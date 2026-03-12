@@ -1,0 +1,183 @@
+from django.db import models
+from django.contrib.auth.models import AbstractUser
+from django.conf import settings
+
+# Lớp cơ sở để tái sử dụng created_at và updated_at cho tất cả các bảng
+class TimeStampedModel(models.Model):
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+# 1. Bảng USERS
+class User(AbstractUser, TimeStampedModel):
+    ROLE_CHOICES = (
+        ('ADMIN', 'Admin'),
+        ('STAFF', 'Staff'),
+        ('READER', 'Reader'),
+    )
+    MEMBERSHIP_CHOICES = (
+        ('STANDARD', 'Standard'),
+        ('PREMIUM', 'Premium'),
+        ('VIP', 'VIP'),
+    )
+    
+    dob = models.DateField(null=True, blank=True)
+    address = models.CharField(max_length=255, null=True, blank=True)
+    phone = models.CharField(max_length=20, null=True, blank=True)
+    avatar = models.CharField(max_length=255, null=True, blank=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='READER')
+    membership_level = models.CharField(max_length=20, choices=MEMBERSHIP_CHOICES, default='STANDARD')
+
+    class Meta:
+        verbose_name = 'Người dùng'
+        verbose_name_plural = 'Danh sách Người dùng'
+
+    def __str__(self):
+        return self.username
+
+# 2. Bảng CATEGORIES
+class Category(TimeStampedModel):
+    name = models.CharField(max_length=150, unique=True)
+    description = models.TextField(null=True, blank=True)
+    class Meta:
+        verbose_name = 'Danh mục sách'
+        verbose_name_plural = 'Các Danh mục sách'
+
+    def __str__(self):
+        return self.name
+
+# 3. Bảng PUBLISHERS
+class Publisher(TimeStampedModel):
+    name = models.CharField(max_length=150)
+    address = models.CharField(max_length=255, null=True, blank=True)
+
+    class Meta:
+        verbose_name = 'Nhà xuất bản'
+        verbose_name_plural = 'Các Nhà xuất bản'
+
+    def __str__(self):
+        return self.name
+
+# 4. Bảng BOOKS
+class Book(TimeStampedModel):
+    STATUS_CHOICES = (
+        ('AVAILABLE', 'Available'),
+        ('UNAVAILABLE', 'Unavailable'),
+        ('LOST', 'Lost'),
+    )
+
+    title = models.CharField(max_length=255)
+    location = models.CharField(max_length=100, null=True, blank=True)
+    category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='books')
+    publisher = models.ForeignKey(Publisher, on_delete=models.SET_NULL, null=True, related_name='books')
+    cover_image = models.CharField(max_length=255, null=True, blank=True)
+    author = models.CharField(max_length=150, null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    initial_quantity = models.IntegerField(default=0)
+    quantity = models.IntegerField(default=0)
+    published_year = models.IntegerField(null=True, blank=True)
+    description = models.TextField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='AVAILABLE')
+
+    class Meta:
+        verbose_name = 'Cuốn sách'
+        verbose_name_plural = 'Kho Sách'
+
+    def __str__(self):
+        return self.title
+
+# 5. Bảng BOOK_IMAGES
+class BookImage(TimeStampedModel):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='images')
+    image_url = models.CharField(max_length=255)
+
+# 6. Bảng BORROW_TRANSACTIONS
+class BorrowTransaction(TimeStampedModel):
+    STATUS_CHOICES = (
+        ('BORROWED', 'Borrowed'),
+        ('RETURNED', 'Returned'),
+        ('OVERDUE', 'Overdue'),
+    )
+
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='borrow_records')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='borrow_records')
+    borrow_date = models.DateField(auto_now_add=True)
+    return_date = models.DateField(null=True, blank=True)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='BORROWED')
+    reason = models.CharField(max_length=255, null=True, blank=True)
+    borrow_date = models.DateField(auto_now_add=True)
+    due_date = models.DateField(null=True, blank=True, verbose_name="Hạn trả") # Thêm dòng này
+    return_date = models.DateField(null=True, blank=True, verbose_name="Ngày trả thực tế")
+    class Meta:
+        verbose_name = 'Giao dịch mượn'
+        verbose_name_plural = 'Quản lý Mượn/Trả'
+
+# 7. Bảng PENALTIES
+class Penalty(TimeStampedModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='penalties')
+    borrow_transaction = models.ForeignKey(BorrowTransaction, on_delete=models.CASCADE, related_name='penalties')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    reason = models.TextField()
+    due_date = models.DateField(null=True, blank=True)
+    class Meta:
+        verbose_name = 'Phiếu phạt'
+        verbose_name_plural = 'Danh sách Xử phạt'
+
+# 8. Bảng REVIEWS
+class Review(TimeStampedModel):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='reviews')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
+    rating = models.SmallIntegerField() 
+    comment = models.TextField(null=True, blank=True)
+
+# 9. Bảng WISHLISTS
+class Wishlist(TimeStampedModel):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='wishlisted_by')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wishlists')
+
+# 10. Bảng RECOMMENDATIONS
+class Recommendation(TimeStampedModel):
+    book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='recommendations')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recommended_to')
+    score = models.FloatField()
+
+# 11. Bảng MEMBERSHIPS
+class Membership(TimeStampedModel):
+    LEVEL_CHOICES = (
+        ('STANDARD', 'Standard'),
+        ('PREMIUM', 'Premium'),
+        ('VIP', 'VIP'),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='memberships')
+    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='STANDARD')
+    points = models.IntegerField(default=0)
+
+# 12. Bảng NOTIFICATIONS
+class Notification(TimeStampedModel):
+    TYPE_CHOICES = (
+        ('REMINDER', 'Reminder'),
+        ('WARNING', 'Warning'),
+        ('SYSTEM', 'System'),
+    )
+    STATUS_CHOICES = (
+        ('UNREAD', 'Unread'),
+        ('READ', 'Read'),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
+    message = models.TextField()
+    type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='SYSTEM')
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='UNREAD')
+
+# 13. Bảng CHAT_ROOMS
+class ChatRoom(TimeStampedModel):
+    name = models.CharField(max_length=150)
+    is_private = models.BooleanField(default=False)
+    admin = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='managed_rooms')
+
+# 14. Bảng CHATS
+class Chat(TimeStampedModel):
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chats')
+    chat_room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='chats')
+    message = models.TextField()

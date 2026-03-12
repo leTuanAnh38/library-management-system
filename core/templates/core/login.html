@@ -1,0 +1,54 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>Đăng nhập - Thư viện Alovu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <style>
+        body { background-color: #f3f6f9; }
+        .login-container { max-width: 450px; margin: 80px auto; }
+        .card { border-radius: 15px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="container login-container">
+        <div class="card p-4 border-top border-primary border-4">
+            <div class="text-center mb-4 mt-2">
+                <h2 class="text-primary fw-bold">Đăng nhập</h2>
+                <p class="text-muted">Hệ thống Thư viện Alovu</p>
+            </div>
+            
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <form method="POST" action="">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tên đăng nhập</label>
+                    <input type="text" name="username" class="form-control form-control-lg" placeholder="Nhập tên đăng nhập của bạn" required>
+                </div>
+
+                <div class="mb-4">
+                    <label class="form-label fw-bold">Mật khẩu</label>
+                    <input type="password" name="password" class="form-control form-control-lg" placeholder="••••••••" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill fw-bold fs-5">Đăng nhập</button>
+            </form>
+            
+            <div class="text-center mt-4">
+                <small>Chưa có tài khoản? <a href="{% url 'register' %}" class="text-primary fw-bold text-decoration-none">Đăng ký ngay</a></small><br>
+                <small class="d-block mt-2"><a href="{% url 'home' %}" class="text-secondary text-decoration-none">← Trở về Trang chủ</a></small>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

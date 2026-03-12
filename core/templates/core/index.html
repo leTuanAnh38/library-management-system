@@ -1,0 +1,185 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Trang chủ - Thư viện Alovu{% endblock %}
+{% block nav_home %}active fw-bold{% endblock %}
+
+{% block content %}
+<div class="container-fluid header-carousel owl-carousel px-0 mb-5">
+    {% for book in featured_books %}
+    <div class="header-carousel-item position-relative" style="height: 450px;">
+        <img src="{% static 'img/carousel-bg.jpg' %}" class="img-fluid w-100 h-100" style="object-fit: cover; filter: brightness(0.5);" alt="Background">
+        
+        <div class="carousel-caption d-flex align-items-center justify-content-center">
+            <div class="featured-book-card text-center wow zoomIn" data-wow-delay="0.2s">
+                <div class="featured-img-wrapper mb-3">
+                    <img src="{{ book.cover_image }}" class="shadow-lg rounded" style="width: 200px; height: 280px; object-fit: cover;" alt="{{ book.title }}">
+                </div>
+                <div class="featured-info p-3 rounded bg-dark-transparent">
+                    <h3 class="text-white fw-bold mb-1">{{ book.title }}</h3>
+                    <p class="text-white-50 mb-0">{{ book.author }}</p>
+                    <div class="mt-2">
+                        <span class="badge bg-primary px-3 py-2 rounded-pill">Sách mới nổi bật</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="container-fluid py-5 mb-5" style="background-color: #f8f9fa;">
+    <div class="container">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold text-primary m-0 border-start border-4 border-primary ps-3">Đề xuất cho bạn</h2>
+            <a href="{% url 'book_list' %}" class="btn btn-outline-primary rounded-pill">Xem tất cả <i class="fas fa-arrow-right ms-2"></i></a>
+        </div>
+        
+        <div class="related-carousel owl-carousel">
+            {% for book in recommended_books %}
+            <div class="bg-white rounded shadow-sm p-3 m-2 text-center border h-100 product-item d-flex flex-column">
+                <a href="{% url 'book_detail' book.id %}">
+                    <img src="{{ book.cover_image }}" class="img-fluid rounded mb-3" style="height: 200px; object-fit: contain;" alt="{{ book.title }}">
+                </a>
+                <h6 class="fw-bold text-truncate mb-1">{{ book.title }}</h6>
+                <p class="small text-muted mb-3">{{ book.author }}</p>
+                <div class="mt-auto">
+                    <a href="{% url 'borrow_book' book.id %}" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">Mượn ngay</a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="container py-3">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm rounded-3 overflow-hidden mb-4">
+                <div class="card-header bg-primary py-3">
+                    <h5 class="m-0 text-white fw-bold"><i class="fas fa-link me-2"></i>Liên Kết Nhanh</h5>
+                </div>
+                <div class="list-group list-group-flush shadow-sm">
+                    <a href="#" class="list-group-item list-group-item-action py-3 border-0">
+                        <i class="fas fa-bell text-primary me-3"></i>Thông báo <span class="badge bg-danger rounded-pill float-end">4</span>
+                    </a>
+                    <a href="{% url 'book_list' %}" class="list-group-item list-group-item-action py-3 border-0 active bg-light text-primary fw-bold">
+                        <i class="fas fa-book-reader me-3"></i>Mượn sách
+                    </a>
+                    <a href="{% url 'borrow_history' %}" class="list-group-item list-group-item-action py-3 border-0">
+                        <i class="fas fa-history text-primary me-3"></i>Lịch sử mượn
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action py-3 border-0">
+                        <i class="fas fa-exclamation-triangle text-primary me-3"></i>Xử phạt
+                    </a>
+                    <a href="#" class="list-group-item list-group-item-action py-3 border-0">
+                        <i class="fas fa-star text-primary me-3"></i>Đánh giá
+                    </a>
+                    <a href="{% url 'wishlist' %}" class="list-group-item list-group-item-action py-3 border-0">
+                        <i class="fas fa-heart text-primary me-3"></i>Yêu thích
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="text-center mb-5">
+                <h1 class="display-5 fw-bold text-primary">Danh sách Sách</h1>
+                <div class="mx-auto bg-secondary" style="width: 100px; height: 3px;"></div>
+            </div>
+
+            <div class="row g-3 mb-4 bg-white p-3 rounded shadow-sm mx-0 border">
+                <div class="col-md-6">
+                    <label class="small text-muted mb-1">Sắp xếp theo:</label>
+                    <select class="form-select border-light shadow-none">
+                        <option>Tiêu đề</option>
+                        <option>Mới nhất</option>
+                        <option>Phổ biến nhất</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="small text-muted mb-1">Lọc theo:</label>
+                    <select class="form-select border-light shadow-none">
+                        <option>Tất cả danh mục</option>
+                        {% for cat in categories %}
+                            <option value="{{ cat.id }}">{{ cat.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="row g-4">
+                {% for book in books %}
+                <div class="col-md-6 col-lg-4 d-flex align-items-stretch">
+                    
+                    <div class="product-item bg-white border rounded shadow-sm w-100 d-flex flex-column wow fadeInUp" data-wow-delay="0.1s">
+                        
+                        <div class="position-relative text-center p-3 bg-light rounded-top" style="height: 250px; overflow: hidden;">
+                            <a href="{% url 'book_detail' book.id %}">
+                                {% if book.cover_image %}
+                                    <img src="{{ book.cover_image }}" class="img-fluid h-100 rounded" style="object-fit: contain; transition: transform 0.4s ease;" alt="{{ book.title }}">
+                                {% else %}
+                                    <img src="{% static 'img/product-1.png' %}" class="img-fluid h-100 opacity-25" alt="Mặc định">
+                                {% endif %}
+                            </a>
+                        </div>
+
+                        <div class="p-4 text-center d-flex flex-column flex-grow-1 border-top">
+                            <span class="d-block mb-2 text-muted small fw-bold text-uppercase">{{ book.category.name|default:"Chưa phân loại" }}</span>
+                            
+                            <h5 class="mb-2 fw-bold">
+                                <a href="{% url 'book_detail' book.id %}" class="text-dark text-decoration-none text-truncate d-block" title="{{ book.title }}">{{ book.title }}</a>
+                            </h5>
+                            
+                            <p class="small text-muted mb-3">Tác giả: {{ book.author|default:"Ẩn danh" }}</p>
+                            
+                            <div class="mt-auto pt-3 border-top w-100">
+                                <div class="mb-3">
+                                    <span class="small text-muted d-block">Số lượng còn lại: <b>{{ book.quantity }}</b></span>
+                                    {% if book.quantity > 0 %}
+                                        <span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i>Có sẵn</span>
+                                    {% else %}
+                                        <span class="text-danger small fw-bold"><i class="fas fa-times-circle me-1"></i>Đang mượn</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    {% if book.quantity > 0 %}
+                                        <a href="{% url 'borrow_book' book.id %}" class="btn btn-primary rounded-pill fw-bold shadow-sm">
+                                            MƯỢN SÁCH
+                                        </a>
+                                    {% else %}
+                                        <button class="btn btn-secondary rounded-pill fw-bold" disabled>HẾT SÁCH</button>
+                                    {% endif %}
+                                    
+                                    <a href="{% url 'toggle_wishlist' book.id %}" class="btn btn-link text-muted btn-sm text-decoration-none">
+                                         <i class="far fa-heart text-danger"></i> Yêu thích
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="col-12 text-center py-5">
+                    <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                    <h4 class="text-muted">Chưa có sách nào trong thư viện.</h4>
+                </div>
+                {% endfor %}
+            </div>
+
+            <div class="col-12 text-center mt-5">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center">
+                        <li class="page-item disabled"><a class="page-link rounded-start shadow-sm" href="#">Trước</a></li>
+                        <li class="page-item active"><a class="page-link shadow-sm" href="#">1</a></li>
+                        <li class="page-item"><a class="page-link shadow-sm" href="#">2</a></li>
+                        <li class="page-item"><a class="page-link shadow-sm" href="#">3</a></li>
+                        <li class="page-item"><a class="page-link rounded-end shadow-sm" href="#">Sau</a></li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

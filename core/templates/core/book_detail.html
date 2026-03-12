@@ -1,0 +1,69 @@
+{% extends 'core/base.html' %}
+{% block title %}{{ book.title }} - Alovu{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row g-5">
+        <div class="col-lg-4 wow fadeInLeft">
+            <div class="card shadow-sm p-2">
+                <img src="{{ book.cover_image }}" class="img-fluid rounded" alt="{{ book.title }}">
+            </div>
+        </div>
+
+        <div class="col-lg-8 wow fadeInRight">
+            <span class="badge bg-primary mb-2">{{ book.category.name }}</span>
+            <h1 class="display-5 fw-bold mb-3">{{ book.title }}</h1>
+            <p class="fs-5 text-muted">Tác giả: <span class="text-dark fw-bold">{{ book.author }}</span></p>
+            <hr>
+            <h4 class="fw-bold">Tóm tắt nội dung:</h4>
+            <p class="text-secondary lead">{{ book.description|default:"Đang cập nhật nội dung tóm tắt cho cuốn sách này..." }}</p>
+            
+            <div class="mt-4">
+                <a href="{% url 'borrow_book' book.id %}" class="btn btn-warning btn-lg px-5 rounded-pill fw-bold">Mượn sách ngay</a>
+            </div>
+
+            <div class="mt-5 pt-5 border-top">
+                <h3 class="fw-bold mb-4">Độc giả nhận xét ({{ reviews.count }})</h3>
+                
+                {% if user.is_authenticated %}
+                <form action="{% url 'add_review' book.id %}" method="POST" class="bg-light p-4 rounded shadow-sm mb-5">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Đánh giá của bạn:</label>
+                        <select name="rating" class="form-select border-primary" required>
+                            <option value="5">⭐⭐⭐⭐⭐ (Rất hay)</option>
+                            <option value="4">⭐⭐⭐⭐ (Hay)</option>
+                            <option value="3">⭐⭐⭐ (Bình thường)</option>
+                            <option value="2">⭐⭐ (Kém)</option>
+                            <option value="1">⭐ (Tệ)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Cảm nghĩ của bạn:</label>
+                        <textarea name="comment" class="form-control" rows="3" placeholder="Viết cảm nghĩ của Khanh về cuốn sách này..." required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary rounded-pill px-4">Gửi nhận xét</button>
+                </form>
+                {% else %}
+                <p class="alert alert-info">Vui lòng <a href="{% url 'login' %}">đăng nhập</a> để viết nhận xét.</p>
+                {% endif %}
+
+                <div class="review-list">
+                    {% for r in reviews %}
+                    <div class="d-flex mb-4 border-bottom pb-3">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-user-circle fa-3x text-secondary"></i>
+                        </div>
+                        <div class="ms-3">
+                            <h6 class="fw-bold mb-0">{{ r.user.username }} <span class="text-warning ms-2">{% if r.rating == 5 %}⭐⭐⭐⭐⭐{% elif r.rating == 4 %}⭐⭐⭐⭐{% else %}⭐⭐⭐{% endif %}</span></h6>
+                            <small class="text-muted">{{ r.created_at|date:"d/m/Y" }}</small>
+                            <p class="mt-2 text-dark">{{ r.comment }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

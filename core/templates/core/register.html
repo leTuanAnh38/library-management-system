@@ -1,0 +1,52 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8">
+    <title>Đăng ký tài khoản - Thư viện Alovu</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <style>
+        body { background-color: #f3f6f9; }
+        .register-container { max-width: 500px; margin: 50px auto; }
+        .card { border-radius: 15px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="container register-container">
+        <div class="card p-4">
+            <div class="text-center mb-4">
+                <h2 class="text-primary fw-bold">Đăng ký tài khoản</h2>
+                <p class="text-muted">Tham gia mượn sách tại thư viện Alovu</p>
+            </div>
+            
+            {% if form.errors %}
+                <div class="alert alert-danger">
+                    Vui lòng kiểm tra lại các thông tin bên dưới.
+                </div>
+            {% endif %}
+
+            <form method="POST" action="">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">{{ field.label }}</label>
+                        <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" class="form-control" placeholder="Nhập {{ field.label|lower }}">
+                        {% if field.errors %}
+                            <small class="text-danger">{{ field.errors|striptags }}</small>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+
+                <button type="submit" class="btn btn-primary w-100 py-2 mt-3 rounded-pill fw-bold">Đăng ký ngay</button>
+            </form>
+            
+            <div class="text-center mt-3">
+                <small>Đã có tài khoản? <a href="{% url 'login' %}" class="text-primary text-decoration-none">Đăng nhập</a></small><br>
+                <small><a href="{% url 'home' %}" class="text-secondary text-decoration-none">← Trở về Trang chủ</a></small>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
