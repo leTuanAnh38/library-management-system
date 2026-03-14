@@ -1,0 +1,44 @@
+<div class="sticky-sidebar">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden border mb-4">
+        <div class="card-header bg-primary py-3 text-white fw-bold text-uppercase">
+            <i class="fas fa-th-large me-2"></i>Liên kết nhanh
+        </div>
+        <div class="list-group list-group-flush shadow-sm">
+            <a href="{% url 'home' %}" class="list-group-item list-group-item-action py-3 border-0 {% if request.resolver_match.url_name == 'home' %}active bg-light text-primary fw-bold{% endif %}">
+                <i class="fas fa-home text-primary me-3"></i>Trang chủ
+            </a>
+
+            <a href="#" class="list-group-item list-group-item-action py-3 border-0">
+                <i class="fas fa-bell text-primary me-3"></i>Thông báo 
+                <span class="badge bg-danger rounded-pill float-end">4</span>
+            </a>
+
+            <a href="{% url 'book_list' %}" class="list-group-item list-group-item-action py-3 border-0 {% if request.resolver_match.url_name == 'book_list' %}active bg-light text-primary fw-bold{% endif %}">
+                <i class="fas fa-book-reader text-primary me-3"></i>Kho sách
+            </a>
+
+            <a href="#" class="list-group-item list-group-item-action py-3 border-0">
+                <i class="fas fa-undo text-primary me-3"></i>Trả sách
+            </a>
+
+            <a href="{% url 'borrow_history' %}" class="list-group-item list-group-item-action py-3 border-0 {% if request.resolver_match.url_name == 'borrow_history' %}active bg-light text-primary fw-bold{% endif %}">
+                <i class="fas fa-history text-primary me-3"></i>Lịch sử mượn
+            </a>
+
+            <a href="{% url 'wishlist' %}" class="list-group-item list-group-item-action py-3 border-0 border-top {% if request.resolver_match.url_name == 'wishlist' %}active bg-light text-primary fw-bold{% endif %}">
+                <i class="fas fa-heart text-danger me-3"></i>Yêu thích
+                {% if wishlist_count > 0 %}
+                    <span class="badge bg-danger rounded-pill float-end">{{ wishlist_count }}</span>
+                {% endif %}
+            </a>
+        </div>
+    </div>
+</div>
+
+<style>
+    .sticky-sidebar { 
+        position: sticky; 
+        top: 150px; /* Tránh bị thanh Menu che mất khi lướt */
+        z-index: 10;
+    }
+</style>

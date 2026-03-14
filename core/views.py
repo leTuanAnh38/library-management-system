@@ -78,21 +78,30 @@ def change_password(request):
 
 def home(request):
     featured_books = Book.objects.all().order_by('-created_at')[:5]
-    recommended_books = Book.objects.all().order_by('?')[:10] 
-    books = Book.objects.all().order_by('-created_at')
+    recommended_books = Book.objects.all().order_by('?')[:3] 
+    books = Book.objects.all().order_by('-created_at')[:6]
     categories = Category.objects.all()
+
+    wishlist_book_ids = []
+    borrowed_book_ids = []
+    
+    if request.user.is_authenticated:
+        # Lấy danh sách ID sách đã yêu thích
+        wishlist_book_ids = Wishlist.objects.filter(user=request.user).values_list('book_id', flat=True)
+        # Lấy danh sách ID sách đang mượn chưa trả
+        borrowed_book_ids = BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True)
 
     return render(request, 'core/index.html', {
         'featured_books': featured_books,
         'recommended_books': recommended_books, 
         'books': books,
-        'categories': categories
+        'categories': categories,
+        'wishlist_book_ids': list(wishlist_book_ids),
+        'borrowed_book_ids': list(borrowed_book_ids)
     })
-
 # HÀM BOOK_LIST CHUẨN (Đã gộp cả tìm kiếm, lọc và phân trang)
 def book_list(request):
     query = request.GET.get('q', '')
-    
     books_list = Book.objects.all().order_by('-created_at') 
     categories = Category.objects.all()
 
@@ -103,7 +112,20 @@ def book_list(request):
             Q(category__name__icontains=query)   
         ).distinct()
 
-    paginator = Paginator(books_list, 8) 
+    wishlist_book_ids = []
+    borrowed_book_ids = []
+    
+    if request.user.is_authenticated:
+        # 1. Lấy ID sách đã yêu thích (để giữ màu hồng trái tim)
+        wishlist_book_ids = Wishlist.objects.filter(user=request.user).values_list('book_id', flat=True)
+        
+        # 2. Lấy ID sách ĐANG MƯỢN (để đổi trạng thái nút)
+        borrowed_book_ids = BorrowTransaction.objects.filter(
+            user=request.user, 
+            status='BORROWED'
+        ).values_list('book_id', flat=True)
+
+    paginator = Paginator(books_list, 6) 
     page = request.GET.get('page')
     
     try:
@@ -116,7 +138,9 @@ def book_list(request):
     context = {
         'books': books, 
         'categories': categories,
-        'query': query, 
+        'query': query,
+        'wishlist_book_ids': list(wishlist_book_ids),
+        'borrowed_book_ids': list(borrowed_book_ids) # Gửi danh sách đang mượn sang HTML
     }
     return render(request, 'core/book_list.html', context)
 
@@ -172,9 +196,18 @@ def book_detail(request, book_id):
     book = get_object_or_404(Book, id=book_id)
     reviews = book.reviews.all().order_by('-created_at')
     
+    borrowed_book_ids = []
+    if request.user.is_authenticated:
+        # Lấy danh sách ID các sách Khanh đang mượn chưa trả
+        borrowed_book_ids = BorrowTransaction.objects.filter(
+            user=request.user, 
+            status='BORROWED'
+        ).values_list('book_id', flat=True)
+    
     return render(request, 'core/book_detail.html', {
         'book': book,
-        'reviews': reviews
+        'reviews': reviews,
+        'borrowed_book_ids': list(borrowed_book_ids) # Gửi sang HTML
     })
 
 @login_required(login_url='login')
@@ -270,4 +303,14 @@ def toggle_wishlist(request, book_id):
 def wishlist_view(request):
     # Lấy toàn bộ sách yêu thích của người dùng hiện tại
     wishlist_items = Wishlist.objects.filter(user=request.user).order_by('-created_at')
-    return render(request, 'core/wishlist.html', {'wishlist_items': wishlist_items})
+    
+    # BỔ SUNG: Lấy ID các sách đang mượn (status='BORROWED')
+    borrowed_book_ids = BorrowTransaction.objects.filter(
+        user=request.user, 
+        status='BORROWED'
+    ).values_list('book_id', flat=True)
+    
+    return render(request, 'core/wishlist.html', {
+        'wishlist_items': wishlist_items,
+        'borrowed_book_ids': list(borrowed_book_ids)
+    })

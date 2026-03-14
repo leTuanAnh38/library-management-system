@@ -1,75 +1,100 @@
 {% extends 'core/base.html' %}
+{% load static %}
 
 {% block title %}Lịch sử mượn sách - Alovu{% endblock %}
 
 {% block content %}
-<div class="container py-5">
-    <div class="row">
-        <div class="col-12">
-            <h2 class="fw-bold mb-4 border-start border-4 border-primary ps-3">Sách của tôi</h2>
-            
-            <div class="table-responsive shadow-sm rounded">
-                <table class="table table-hover align-middle bg-white mb-0">
-                    <thead class="bg-primary text-white">
-                        <tr>
-                            <th class="py-3 ps-4">Tên sách</th>
-                            <th class="py-3">Ngày mượn</th>
-                            <th class="py-3">Hạn trả</th>
-                            <th class="py-3">Trạng thái</th>
-                            <th class="py-3 text-center">Hành động</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for item in history %}
-                        <tr>
-                            <td class="ps-4">
-                                <div class="d-flex align-items-center">
-                                    <img src="{{ item.book.cover_image }}" alt="" style="width: 45px; height: 60px; object-fit: cover;" class="rounded me-3 border">
-                                    <div>
-                                        <div class="fw-bold text-dark">{{ item.book.title }}</div>
-                                        <small class="text-muted">Tác giả: {{ item.book.author }}</small>
+<div class="container-fluid px-lg-5 py-5">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            {% include 'core/includes/sidebar.html' %}
+        </div>
+
+        <div class="col-lg-9">
+            <div class="bg-white p-4 rounded-4 shadow-sm border">
+                <h2 class="fw-bold mb-4 border-start border-4 border-primary ps-3">Lịch sử mượn sách của Khanh</h2>
+                
+                <div class="table-responsive rounded shadow-sm">
+                    <table class="table table-hover align-middle bg-white mb-0">
+                        <thead class="bg-primary text-white">
+                            <tr>
+                                <th class="py-3 ps-4">Tên sách</th>
+                                <th class="py-3">Ngày mượn</th>
+                                <th class="py-3">Hạn trả</th>
+                                <th class="py-3">Trạng thái</th>
+                                <th class="py-3 text-center">Hành động</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in history %}
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <img src="{{ item.book.cover_image }}" alt="" style="width: 45px; height: 60px; object-fit: cover;" class="rounded me-3 border">
+                                        <div>
+                                            <div class="fw-bold text-dark">{{ item.book.title }}</div>
+                                            <small class="text-muted">Tác giả: {{ item.book.author }}</small>
+                                        </div>
                                     </div>
-                                </div>
-                            </td>
-                            <td>{{ item.borrow_date|date:"d/m/Y" }}</td>
-                            <td>
-                                <span class="{% if item.status == 'BORROWED' %}text-danger fw-bold{% endif %}">
-                                    {{ item.due_date|date:"d/m/Y" }}
-                                </span>
-                            </td>
-                            <td>
-                                {% if item.status == 'BORROWED' %}
-                                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Đang mượn</span>
-                                {% elif item.status == 'RETURNED' %}
-                                    <span class="badge bg-success px-3 py-2 rounded-pill">Đã trả</span>
-                                {% else %}
-                                    <span class="badge bg-danger px-3 py-2 rounded-pill">Quá hạn</span>
-                                {% endif %}
-                            </td>
-                           <td class="text-center">
-    {% if item.status == 'BORROWED' %}
-        <a href="{% url 'return_book' item.id %}" 
-           class="btn btn-warning btn-sm rounded-pill px-3 fw-bold"
-           onclick="return confirm('Khanh chắc chắn muốn trả cuốn sách này chứ?')">
-            Trả sách ngay
-        </a>
-    {% else %}
-        <span class="text-success small"><i class="fas fa-check-circle"></i> Đã hoàn tất</span>
-    {% endif %}
-</td>
-                        </tr>
-                        {% empty %}
-                        <tr>
-                            <td colspan="5" class="text-center py-5">
-                                <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
-                                <p class="text-muted">Khanh chưa mượn cuốn sách nào cả. <a href="{% url 'book_list' %}">Mượn ngay!</a></p>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
+                                </td>
+                                <td>{{ item.borrow_date|date:"d/m/Y" }}</td>
+                                <td>
+                                    <span class="{% if item.status == 'BORROWED' %}text-danger fw-bold{% endif %}">
+                                        {{ item.due_date|date:"d/m/Y" }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if item.status == 'BORROWED' %}
+                                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Đang mượn</span>
+                                    {% elif item.status == 'RETURNED' %}
+                                        <span class="badge bg-success px-3 py-2 rounded-pill">Đã trả</span>
+                                    {% else %}
+                                        <span class="badge bg-danger px-3 py-2 rounded-pill">Quá hạn</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if item.status == 'BORROWED' %}
+                                        <a href="{% url 'return_book' item.id %}" 
+                                           class="btn btn-warning btn-sm rounded-pill px-3 fw-bold shadow-sm"
+                                           onclick="return confirm('Khanh chắc chắn muốn trả cuốn sách này chứ?')">
+                                            Trả sách ngay
+                                        </a>
+                                    {% else %}
+                                        <span class="text-success small"><i class="fas fa-check-circle"></i> Đã hoàn tất</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
+                                    <p class="text-muted">Khanh chưa mượn cuốn sách nào cả. <a href="{% url 'book_list' %}" class="fw-bold text-primary">Mượn ngay!</a></p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    /* Đảm bảo bảng hiển thị đẹp trên nền trắng */
+    .table thead th {
+        border: none;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+    .table tbody td {
+        border-color: #f8f9fa;
+    }
+    /* Hiệu ứng khi lướt qua hàng */
+    .table-hover tbody tr:hover {
+        background-color: #fdfaf5;
+    }
+</style>
 {% endblock %}

@@ -5,116 +5,137 @@
 {% block nav_book %}active fw-bold{% endblock %}
 
 {% block content %}
-<div class="container-fluid product py-5">
-    <div class="container py-3">
-        <div class="text-center mx-auto mb-5" style="max-width: 700px;">
-            <h1 class="display-4">Toàn Bộ Kho Sách</h1>
-            <p class="text-muted">Tìm kiếm và mượn những cuốn sách bạn yêu thích.</p>
-        </div>
-        
-        <div class="row g-4">
-            {% for book in books %}
-            <div class="col-md-6 col-lg-4 col-xl-3 d-flex align-items-stretch">
-                
-                <div class="product-item bg-white border rounded shadow-sm w-100 d-flex flex-column wow fadeInUp" data-wow-delay="0.1s">
-                    
-                    <div class="position-relative text-center p-3 bg-light rounded-top" style="height: 250px; overflow: hidden;">
-                        <a href="{% url 'book_detail' book.id %}">
-                            {% if book.cover_image %}
-                                <img src="{{ book.cover_image }}" class="img-fluid h-100 rounded" style="object-fit: contain; transition: transform 0.4s ease;" alt="{{ book.title }}">
-                            {% else %}
-                                <img src="{% static 'img/product-1.png' %}" class="img-fluid h-100 opacity-25" alt="Mặc định">
-                            {% endif %}
-                        </a>
-                    </div>
-
-                    <div class="p-4 text-center d-flex flex-column flex-grow-1 border-top">
-                        <span class="d-block mb-2 text-muted small fw-bold text-uppercase">{{ book.category.name|default:"Chưa phân loại" }}</span>
-                        
-                        <h5 class="mb-2 fw-bold">
-                            <a href="{% url 'book_detail' book.id %}" class="text-dark text-decoration-none text-truncate d-block" title="{{ book.title }}">{{ book.title }}</a>
-                        </h5>
-                        
-                        <p class="small text-muted mb-3">Tác giả: {{ book.author|default:"Ẩn danh" }}</p>
-                        
-                        <div class="mt-auto pt-3 border-top w-100">
-                            <div class="mb-3">
-                                <span class="small text-muted d-block">Số lượng còn lại: <b>{{ book.quantity }}</b></span>
-                                {% if book.quantity > 0 %}
-                                    <span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i>Có sẵn</span>
-                                {% else %}
-                                    <span class="text-danger small fw-bold"><i class="fas fa-times-circle me-1"></i>Đang mượn</span>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="d-grid gap-2">
-                                {% if book.quantity > 0 %}
-                                    <a href="{% url 'borrow_book' book.id %}" class="btn btn-primary rounded-pill fw-bold shadow-sm">
-                                        MƯỢN SÁCH
-                                    </a>
-                                {% else %}
-                                    <button class="btn btn-secondary rounded-pill fw-bold" disabled>HẾT SÁCH</button>
-                                {% endif %}
-                                
-                                <a href="{% url 'toggle_wishlist' book.id %}" class="btn btn-link text-muted btn-sm text-decoration-none">
-                                    <i class="far fa-heart text-danger"></i> Yêu thích
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            {% empty %}
-            <div class="col-12 text-center py-5">
-                <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
-                <h4 class="text-muted">Chưa có cuốn sách nào trong kho.</h4>
-            </div>
-            {% endfor %}
-
-            {% if books.has_other_pages %}
-            <div class="col-12 text-center mt-5">
-                <nav aria-label="Page navigation">
-                    <ul class="pagination justify-content-center">
-                        
-                        {% if books.has_previous %}
-                            <li class="page-item">
-                                <a class="page-link rounded-start shadow-sm" href="?page={{ books.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">Trước</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <a class="page-link rounded-start shadow-sm" href="#">Trước</a>
-                            </li>
-                        {% endif %}
-
-                        {% for i in books.paginator.page_range %}
-                            {% if books.number == i %}
-                                <li class="page-item active">
-                                    <a class="page-link shadow-sm" href="#">{{ i }}</a>
-                                </li>
-                            {% else %}
-                                <li class="page-item">
-                                    <a class="page-link shadow-sm" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}">{{ i }}</a>
-                                </li>
-                            {% endif %}
-                        {% endfor %}
-
-                        {% if books.has_next %}
-                            <li class="page-item">
-                                <a class="page-link rounded-end shadow-sm" href="?page={{ books.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Sau</a>
-                            </li>
-                        {% else %}
-                            <li class="page-item disabled">
-                                <a class="page-link rounded-end shadow-sm" href="#">Sau</a>
-                            </li>
-                        {% endif %}
-
-                    </ul>
-                </nav>
-            </div>
-            {% endif %}
-            
+<div class="container-fluid px-lg-5 py-4">
+    <div class="row g-4">
+       <div class="col-lg-3">
+    <div class="sticky-sidebar">
+        <div class="card border-0 shadow-sm rounded-4 overflow-hidden border mb-4">
+       {% include 'core/includes/sidebar.html' %}
         </div>
     </div>
 </div>
+
+        <div class="col-lg-9">
+            <div class="bg-white p-4 rounded-3 shadow-sm border mb-4">
+                <div class="text-center mb-5">
+                    <h1 class="display-5 fw-bold text-primary">Toàn Bộ Kho Sách</h1>
+                    <div class="mx-auto bg-primary" style="width: 100px; height: 3px;"></div>
+                </div>
+                
+                <div class="row g-3 mb-4">
+                    <div class="col-md-6">
+                        <label class="small text-muted mb-1 fw-bold">Sắp xếp theo:</label>
+                        <select class="form-select border-light shadow-none bg-light text-muted">
+                            <option>Tiêu đề</option>
+                            <option>Mới nhất</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="small text-muted mb-1 fw-bold">Lọc theo:</label>
+                        <select class="form-select border-light shadow-none bg-light text-muted">
+                            <option>Tất cả danh mục</option>
+                            {% for cat in categories %}
+                                <option value="{{ cat.id }}">{{ cat.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    {% for book in books %}
+                    <div class="col-md-6 col-lg-4 d-flex align-items-stretch">
+                        <div class="product-item bg-white border rounded shadow-sm w-100 d-flex flex-column p-2 transition-hover">
+                            <div class="text-center p-3 bg-light rounded" style="height: 200px; overflow: hidden;">
+                                <a href="{% url 'book_detail' book.id %}">
+                                    <img src="{{ book.cover_image }}" class="h-100 rounded" style="object-fit: contain;" alt="{{ book.title }}">
+                                </a>
+                            </div>
+
+                            <div class="p-3 text-center d-flex flex-column flex-grow-1">
+                                <h6 class="fw-bold text-dark text-truncate-2 mb-2">{{ book.title }}</h6>
+                                <p class="small text-muted mb-1">Tác giả: <b>{{ book.author|default:"Chưa rõ" }}</b></p>
+                                
+                                <div class="mb-3 mt-2">
+                                    {% if book.quantity > 0 %}
+                                        <span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i>Có sẵn: {{ book.quantity }} cuốn</span>
+                                    {% else %}
+                                        <span class="text-danger small fw-bold"><i class="fas fa-times-circle me-1"></i>Hết sách</span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="mt-auto">
+                                    {% if book.id in borrowed_book_ids %}
+                                        <button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 shadow-sm disabled">
+                                            ĐANG MƯỢN
+                                        </button>
+                                    {% elif book.quantity > 0 %}
+                                        <a href="{% url 'borrow_book' book.id %}" 
+                                           class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm"
+                                           onclick="return confirm('Khanh ơi, bạn có chắc chắn muốn mượn sách [{{ book.title }}] không?')">
+                                            MƯỢN SÁCH
+                                        </a>
+                                    {% else %}
+                                        <button class="btn btn-danger rounded-pill fw-bold w-100 py-2 shadow-sm disabled">
+                                            HẾT SÁCH
+                                        </button>
+                                    {% endif %}
+
+                                    <div class="text-center mt-2">
+                                        <a href="{% url 'toggle_wishlist' book.id %}" class="btn btn-link btn-sm p-0 text-decoration-none text-muted">
+                                            {% if book.id in wishlist_book_ids %}
+                                                <i class="fas fa-heart text-danger fs-5"></i>
+                                            {% else %}
+                                                <i class="far fa-heart text-danger fs-5"></i>
+                                            {% endif %}
+                                            Yêu thích
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+
+                {% if books.has_other_pages %}
+                <div class="mt-5 text-center">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center">
+                            {% if books.has_previous %}
+                                <li class="page-item"><a class="page-link border-0 bg-light rounded-start px-3" href="?page={{ books.previous_page_number }}{% if query %}&q={{ query }}{% endif %}">Trước</a></li>
+                            {% endif %}
+                            {% for i in books.paginator.page_range %}
+                                <li class="page-item {% if books.number == i %}active{% endif %}">
+                                    <a class="page-link border-0 {% if books.number == i %}bg-primary text-white{% else %}bg-light{% endif %} px-3" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}">{{ i }}</a>
+                                </li>
+                            {% endfor %}
+                            {% if books.has_next %}
+                                <li class="page-item"><a class="page-link border-0 bg-light rounded-end px-3" href="?page={{ books.next_page_number }}{% if query %}&q={{ query }}{% endif %}">Sau</a></li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .btn-primary { 
+        background-color: var(--bs-primary) !important; 
+        border-color: var(--bs-primary) !important; 
+        color: #fff !important;
+    }
+    .btn-primary:hover { filter: brightness(0.9); }
+    .transition-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
+    .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .fa-heart.fas { color: #ff4d6d !important; }
+    .sticky-sidebar { position: sticky; top: 150px;
+    z-index: 10; }
+    .rounded-4 {
+    border-radius: 1rem !important;
+}
+    
+</style>
 {% endblock %}
