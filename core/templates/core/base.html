@@ -17,60 +17,38 @@
 
     <link href="{% static 'lib/animate/animate.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
-    <link href="{% static 'css/style.css' %}" rel="stylesheet">
-
-    <style>
-        /* Hiệu ứng thẻ sách */
-        .product-item { transition: all 0.3s ease-in-out; border-radius: 8px; }
-        .product-item:hover { transform: translateY(-10px); box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15) !important; border-color: #0d6efd !important; }
-        .product-item img { transition: transform 0.4s ease; }
-        .product-item:hover img { transform: scale(1.08); }
-        
-        /* CSS cho Sidebar dính (Sticky Sidebar) */
-        @media (min-width: 992px) {
-            .sticky-sidebar {
-                position: -webkit-sticky;
-                position: sticky;
-                top: 140px; 
-                z-index: 10;
-            }
-        }
-        
-        /* Đảm bảo Header dính có độ ưu tiên cao */
-        .sticky-top { z-index: 1020; }
-    </style>
-</head>
+    <link href="{% static 'css/style.css' %}?v=1.1" rel="stylesheet">
 
 <body>
     <header class="sticky-top shadow-sm">
-        <div class="container-fluid px-lg-5 py-1 d-none d-lg-block border-bottom bg-white">
+        <div class="container-fluid px-lg-5 py-2 d-none d-lg-block border-bottom bg-white">
             <div class="row gx-0 align-items-center">
                 <div class="col-md-4 col-lg-3">
                     <a href="{% url 'home' %}" class="navbar-brand p-0">
-                        <h2 class="text-primary m-0 fs-3"><i class="fas fa-book-reader text-secondary me-2"></i>Alovu</h2>
+                        <img src="{% static 'img/logo.png' %}" alt="Logo Thư viện Alovu" class="img-fluid" style="max-height: 50px;">
                     </a>
                 </div>
                 <div class="col-md-4 col-lg-6">
-                    <form action="{% url 'book_list' %}" method="GET" class="d-flex border rounded-pill bg-light">
-                        <input class="form-control border-0 rounded-pill w-100 py-1 ps-4 bg-light" type="text" name="q" placeholder="Tìm kiếm tên sách, tác giả..." value="{{ request.GET.q }}">
-                        <button type="submit" class="btn btn-primary rounded-pill py-1 px-4" style="border: 0;"><i class="fas fa-search"></i></button>
+                    <form action="{% url 'book_list' %}" method="GET" class="d-flex border rounded-pill bg-light shadow-sm overflow-hidden">
+                        <input class="form-control border-0 rounded-pill w-100 py-2 ps-4 bg-light" type="text" name="q" placeholder="Tìm kiếm tên sách, tác giả..." value="{{ request.GET.q }}">
+                        <button type="submit" class="btn btn-primary rounded-pill py-2 px-4 border-0"><i class="fas fa-search"></i></button>
                     </form>
                 </div>
                 <div class="col-md-4 col-lg-3 text-end">
                     <div class="dropdown">
-                        <a href="#" class="dropdown-toggle text-dark fs-6 text-decoration-none" data-bs-toggle="dropdown">
+                        <a href="#" class="dropdown-toggle text-dark fs-6 text-decoration-none fw-bold" data-bs-toggle="dropdown">
                             <i class="fa fa-user-circle fa-lg text-primary me-2"></i> 
                             {% if user.is_authenticated %} {{ user.username }} {% else %} Tài khoản {% endif %}
                         </a>
-                        <div class="dropdown-menu dropdown-menu-end rounded shadow-sm mt-2">
+                        <div class="dropdown-menu dropdown-menu-end rounded-4 shadow mt-2 border-0 animate__animated animate__fadeIn">
                             {% if user.is_authenticated %}
-                                <a href="{% url 'change_password' %}" class="dropdown-item">Đổi mật khẩu</a>
-                                <a href="{% url 'borrow_history' %}" class="dropdown-item">Lịch sử mượn</a>
+                                <a href="{% url 'change_password' %}" class="dropdown-item py-2">Đổi mật khẩu</a>
+                                <a href="{% url 'borrow_history' %}" class="dropdown-item py-2">Lịch sử mượn</a>
                                 <hr class="dropdown-divider">
-                                <a href="{% url 'logout' %}" class="dropdown-item text-danger fw-bold">Đăng xuất</a>
+                                <a href="{% url 'logout' %}" class="dropdown-item text-danger fw-bold py-2">Đăng xuất</a>
                             {% else %}
-                                <a href="{% url 'login' %}" class="dropdown-item">Đăng nhập</a>
-                                <a href="{% url 'register' %}" class="dropdown-item text-primary fw-bold">Đăng ký</a>
+                                <a href="{% url 'login' %}" class="dropdown-item py-2">Đăng nhập</a>
+                                <a href="{% url 'register' %}" class="dropdown-item text-primary fw-bold py-2">Đăng ký</a>
                             {% endif %}
                         </div>
                     </div>
@@ -82,17 +60,17 @@
             <div class="row gx-0 bg-primary px-lg-5 align-items-center">
                 <div class="col-lg-3 d-none d-lg-block">
                     <nav class="navbar navbar-light" style="width: 250px;">
-                        <button class="navbar-toggler border-0 fs-5 w-100 px-0 text-start text-white" type="button" data-bs-toggle="collapse" data-bs-target="#allCat">
+                        <button class="navbar-toggler border-0 fs-5 w-100 px-0 text-start text-white py-3" type="button" data-bs-toggle="collapse" data-bs-target="#allCat">
                             <h5 class="m-0 text-white fw-bold"><i class="fa fa-bars me-2"></i>Danh mục sách</h5>
                         </button>
                         <div class="collapse navbar-collapse rounded-bottom" id="allCat">
-                            <div class="navbar-nav ms-auto py-0 bg-white shadow-sm border">
+                            <div class="navbar-nav ms-auto py-0 bg-white shadow-sm border-0 rounded-bottom">
                                 {% for cat in categories %}
-                                    <a href="{% url 'book_list' %}?q={{ cat.name }}" class="dropdown-item py-2">
-                                        {{ cat.name }}
+                                    <a href="{% url 'book_list' %}?q={{ cat.name }}" class="dropdown-item py-3 border-bottom small">
+                                        <i class="fas fa-chevron-right me-2 text-primary" style="font-size: 0.7rem;"></i>{{ cat.name }}
                                     </a>
                                 {% empty %}
-                                    <a href="#" class="dropdown-item py-2 text-muted italic">Chưa có danh mục</a>
+                                    <a href="#" class="dropdown-item py-2 text-muted">Chưa có danh mục</a>
                                 {% endfor %}
                             </div>
                         </div>
@@ -101,10 +79,10 @@
                 <div class="col-12 col-lg-9">
                     <nav class="navbar navbar-expand-lg navbar-light bg-primary py-0">
                         <div class="navbar-nav ms-auto py-0">
-                            <a href="{% url 'home' %}" class="nav-item nav-link text-white py-3 px-4 {% block nav_home %}{% endblock %}">Trang chủ</a>
-                            <a href="{% url 'book_list' %}" class="nav-item nav-link text-white py-3 px-4 {% block nav_book %}{% endblock %}">Kho sách</a>
-                            <a href="#" class="nav-item nav-link text-white py-3 px-4">Hướng dẫn</a>
-                            <a href="#" class="nav-item nav-link text-white py-3 px-4">Liên hệ</a>
+                            <a href="{% url 'home' %}" class="nav-item nav-link text-white py-4 px-4 {% block nav_home %}{% endblock %}">Trang chủ</a>
+                            <a href="{% url 'book_list' %}" class="nav-item nav-link text-white py-4 px-4 {% block nav_book %}{% endblock %}">Kho sách</a>
+                            <a href="#" class="nav-item nav-link text-white py-4 px-4">Hướng dẫn</a>
+                            <a href="#" class="nav-item nav-link text-white py-4 px-4">Liên hệ</a>
                         </div>
                     </nav>
                 </div>
@@ -115,7 +93,8 @@
     {% if messages %}
     <div class="container-fluid px-lg-5 mt-3">
         {% for message in messages %}
-            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-dismissible fade show shadow-sm">
+            <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-dismissible fade show shadow-sm border-0 rounded-3">
+                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
                 {{ message }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
@@ -127,9 +106,53 @@
         {% block content %}{% endblock %}
     </main>
 
-    <footer class="container-fluid copyright py-4 bg-dark mt-5 text-center">
-        <span class="text-light">© 2026 <strong>Thư viện Alovu</strong>. Đồ án môn học CNPM.</span>
-    </footer>
+    <footer class="full-footer">
+    <div class="container-fluid px-lg-5">
+        <div class="row g-5">
+            <div class="col-md-6 col-lg-4">
+                <a href="{% url 'home' %}" class="navbar-brand p-0">
+                    <h3 class="text-white m-0"><i class="fas fa-book-reader text-secondary me-2"></i>Alovu Library</h3>
+                </a>
+                <p class="mt-4 mb-4 lh-base text-white-50">
+                    "Tri thức là sức mạnh. Hãy cùng Alovu khám phá thế giới qua từng trang sách."
+                </p>
+                <div class="d-flex social-icons mt-3">
+                    <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i class="fab fa-facebook-f"></i></a>
+                    <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i class="fab fa-github"></i></a>
+                    <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i class="fab fa-instagram"></i></a>
+                    <a href="#" class="btn btn-outline-light btn-square rounded-circle"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <h5 class="text-white mb-4">Liên kết nhanh</h5>
+                <div class="d-flex flex-column footer-link-list justify-content-start">
+                    <a href="{% url 'home' %}"><i class="fas fa-chevron-right me-2"></i>Trang chủ</a>
+                    <a href="{% url 'book_list' %}"><i class="fas fa-chevron-right me-2"></i>Kho sách</a>
+                    <a href="#"><i class="fas fa-chevron-right me-2"></i>Hướng dẫn mượn sách</a>
+                    <a href="#"><i class="fas fa-chevron-right me-2"></i>Liên hệ</a>
+                    <a href="{% url 'borrow_history' %}"><i class="fas fa-chevron-right me-2"></i>Lịch sử mượn</a>
+                </div>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <h5 class="text-white mb-4">Hỗ trợ</h5>
+                <div class="d-flex flex-column footer-link-list justify-content-start">
+                    <a href="#"><i class="fas fa-chevron-right me-2"></i>Quy định</a>
+                    <a href="#"><i class="fas fa-chevron-right me-2"></i>Chính sách bảo mật</a>
+                    <a href="#"><i class="fas fa-chevron-right me-2"></i>Phản hồi</a>
+                    <a href="#"><i class="fas fa-chevron-right me-2"></i>Câu hỏi thường gặp</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid copyright-bar py-3 mt-5 text-center">
+        <div class="container">
+            <span class="text-white-50 small">© 2026 <strong>Thư viện Alovu</strong>. Designed by <a href="#" class="text-primary fw-bold text-decoration-none">Lê Tuấn Anh</a>.</span>
+        </div>
+    </div>
+</footer>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>

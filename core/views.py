@@ -9,7 +9,9 @@ from datetime import timedelta
 from django.db.models import Q
 from .models import Book, BorrowTransaction, Review, Category, Wishlist # Thêm Wishlist vào đây
 from .forms import CustomUserCreationForm, BookForm
-
+from django.db import transaction as db_transaction # Đổi tên để tránh trùng với biến transaction
+from .models import Notification
+from .services import check_and_create_due_reminders
 
 
 def user_logout(request):
@@ -77,6 +79,9 @@ def change_password(request):
     return render(request, 'core/change_password.html', {'form': form})
 
 def home(request):
+    if request.user.is_authenticated:
+        check_and_create_due_reminders(request.user)
+
     featured_books = Book.objects.all().order_by('-created_at')[:5]
     recommended_books = Book.objects.all().order_by('?')[:3] 
     books = Book.objects.all().order_by('-created_at')[:6]
@@ -161,6 +166,15 @@ def borrow_book(request, book_id):
         status='BORROWED'
     )
 
+    # --- THÊM: Tạo thông báo mượn thành công ---
+    Notification.objects.create(
+        user=request.user,
+        message=f"Mượn thành công! Hạn trả cuốn '{book.title}' là ngày {han_tra.strftime('%d/%m/%Y')}.",
+        type='SYSTEM',
+        status='UNREAD'
+    )
+    # ------------------------------------------
+
     book.quantity -= 1
     book.save()
 
@@ -175,20 +189,32 @@ def borrow_history(request):
 
 @login_required(login_url='login')
 def return_book(request, transaction_id):
-    transaction = get_object_or_404(BorrowTransaction, id=transaction_id, user=request.user)
+    # Lấy giao dịch mượn sách, đảm bảo nó tồn tại, thuộc về người dùng và chưa được trả
+    borrow_record = get_object_or_404(
+        BorrowTransaction, 
+        id=transaction_id, 
+        user=request.user, 
+        status='BORROWED' # Thêm điều kiện này vào get_object_or_404 để xử lý gọn hơn
+    )
     
-    if transaction.status == 'BORROWED':
-        transaction.status = 'RETURNED'
-        transaction.return_date = timezone.now().date()
-        transaction.save()
-        
-        book = transaction.book
-        book.quantity += 1
-        book.save()
-        
-        messages.success(request, f"Bạn đã trả cuốn sách '{book.title}' thành công. Cảm ơn bạn!")
-    else:
-        messages.warning(request, "Giao dịch này đã được hoàn tất trước đó.")
+    # Sử dụng database transaction để đảm bảo tính nhất quán dữ liệu
+    try:
+        with db_transaction.atomic():
+            # Cập nhật bản ghi mượn sách
+            borrow_record.status = 'RETURNED'
+            borrow_record.return_date = timezone.now().date()
+            borrow_record.save()
+            
+            # Cập nhật số lượng sách
+            book = borrow_record.book
+            book.quantity += 1
+            book.save()
+            
+            messages.success(request, f"Bạn đã trả cuốn sách '{book.title}' thành công. Cảm ơn bạn!")
+    except Exception as e:
+        # Xử lý lỗi nếu có bất kỳ thao tác nào trong transaction bị thất bại
+        messages.error(request, f"Đã xảy ra lỗi khi trả sách: {str(e)}")
+        # Bạn có thể muốn log lỗi ở đây để kiểm tra sau
         
     return redirect('borrow_history')
 
@@ -223,7 +249,7 @@ def add_review(request, book_id):
             rating=rating,
             comment=comment
         )
-        messages.success(request, "Cảm ơn Khanh đã để lại nhận xét!")
+        messages.success(request, "Cảm ơn Bạn đã để lại nhận xét!")
     
     return redirect('book_detail', book_id=book_id)
 
@@ -314,3 +340,13 @@ def wishlist_view(request):
         'wishlist_items': wishlist_items,
         'borrowed_book_ids': list(borrowed_book_ids)
     })
+
+@login_required
+def notification_list(request):
+    # 1. Lấy tất cả thông báo của người dùng, mới nhất lên đầu
+    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    
+    # 2. Đánh dấu tất cả thông báo UNREAD của người dùng này thành READ
+    notifications.filter(status='UNREAD').update(status='READ')
+    
+    return render(request, 'core/notifications.html', {'notifications': notifications})

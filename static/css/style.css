@@ -720,19 +720,6 @@
     border: 4px solid var(--bs-secondary);
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
 .related-product .related-carousel .related-item {
     width: 100%;
     height: 100%;
@@ -921,4 +908,173 @@
     left: 0;
     right: 0;
     background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+}
+
+/* --- HIỆU ỨNG THẺ SÁCH --- */
+.product-item { 
+    transition: all 0.3s ease-in-out; 
+    border-radius: 8px; 
+}
+.product-item:hover { 
+    transform: translateY(-10px); 
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15) !important; 
+    border-color: #0d6efd !important; 
+}
+.product-item img { 
+    transition: transform 0.4s ease; 
+}
+.product-item:hover img { 
+    transform: scale(1.08); 
+}
+
+/* --- SIDEBAR DÍNH (STICKY SIDEBAR) --- */
+@media (min-width: 992px) {
+    .sticky-sidebar {
+        position: -webkit-sticky;
+        position: sticky;
+        top: 90px; /* Đã fix lỗi bị menu che */
+        z-index: 10;
+    }
+}
+
+/* --- NÂNG CẤP THANH MENU (NAVBAR) --- */
+.sticky-top { 
+    z-index: 1020; 
+}
+
+.nav-bar .nav-link {
+    position: relative;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-size: 0.9rem;
+    transition: all 0.3s ease-in-out;
+    margin: 0 5px;
+}
+
+/* Hiệu ứng di chuột: Chữ đổi màu và có nền mờ */
+.nav-bar .nav-link:hover {
+    color: #ffc107 !important; 
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+/* Thanh gạch chân chạy dưới nút */
+.nav-bar .nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 3px;
+    bottom: 8px;
+    left: 50%;
+    background-color: #ffc107;
+    transition: all 0.3s ease;
+    transform: translateX(-50%);
+    border-radius: 2px;
+}
+
+.nav-bar .nav-link:hover::after, 
+.nav-bar .nav-link.active::after {
+    width: 30%; 
+}
+
+/* Trạng thái trang hiện tại */
+.nav-bar .nav-link.active {
+    color: #ffc107 !important;
+}
+
+/* Làm đẹp nút Danh mục sách */
+.navbar-toggler h5 { 
+    transition: 0.3s; 
+}
+.navbar-toggler:hover h5 { 
+    color: #ffc107 !important; 
+    transform: translateX(5px); 
+}
+
+/* Dropdown Menu mượt mà */
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+    animation: slideUp 0.4s ease;
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Hiệu ứng chữ nghiêng cho các thông báo nhỏ */
+.italic { 
+    font-style: italic; 
+}
+
+/* --- FOOTER CHUYÊN NGHIỆP --- */
+.full-footer {
+    background-color: #1a1a1a; /* Nền đen đậm hơn */
+    color: #f8f9fa;
+    padding-top: 5rem;
+    padding-bottom: 0rem; /* Không padding dưới để copyright nằm sát chân */
+}
+
+.full-footer h3 {
+    font-size: 1.75rem;
+    font-weight: 700;
+}
+
+.full-footer h5 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-start: 4px solid #0d6efd; /* Đường kẻ xanh nhỏ bên trái tiêu đề */
+    padding-left: 10px;
+}
+
+.full-footer p,
+.full-footer a {
+    color: #adb5bd; /* Màu chữ xám nhạt */
+    text-decoration: none;
+    transition: all 0.3s ease;
+}
+
+/* Hiệu ứng khi di chuột qua link trong footer */
+.full-footer a:hover {
+    color: #ffc107 !important; /* Đổi màu chữ sang vàng cam */
+    transform: translateX(3px);
+}
+
+.footer-link-list a {
+    display: flex;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+/* Màu icon xanh cho dấu chevron */
+.footer-link-list i {
+    color: #0d6efd;
+    font-size: 0.8rem;
+}
+
+/* Hiệu ứng di chuột cho các nút mạng xã hội */
+.full-footer .btn-square {
+    width: 40px;
+    height: 40px;
+    transition: 0.3s;
+}
+
+.full-footer .btn-square:hover {
+    background-color: #fff;
+    color: #1a1a1a !important;
+    border-color: #fff;
+}
+
+/* Phần Copyright */
+.copyright-bar {
+    background-color: #000; /* Nền đen hoàn toàn */
+    border-top: 1px solid #333; /* Đường gạch ngang nhỏ phía trên */
+}
+
+.copyright-bar a {
+    font-weight: 600;
 }

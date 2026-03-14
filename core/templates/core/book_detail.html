@@ -42,6 +42,20 @@
                 {% endif %}
             </div>
 
+            <div class="book-location-info mt-3">
+    <div class="alert alert-info border-0 shadow-sm rounded-4 d-flex align-items-center">
+        <div class="icon-box me-3 bg-white rounded-circle p-2 text-primary">
+            <i class="fas fa-map-marker-alt fs-4"></i>
+        </div>
+        <div>
+            <h6 class="mb-1 fw-bold text-dark">Vị trí sách trong thư viện:</h6>
+            <p class="mb-0 text-muted">
+                Tầng {{ book.floor }} - Kệ {{ book.shelf }} {% if book.area %}(Khu vực: {{ book.area }}){% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+
             <div class="mt-5 pt-5 border-top">
                 <h3 class="fw-bold mb-4">Độc giả nhận xét ({{ reviews.count }})</h3>
                 
@@ -107,5 +121,16 @@
     .transition-hover { transition: all 0.3s ease; }
     .transition-hover:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.15) !important; }
     .italic { font-style: italic; }
+
+    /* Thêm vào trong thẻ <style> cuối file notifications.html hoặc style.css */
+.icon-box i {
+    animation: pulse-marker 2s infinite;
+}
+
+@keyframes pulse-marker {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); color: #dc3545; } /* Đổi sang màu đỏ nhẹ khi giãn ra */
+    100% { transform: scale(1); }
+}
 </style>
 {% endblock %}

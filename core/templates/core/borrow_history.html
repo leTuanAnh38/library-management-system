@@ -12,7 +12,7 @@
 
         <div class="col-lg-9">
             <div class="bg-white p-4 rounded-4 shadow-sm border">
-                <h2 class="fw-bold mb-4 border-start border-4 border-primary ps-3">Lịch sử mượn sách của Khanh</h2>
+                <h2 class="fw-bold mb-4 border-start border-4 border-primary ps-3">Lịch sử mượn sách của bạn</h2>
                 
                 <div class="table-responsive rounded shadow-sm">
                     <table class="table table-hover align-middle bg-white mb-0">
@@ -56,7 +56,7 @@
                                     {% if item.status == 'BORROWED' %}
                                         <a href="{% url 'return_book' item.id %}" 
                                            class="btn btn-warning btn-sm rounded-pill px-3 fw-bold shadow-sm"
-                                           onclick="return confirm('Khanh chắc chắn muốn trả cuốn sách này chứ?')">
+                                           onclick="return confirm('Bạn chắc chắn muốn trả cuốn sách này chứ?')">
                                             Trả sách ngay
                                         </a>
                                     {% else %}
@@ -68,7 +68,7 @@
                             <tr>
                                 <td colspan="5" class="text-center py-5">
                                     <i class="fas fa-book-open fa-3x text-muted mb-3"></i>
-                                    <p class="text-muted">Khanh chưa mượn cuốn sách nào cả. <a href="{% url 'book_list' %}" class="fw-bold text-primary">Mượn ngay!</a></p>
+                                    <p class="text-muted">Bạn chưa mượn cuốn sách nào cả. <a href="{% url 'book_list' %}" class="fw-bold text-primary">Mượn ngay!</a></p>
                                 </td>
                             </tr>
                             {% endfor %}

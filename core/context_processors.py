@@ -1,7 +1,6 @@
-from .models import BorrowTransaction
+from .models import BorrowTransaction, Wishlist, Category, Notification # Thêm Notification vào đây
 from django.db.models.functions import ExtractMonth
 from django.db.models import Count
-from .models import Wishlist, Category # Thêm Category vào đây
 
 def dashboard_stats(request):
     # Lấy dữ liệu mượn sách theo tháng
@@ -20,12 +19,21 @@ def global_counts(request):
     # Lấy toàn bộ danh mục sách từ CSDL
     categories = Category.objects.all()
     
-    # Đếm số sách yêu thích (giữ nguyên code cũ của bạn)
+    # Đếm số sách yêu thích
     wishlist_count = 0
     if request.user.is_authenticated:
         wishlist_count = Wishlist.objects.filter(user=request.user).count()
         
     return {
         'wishlist_count': wishlist_count,
-        'categories': categories  # Trả về biến categories để dùng ở mọi nơi
+        'categories': categories
     }
+
+# --- KHANH THÊM HÀM NÀY VÀO ĐỂ HẾT LỖI 500 ---
+def notifications_count(request):
+    """Đếm số lượng thông báo chưa đọc cho toàn bộ website"""
+    if request.user.is_authenticated:
+        # Lọc theo đúng trạng thái 'UNREAD' trong model của Khanh
+        count = Notification.objects.filter(user=request.user, status='UNREAD').count()
+        return {'unread_notifications_count': count}
+    return {'unread_notifications_count': 0}

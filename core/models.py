@@ -1,6 +1,9 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
+from django.dispatch import receiver
+from django.db.models.signals import post_save
+from django.urls import reverse
 
 # Lớp cơ sở để tái sử dụng created_at và updated_at cho tất cả các bảng
 class TimeStampedModel(models.Model):
@@ -79,6 +82,9 @@ class Book(TimeStampedModel):
     quantity = models.IntegerField(default=0)
     published_year = models.IntegerField(null=True, blank=True)
     description = models.TextField(null=True, blank=True)
+    floor = models.IntegerField(default=1, verbose_name="Tầng")
+    shelf = models.CharField(max_length=50, blank=True, verbose_name="Kệ sách")
+    area = models.CharField(max_length=100, blank=True, verbose_name="Khu vực/Phòng")
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='AVAILABLE')
 
     class Meta:
@@ -181,3 +187,26 @@ class Chat(TimeStampedModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chats')
     chat_room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='chats')
     message = models.TextField()
+
+# core/models.py
+
+@receiver(post_save, sender=Book)
+def notify_new_book(sender, instance, created, **kwargs):
+    if created:
+        users = User.objects.all()
+        
+        # SỬA TẠI ĐÂY: Đổi 'id' thành 'book_id' để khớp với urls.py
+        book_url = reverse('book_detail', kwargs={'book_id': instance.id})
+        
+        link_html = f"<a href='{book_url}' class='fw-bold text-primary'>Khám phá ngay!</a>"
+        message_text = f"🔥🔥🔥 Sách mới lên kệ: Thư viện vừa bổ sung cuốn '{instance.title}'. {link_html}"
+        
+        notifications = [
+            Notification(
+                user=u, 
+                message=message_text,
+                type='SYSTEM',
+                status='UNREAD'
+            ) for u in users
+        ]
+        Notification.objects.bulk_create(notifications)

@@ -20,4 +20,5 @@ urlpatterns = [
     path('staff/delete-book/<int:book_id>/', views.delete_book, name='delete_book'),
     path('wishlist/', views.wishlist_view, name='wishlist'),
     path('wishlist/toggle/<int:book_id>/', views.toggle_wishlist, name='toggle_wishlist'),
+    path('notifications/', views.notification_list, name='notification_list'),
 ]

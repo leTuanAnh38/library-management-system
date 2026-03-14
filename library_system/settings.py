@@ -65,6 +65,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.dashboard_stats',
+                'core.context_processors.notifications_count',
             ],
         },
     },
@@ -84,6 +85,10 @@ DATABASES = {
         'PASSWORD': '',          # Pass mặc định của XAMPP là rỗng
         'HOST': '127.0.0.1',
         'PORT': '3306',
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'init_command': "SET sql_mode='STRICT_TRANS_TABLES', names 'utf8mb4'",
+        },
     }
 }
 
