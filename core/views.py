@@ -166,13 +166,18 @@ def book_list(request):
 def borrow_book(request, book_id):
     user = request.user
     
-    # 1. KIỂM TRA HỒ SƠ: Nếu thiếu MSSV hoặc Lớp thì không cho mượn
-    # Chúng ta kiểm tra cả hai trường này xem có dữ liệu hay không
+    # 1. KIỂM TRA PHÍ PHẠT: Phải trả hết nợ (UNPAID) mới được mượn tiếp
+    # Sử dụng thuộc tính total_fine từ models.py
+    if user.total_fine > 0:
+        messages.error(request, f"Bạn hiện đang có khoản phí phạt chưa thanh toán ({user.total_fine} VNĐ). Vui lòng hoàn tất nghĩa vụ để tiếp tục mượn sách!")
+        return redirect('profile')
+
+    # 2. KIỂM TRA HỒ SƠ: Nếu thiếu MSSV hoặc Lớp thì không cho mượn
     if not user.msv or not user.lop:
         messages.warning(request, "Vui lòng cập nhật MSSV và Lớp trong hồ sơ cá nhân trước khi thực hiện mượn sách!")
-        return redirect('profile') # Chuyển hướng Khanh về trang cập nhật hồ sơ
+        return redirect('profile')
 
-    # 2. Logic mượn sách (Chỉ chạy khi hồ sơ đã đầy đủ)
+    # 3. Logic mượn sách
     book = get_object_or_404(Book, id=book_id)
     
     if book.quantity <= 0:
@@ -181,25 +186,29 @@ def borrow_book(request, book_id):
 
     han_tra = timezone.now().date() + timedelta(days=14)
 
-    transaction = BorrowTransaction.objects.create(
-        user=user,
-        book=book,
-        due_date=han_tra, 
-        status='BORROWED'
-    )
+    try:
+        with db_transaction.atomic():
+            transaction = BorrowTransaction.objects.create(
+                user=user,
+                book=book,
+                due_date=han_tra, 
+                status='BORROWED'
+            )
 
-    # Tạo thông báo hệ thống
-    Notification.objects.create(
-        user=user,
-        message=f"Mượn thành công! Hạn trả cuốn '{book.title}' là ngày {han_tra.strftime('%d/%m/%Y')}.",
-        type='SYSTEM',
-        status='UNREAD'
-    )
+            # Tạo thông báo hệ thống
+            Notification.objects.create(
+                user=user,
+                message=f"Mượn thành công! Hạn trả cuốn '{book.title}' là ngày {han_tra.strftime('%d/%m/%Y')}.",
+                type='SYSTEM',
+                status='UNREAD'
+            )
 
-    book.quantity -= 1
-    book.save()
+            book.quantity -= 1
+            book.save()
 
-    messages.success(request, f"Mượn thành công! Hạn trả cuốn '{book.title}' là ngày {han_tra.strftime('%d/%m/%Y')}.")
+        messages.success(request, f"Mượn thành công! Hạn trả cuốn '{book.title}' là ngày {han_tra.strftime('%d/%m/%Y')}.")
+    except Exception as e:
+        messages.error(request, f"Đã có lỗi xảy ra trong quá trình mượn sách: {str(e)}")
     
     return redirect('book_list')
 
@@ -212,6 +221,7 @@ def borrow_history(request):
 @login_required(login_url='login')
 def return_book(request, transaction_id):
     borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, user=request.user, status='BORROWED')
+    user = request.user
     
     try:
         with db_transaction.atomic():
@@ -220,23 +230,29 @@ def return_book(request, transaction_id):
             borrow_record.return_date = today
             borrow_record.save()
             
-            # --- THÊM LOGIC XỬ PHẠT TẠI ĐÂY ---
+            # KIỂM TRA TRẢ TRỄ VÀ TÍCH ĐIỂM
             if today > borrow_record.due_date:
-                # Tính số ngày trễ
+                # 1. Trừ 5 điểm nếu trả trễ (không để điểm âm)
+                user.points = max(0, user.points - 5)
+                
+                # 2. Tạo phiếu phạt
                 days_late = (today - borrow_record.due_date).days
-                # Giả sử phạt 5.000 VNĐ / ngày
                 fine_amount = days_late * 5000
                 
-                from .models import Penalty
                 Penalty.objects.create(
-                    user=request.user,
+                    user=user,
                     borrow_transaction=borrow_record,
                     amount=fine_amount,
                     reason=f"Trả sách trễ {days_late} ngày (Hạn trả: {borrow_record.due_date})",
                     status='UNPAID'
                 )
-                messages.warning(request, f"Bạn trả sách trễ {days_late} ngày. Phí phạt phát sinh: {fine_amount} VNĐ.")
-            # ----------------------------------
+                messages.warning(request, f"Bạn trả sách trễ {days_late} ngày. Phí phạt: {fine_amount} VNĐ. Bạn bị trừ 5 điểm tích lũy.")
+            else:
+                # TRẢ ĐÚNG HẠN: Cộng 10 điểm thưởng
+                user.points += 10
+                messages.success(request, "Tuyệt vời! Bạn được cộng 10 điểm thưởng vì trả sách đúng hạn.")
+            
+            user.save() # Lưu lại điểm số của người dùng
 
             book = borrow_record.book
             book.quantity += 1

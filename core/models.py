@@ -35,6 +35,17 @@ class User(AbstractUser, TimeStampedModel):
     msv = models.CharField(max_length=20, unique=True, verbose_name="Mã sinh viên", null=True, blank=True)
     lop = models.CharField(max_length=50, verbose_name="Lớp", null=True, blank=True)
     dia_chi = models.TextField(verbose_name="Địa chỉ", null=True, blank=True)
+    points = models.IntegerField(default=0, verbose_name="Điểm tích lũy")
+
+    @property
+    def rank_info(self):
+        """Xác định hạng và quyền lợi dựa trên số điểm tích lũy"""
+        if self.points >= 500:
+            return {'level': 'VIP', 'max_books': 10, 'color': 'text-danger', 'next': None}
+        elif self.points >= 100:
+            return {'level': 'PREMIUM', 'max_books': 5, 'color': 'text-primary', 'next': 500}
+        else:
+            return {'level': 'STANDARD', 'max_books': 3, 'color': 'text-success', 'next': 100}
 
     @property
     def avatar_url(self):

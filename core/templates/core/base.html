@@ -18,6 +18,7 @@
     <link href="{% static 'lib/animate/animate.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/style.css' %}?v=1.1" rel="stylesheet">
+</head>
 
 <body>
     <header class="sticky-top shadow-sm">
@@ -68,7 +69,7 @@
                         <div class="collapse navbar-collapse rounded-bottom" id="allCat">
                             <div class="navbar-nav ms-auto py-0 bg-white shadow-sm border-0 rounded-bottom">
                                 {% for cat in categories %}
-                                    <a href="{% url 'book_list' %}?q={{ cat.name }}" class="dropdown-item py-3 border-bottom small">
+                                    <a href="{% url 'book_list' %}?category={{ cat.id }}" class="dropdown-item py-3 border-bottom small">
                                         <i class="fas fa-chevron-right me-2 text-primary" style="font-size: 0.7rem;"></i>{{ cat.name }}
                                     </a>
                                 {% empty %}
@@ -109,52 +110,52 @@
     </main>
 
     <footer class="full-footer">
-    <div class="container-fluid px-lg-5">
-        <div class="row g-5">
-            <div class="col-md-6 col-lg-4">
-                <a href="{% url 'home' %}" class="navbar-brand p-0">
-                    <h3 class="text-white m-0"><i class="fas fa-book-reader text-secondary me-2"></i>Alovu Library</h3>
-                </a>
-                <p class="mt-4 mb-4 lh-base text-white-50">
-                    "Tri thức là sức mạnh. Hãy cùng Alovu khám phá thế giới qua từng trang sách."
-                </p>
-                <div class="d-flex social-icons mt-3">
-                    <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i class="fab fa-facebook-f"></i></a>
-                    <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i class="fab fa-github"></i></a>
-                    <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i class="fab fa-instagram"></i></a>
-                    <a href="#" class="btn btn-outline-light btn-square rounded-circle"><i class="fab fa-linkedin-in"></i></a>
+        <div class="container-fluid px-lg-5">
+            <div class="row g-5">
+                <div class="col-md-6 col-lg-4">
+                    <a href="{% url 'home' %}" class="navbar-brand p-0">
+                        <h3 class="text-white m-0"><i class="fas fa-book-reader text-secondary me-2"></i>Alovu Library</h3>
+                    </a>
+                    <p class="mt-4 mb-4 lh-base text-white-50">
+                        "Tri thức là sức mạnh. Hãy cùng Alovu khám phá thế giới qua từng trang sách."
+                    </p>
+                    <div class="d-flex social-icons mt-3">
+                        <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i class="fab fa-github"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-square rounded-circle"><i class="fab fa-linkedin-in"></i></a>
+                    </div>
                 </div>
-            </div>
 
-            <div class="col-md-6 col-lg-4">
-                <h5 class="text-white mb-4">Liên kết nhanh</h5>
-                <div class="d-flex flex-column footer-link-list justify-content-start">
-                    <a href="{% url 'home' %}"><i class="fas fa-chevron-right me-2"></i>Trang chủ</a>
-                    <a href="{% url 'book_list' %}"><i class="fas fa-chevron-right me-2"></i>Kho sách</a>
-                    <a href="#"><i class="fas fa-chevron-right me-2"></i>Hướng dẫn mượn sách</a>
-                    <a href="#"><i class="fas fa-chevron-right me-2"></i>Liên hệ</a>
-                    <a href="{% url 'borrow_history' %}"><i class="fas fa-chevron-right me-2"></i>Lịch sử mượn</a>
+                <div class="col-md-6 col-lg-4">
+                    <h5 class="text-white mb-4">Liên kết nhanh</h5>
+                    <div class="d-flex flex-column footer-link-list justify-content-start">
+                        <a href="{% url 'home' %}"><i class="fas fa-chevron-right me-2"></i>Trang chủ</a>
+                        <a href="{% url 'book_list' %}"><i class="fas fa-chevron-right me-2"></i>Kho sách</a>
+                        <a href="#"><i class="fas fa-chevron-right me-2"></i>Hướng dẫn mượn sách</a>
+                        <a href="#"><i class="fas fa-chevron-right me-2"></i>Liên hệ</a>
+                        <a href="{% url 'borrow_history' %}"><i class="fas fa-chevron-right me-2"></i>Lịch sử mượn</a>
+                    </div>
                 </div>
-            </div>
 
-            <div class="col-md-6 col-lg-4">
-                <h5 class="text-white mb-4">Hỗ trợ</h5>
-                <div class="d-flex flex-column footer-link-list justify-content-start">
-                    <a href="#"><i class="fas fa-chevron-right me-2"></i>Quy định</a>
-                    <a href="#"><i class="fas fa-chevron-right me-2"></i>Chính sách bảo mật</a>
-                    <a href="#"><i class="fas fa-chevron-right me-2"></i>Phản hồi</a>
-                    <a href="#"><i class="fas fa-chevron-right me-2"></i>Câu hỏi thường gặp</a>
+                <div class="col-md-6 col-lg-4">
+                    <h5 class="text-white mb-4">Hỗ trợ</h5>
+                    <div class="d-flex flex-column footer-link-list justify-content-start">
+                        <a href="#"><i class="fas fa-chevron-right me-2"></i>Quy định</a>
+                        <a href="#"><i class="fas fa-chevron-right me-2"></i>Chính sách bảo mật</a>
+                        <a href="#"><i class="fas fa-chevron-right me-2"></i>Phản hồi</a>
+                        <a href="#"><i class="fas fa-chevron-right me-2"></i>Câu hỏi thường gặp</a>
+                    </div>
                 </div>
             </div>
         </div>
-    </div>
 
-    <div class="container-fluid copyright-bar py-3 mt-5 text-center">
-        <div class="container">
-            <span class="text-white-50 small">© 2026 <strong>Thư viện Alovu</strong>. Designed by <a href="#" class="text-primary fw-bold text-decoration-none">Lê Tuấn Anh</a>.</span>
+        <div class="container-fluid copyright-bar py-3 mt-5 text-center">
+            <div class="container">
+                <span class="text-white-50 small">© 2026 <strong>Thư viện Alovu</strong>. Designed by <a href="#" class="text-primary fw-bold text-decoration-none">Lê Tuấn Anh</a>.</span>
+            </div>
         </div>
-    </div>
-</footer>
+    </footer>
 
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
