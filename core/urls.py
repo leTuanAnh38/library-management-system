@@ -21,4 +21,6 @@ urlpatterns = [
     path('wishlist/', views.wishlist_view, name='wishlist'),
     path('wishlist/toggle/<int:book_id>/', views.toggle_wishlist, name='toggle_wishlist'),
     path('notifications/', views.notification_list, name='notification_list'),
+    path('profile/', views.profile_view, name='profile'),
+    path('profile/pay-all/', views.pay_all_penalties, name='pay_all_penalties'),
 ]

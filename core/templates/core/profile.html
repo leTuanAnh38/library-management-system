@@ -1,0 +1,211 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-5 mt-5">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            {% include 'core/includes/sidebar.html' %}
+        </div>
+
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4 class="fw-bold m-0 text-dark">
+                            <i class="fas fa-user-circle me-2 text-primary"></i>Hồ sơ cá nhân
+                        </h4>
+                        <button id="btn-edit-toggle" class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm">
+                            <i class="fas fa-edit me-2"></i>Chỉnh sửa hồ sơ
+                        </button>
+                    </div>
+                    
+                    <div class="alert {% if user.total_fine > 0 %}alert-danger{% else %}alert-success{% endif %} border-0 rounded-4 shadow-sm d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex align-items-center">
+                            <div class="bg-white rounded-circle p-2 text-{% if user.total_fine > 0 %}danger{% else %}success{% endif %} me-3">
+                                <i class="fas fa-hand-holding-usd fs-4"></i>
+                            </div>
+                            <div>
+                                <strong class="d-block text-dark">Tình trạng phí phạt</strong>
+                                <small class="text-muted">Tổng các khoản phí quá hạn cần thanh toán</small>
+                            </div>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <h4 class="mb-0 fw-bold me-3">{{ user.total_fine|default:0 }} VNĐ</h4>
+                            {% if user.total_fine > 0 %}
+                                <button class="btn btn-light btn-sm rounded-pill fw-bold px-3 shadow-sm border" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                                    <i class="fas fa-credit-card me-1"></i>Thanh toán
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <hr class="my-4 opacity-25">
+
+                    <div id="profile-view-mode">
+                        <div class="row align-items-center">
+                            <div class="col-md-4 text-center border-end">
+                                <img src="{{ user.avatar_url }}" class="rounded-circle img-thumbnail mb-3 shadow-sm" style="width: 160px; height: 160px; object-fit: cover;">
+                                <h5 class="fw-bold mb-1 text-dark">{{ user.get_full_name|default:user.username }}</h5>
+                                <span class="badge bg-light text-primary border border-primary px-3 rounded-pill">{{ user.role }}</span>
+                            </div>
+                            <div class="col-md-8 ps-md-5">
+                                <div class="row g-4">
+                                    <div class="col-md-6">
+                                        <label class="text-muted small d-block mb-1 text-uppercase fw-bold">Mã sinh viên</label>
+                                        <p class="fs-5 text-dark fw-medium">{{ user.msv|default:"Chưa cập nhật" }}</p>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="text-muted small d-block mb-1 text-uppercase fw-bold">Lớp học</label>
+                                        <p class="fs-5 text-dark fw-medium">{{ user.lop|default:"Chưa cập nhật" }}</p>
+                                    </div>
+                                    <div class="col-12">
+                                        <label class="text-muted small d-block mb-1 text-uppercase fw-bold">Địa chỉ liên hệ</label>
+                                        <p class="fs-5 text-dark fw-medium">{{ user.dia_chi|default:"Chưa cập nhật" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form id="profile-edit-mode" method="POST" enctype="multipart/form-data" class="row g-3 d-none">
+                        {% csrf_token %}
+                        <div class="col-md-4 text-center border-end">
+                            <div class="position-relative d-inline-block">
+                                <img src="{{ user.avatar_url }}" class="rounded-circle img-thumbnail mb-3 shadow-sm" style="width: 160px; height: 160px; object-fit: cover;">
+                                <div class="position-absolute bottom-0 end-0">
+                                    <label for="avatar-upload" class="btn btn-primary btn-sm rounded-circle shadow">
+                                        <i class="fas fa-camera"></i>
+                                    </label>
+                                </div>
+                            </div>
+                            <input type="file" id="avatar-upload" name="avatar" class="d-none">
+                            <p class="text-muted small mt-2">Chọn ảnh PNG/JPG để thay đổi</p>
+                        </div>
+
+                        <div class="col-md-8 ps-md-5">
+                            <div class="row g-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Họ và tên đệm</label>
+                                    <input type="text" name="first_name" class="form-control rounded-3" value="{{ user.first_name|default:'' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Tên</label>
+                                    <input type="text" name="last_name" class="form-control rounded-3" value="{{ user.last_name|default:'' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Mã sinh viên (MSV)</label>
+                                    <input type="text" name="msv" class="form-control rounded-3" value="{{ user.msv|default:'' }}">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold">Lớp học</label>
+                                    <input type="text" name="lop" class="form-control rounded-3" value="{{ user.lop|default:'' }}">
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold">Địa chỉ</label>
+                                    <textarea name="dia_chi" class="form-control rounded-3" rows="3">{{ user.dia_chi|default:'' }}</textarea>
+                                </div>
+                            </div>
+                            <div class="mt-4 d-flex gap-2">
+                                <button type="submit" class="btn btn-primary px-5 rounded-pill fw-bold shadow-sm">Lưu thay đổi</button>
+                                <button type="button" id="btn-cancel-edit" class="btn btn-light px-4 rounded-pill fw-bold">Hủy bỏ</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold mb-0">Chọn phương thức thanh toán</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small mb-4">Số tiền cần thanh toán: <strong class="text-danger">{{ user.total_fine }} VNĐ</strong></p>
+                
+                <form action="{% url 'pay_all_penalties' %}" method="POST"> 
+                    {% csrf_token %}
+                    <div class="d-grid gap-3">
+                        <label class="d-flex align-items-center p-3 border rounded-3 cursor-pointer hover-bg-light">
+                            <input type="radio" name="payment_method" value="COUNTER" checked class="form-check-input me-3" id="methodCounter">
+                            <div>
+                                <strong class="d-block">Thanh toán trực tiếp tại quầy</strong>
+                                <small class="text-muted italic">Đóng tiền mặt cho Thủ thư để xóa nợ</small>
+                            </div>
+                        </label>
+
+                        <label class="d-flex align-items-center p-3 border rounded-3 cursor-pointer hover-bg-light">
+                            <input type="radio" name="payment_method" value="TRANSFER" class="form-check-input me-3" id="methodTransfer">
+                            <div>
+                                <strong class="d-block">Chuyển khoản (VietQR)</strong>
+                                <small class="text-muted italic">Quét mã ngân hàng để thanh toán nhanh</small>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div id="qr-section" class="d-none mt-4 p-3 bg-light rounded-3 text-center border border-primary border-opacity-25 animate__animated animate__fadeIn">
+                        <h6 class="fw-bold mb-3"><i class="fas fa-qrcode me-2"></i>Mã VietQR của Thư viện</h6>
+                        <img src="{% static 'img/qr.png' %}" class="img-fluid rounded shadow-sm mb-2" style="max-width: 250px;">
+                        <p class="small text-muted mb-0">Nội dung: <strong>{{ user.username }} - Thanh toan phi phat</strong></p>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill mt-4 fw-bold shadow-sm">
+                        Xác nhận thanh toán
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .cursor-pointer { cursor: pointer; }
+    .hover-bg-light:hover { background-color: #f8f9fa; }
+    .italic { font-style: italic; }
+    /* Hiệu ứng mờ dần cho vùng QR */
+    .animate__fadeIn { animation: fadeIn 0.5s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<script>
+    // JS ẨN/HIỆN CHẾ ĐỘ CHỈNH SỬA
+    const btnToggle = document.getElementById('btn-edit-toggle');
+    const btnCancel = document.getElementById('btn-cancel-edit');
+    const viewSection = document.getElementById('profile-view-mode');
+    const editSection = document.getElementById('profile-edit-mode');
+
+    btnToggle.addEventListener('click', () => {
+        viewSection.classList.add('d-none');
+        editSection.classList.remove('d-none');
+        btnToggle.classList.add('d-none');
+    });
+
+    btnCancel.addEventListener('click', () => {
+        viewSection.classList.remove('d-none');
+        editSection.classList.add('d-none');
+        btnToggle.classList.remove('d-none');
+    });
+
+    // JS ĐIỀU KHIỂN HIỂN THỊ MÃ QR
+    const methodTransfer = document.getElementById('methodTransfer');
+    const methodCounter = document.getElementById('methodCounter');
+    const qrSection = document.getElementById('qr-section');
+
+    methodTransfer.addEventListener('change', function() {
+        if (this.checked) {
+            qrSection.classList.remove('d-none');
+        }
+    });
+
+    methodCounter.addEventListener('change', function() {
+        if (this.checked) {
+            qrSection.classList.add('d-none');
+        }
+    });
+</script>
+{% endblock %}

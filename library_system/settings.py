@@ -141,6 +141,9 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
 
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
 JAZZMIN_SETTINGS = {
     "site_title": "Admin Alovu",
     "site_header": "Alovu Library",

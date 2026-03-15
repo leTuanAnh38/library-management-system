@@ -38,3 +38,11 @@ class BookForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'status': forms.Select(attrs={'class': 'form-select'}),
         }
+
+class UserProfileForm(forms.ModelForm):
+    class Meta:
+        model = User
+        fields = ['avatar', 'msv', 'lop', 'dia_chi', 'first_name', 'last_name', 'email']
+        widgets = {
+            'dia_chi': forms.Textarea(attrs={'rows': 3}),
+        }

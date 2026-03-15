@@ -60,7 +60,7 @@
                                     {% elif book.quantity > 0 %}
                                         <a href="{% url 'borrow_book' book.id %}" 
                                            class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm"
-                                           onclick="return confirm('Khanh ơi, bạn có chắc chắn muốn mượn cuốn sách [{{ book.title }}] này không?')">
+                                           onclick="return confirm('Bạn ơi, bạn có chắc chắn muốn mượn cuốn sách [{{ book.title }}] này không?')">
                                             MƯỢN SÁCH
                                         </a>
                                     {% else %}

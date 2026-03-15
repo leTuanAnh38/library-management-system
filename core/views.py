@@ -7,7 +7,7 @@ from django.contrib import messages
 from django.utils import timezone
 from datetime import timedelta
 from django.db.models import Q
-from .models import Book, BorrowTransaction, Review, Category, Wishlist # Thêm Wishlist vào đây
+from .models import Book, BorrowTransaction, Review, Category, Wishlist, Penalty # Thêm Wishlist vào đây
 from .forms import CustomUserCreationForm, BookForm
 from django.db import transaction as db_transaction # Đổi tên để tránh trùng với biến transaction
 from .models import Notification
@@ -106,10 +106,19 @@ def home(request):
     })
 # HÀM BOOK_LIST CHUẨN (Đã gộp cả tìm kiếm, lọc và phân trang)
 def book_list(request):
+    # Lấy các tham số từ thanh địa chỉ (URL)
     query = request.GET.get('q', '')
-    books_list = Book.objects.all().order_by('-created_at') 
+    sort = request.GET.get('sort', 'newest')  # Mặc định là mới nhất
+    category_id = request.GET.get('category', '') # Lấy ID danh mục muốn lọc
+    
+    books_list = Book.objects.all() 
     categories = Category.objects.all()
 
+    # 1. Lọc theo danh mục (nếu người dùng chọn)
+    if category_id:
+        books_list = books_list.filter(category_id=category_id)
+
+    # 2. Xử lý tìm kiếm (giữ nguyên logic của Khanh)
     if query:
         books_list = books_list.filter(
             Q(title__icontains=query) |          
@@ -117,22 +126,24 @@ def book_list(request):
             Q(category__name__icontains=query)   
         ).distinct()
 
+    # 3. Xử lý Sắp xếp
+    if sort == 'title':
+        books_list = books_list.order_by('title') # Sắp xếp A-Z theo tiêu đề
+    elif sort == 'oldest':
+        books_list = books_list.order_by('created_at') # Cũ nhất
+    else:
+        books_list = books_list.order_by('-created_at') # Mới nhất (mặc định)
+
+    # --- Phần xử lý Wishlist và Borrow (Giữ nguyên của Khanh) ---
     wishlist_book_ids = []
     borrowed_book_ids = []
-    
     if request.user.is_authenticated:
-        # 1. Lấy ID sách đã yêu thích (để giữ màu hồng trái tim)
         wishlist_book_ids = Wishlist.objects.filter(user=request.user).values_list('book_id', flat=True)
-        
-        # 2. Lấy ID sách ĐANG MƯỢN (để đổi trạng thái nút)
-        borrowed_book_ids = BorrowTransaction.objects.filter(
-            user=request.user, 
-            status='BORROWED'
-        ).values_list('book_id', flat=True)
+        borrowed_book_ids = BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True)
 
+    # 4. Phân trang (Giữ nguyên của Khanh)
     paginator = Paginator(books_list, 6) 
     page = request.GET.get('page')
-    
     try:
         books = paginator.page(page)
     except PageNotAnInteger:
@@ -144,13 +155,24 @@ def book_list(request):
         'books': books, 
         'categories': categories,
         'query': query,
+        'current_sort': sort,        # Gửi lại để giữ trạng thái dropdown
+        'current_category': category_id, # Gửi lại để giữ trạng thái dropdown
         'wishlist_book_ids': list(wishlist_book_ids),
-        'borrowed_book_ids': list(borrowed_book_ids) # Gửi danh sách đang mượn sang HTML
+        'borrowed_book_ids': list(borrowed_book_ids)
     }
     return render(request, 'core/book_list.html', context)
 
 @login_required(login_url='login')
 def borrow_book(request, book_id):
+    user = request.user
+    
+    # 1. KIỂM TRA HỒ SƠ: Nếu thiếu MSSV hoặc Lớp thì không cho mượn
+    # Chúng ta kiểm tra cả hai trường này xem có dữ liệu hay không
+    if not user.msv or not user.lop:
+        messages.warning(request, "Vui lòng cập nhật MSSV và Lớp trong hồ sơ cá nhân trước khi thực hiện mượn sách!")
+        return redirect('profile') # Chuyển hướng Khanh về trang cập nhật hồ sơ
+
+    # 2. Logic mượn sách (Chỉ chạy khi hồ sơ đã đầy đủ)
     book = get_object_or_404(Book, id=book_id)
     
     if book.quantity <= 0:
@@ -160,20 +182,19 @@ def borrow_book(request, book_id):
     han_tra = timezone.now().date() + timedelta(days=14)
 
     transaction = BorrowTransaction.objects.create(
-        user=request.user,
+        user=user,
         book=book,
         due_date=han_tra, 
         status='BORROWED'
     )
 
-    # --- THÊM: Tạo thông báo mượn thành công ---
+    # Tạo thông báo hệ thống
     Notification.objects.create(
-        user=request.user,
+        user=user,
         message=f"Mượn thành công! Hạn trả cuốn '{book.title}' là ngày {han_tra.strftime('%d/%m/%Y')}.",
         type='SYSTEM',
         status='UNREAD'
     )
-    # ------------------------------------------
 
     book.quantity -= 1
     book.save()
@@ -187,53 +208,84 @@ def borrow_history(request):
     history = BorrowTransaction.objects.filter(user=request.user).order_by('-created_at')
     return render(request, 'core/borrow_history.html', {'history': history})
 
+# core/views.py
 @login_required(login_url='login')
 def return_book(request, transaction_id):
-    # Lấy giao dịch mượn sách, đảm bảo nó tồn tại, thuộc về người dùng và chưa được trả
-    borrow_record = get_object_or_404(
-        BorrowTransaction, 
-        id=transaction_id, 
-        user=request.user, 
-        status='BORROWED' # Thêm điều kiện này vào get_object_or_404 để xử lý gọn hơn
-    )
+    borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, user=request.user, status='BORROWED')
     
-    # Sử dụng database transaction để đảm bảo tính nhất quán dữ liệu
     try:
         with db_transaction.atomic():
-            # Cập nhật bản ghi mượn sách
+            today = timezone.now().date()
             borrow_record.status = 'RETURNED'
-            borrow_record.return_date = timezone.now().date()
+            borrow_record.return_date = today
             borrow_record.save()
             
-            # Cập nhật số lượng sách
+            # --- THÊM LOGIC XỬ PHẠT TẠI ĐÂY ---
+            if today > borrow_record.due_date:
+                # Tính số ngày trễ
+                days_late = (today - borrow_record.due_date).days
+                # Giả sử phạt 5.000 VNĐ / ngày
+                fine_amount = days_late * 5000
+                
+                from .models import Penalty
+                Penalty.objects.create(
+                    user=request.user,
+                    borrow_transaction=borrow_record,
+                    amount=fine_amount,
+                    reason=f"Trả sách trễ {days_late} ngày (Hạn trả: {borrow_record.due_date})",
+                    status='UNPAID'
+                )
+                messages.warning(request, f"Bạn trả sách trễ {days_late} ngày. Phí phạt phát sinh: {fine_amount} VNĐ.")
+            # ----------------------------------
+
             book = borrow_record.book
             book.quantity += 1
             book.save()
             
-            messages.success(request, f"Bạn đã trả cuốn sách '{book.title}' thành công. Cảm ơn bạn!")
+            messages.success(request, f"Bạn đã trả cuốn sách '{book.title}' thành công.")
     except Exception as e:
-        # Xử lý lỗi nếu có bất kỳ thao tác nào trong transaction bị thất bại
-        messages.error(request, f"Đã xảy ra lỗi khi trả sách: {str(e)}")
-        # Bạn có thể muốn log lỗi ở đây để kiểm tra sau
+        messages.error(request, f"Đã xảy ra lỗi: {str(e)}")
         
     return redirect('borrow_history')
 
+# core/views.py
+
 def book_detail(request, book_id):
+    # 1. Lấy thông tin cuốn sách hiện tại
     book = get_object_or_404(Book, id=book_id)
     reviews = book.reviews.all().order_by('-created_at')
     
+    # 2. LOGIC GỢI Ý THÔNG MINH:
+    # - Tìm các cuốn sách cùng Category.
+    # - Loại trừ cuốn sách hiện tại (.exclude).
+    # - Sắp xếp ngẫu nhiên (.order_by('?')) để mỗi lần F5 sẽ thấy sách mới.
+    # - Giới hạn lấy 4 cuốn [:4].
+    recommended_books = Book.objects.filter(
+        category=book.category
+    ).exclude(id=book.id).order_by('?')[:4]
+
+    # Dự phòng: Nếu danh mục này không đủ 4 cuốn, lấy thêm các sách mới nhất khác
+    if recommended_books.count() < 4:
+        additional_count = 4 - recommended_books.count()
+        additional_books = Book.objects.exclude(
+            id__in=[book.id] + [b.id for b in recommended_books]
+        ).order_by('-created_at')[:additional_count]
+        recommended_books = list(recommended_books) + list(additional_books)
+
+    # 3. Kiểm tra sách đang mượn 
     borrowed_book_ids = []
     if request.user.is_authenticated:
-        # Lấy danh sách ID các sách Khanh đang mượn chưa trả
         borrowed_book_ids = BorrowTransaction.objects.filter(
             user=request.user, 
             status='BORROWED'
         ).values_list('book_id', flat=True)
     
+    # 4. Trả về template với thêm biến recommended_books
     return render(request, 'core/book_detail.html', {
         'book': book,
         'reviews': reviews,
-        'borrowed_book_ids': list(borrowed_book_ids) # Gửi sang HTML
+        'recommended_books': recommended_books, # Dữ liệu gợi ý cho AI/ML section
+        'borrowed_book_ids': list(borrowed_book_ids)
     })
 
 @login_required(login_url='login')
@@ -350,3 +402,40 @@ def notification_list(request):
     notifications.filter(status='UNREAD').update(status='READ')
     
     return render(request, 'core/notifications.html', {'notifications': notifications})
+
+# core/views.py
+@login_required
+def profile_view(request):
+    if request.method == 'POST':
+        user = request.user
+        # Thêm 'or ''' để tránh lỗi NULL trong MySQL
+        user.first_name = request.POST.get('first_name') or ''
+        user.last_name = request.POST.get('last_name') or ''
+        user.msv = request.POST.get('msv') or ''
+        user.lop = request.POST.get('lop') or ''
+        user.dia_chi = request.POST.get('dia_chi') or ''
+        
+        if 'avatar' in request.FILES:
+            user.avatar = request.FILES['avatar']
+            
+        user.save()
+        messages.success(request, 'Cập nhật hồ sơ thành công!')
+        return redirect('profile')
+        
+    return render(request, 'core/profile.html')
+
+@login_required
+def pay_all_penalties(request):
+    if request.method == 'POST':
+        method = request.POST.get('payment_method')
+        # Tìm tất cả các phiếu phạt chưa thanh toán (UNPAID) của người dùng hiện tại
+        unpaid_penalties = Penalty.objects.filter(user=request.user, status='UNPAID')
+        
+        if unpaid_penalties.exists():
+            # Cập nhật phương thức và chuyển sang trạng thái chờ xử lý (PROCESSING)
+            unpaid_penalties.update(payment_method=method, status='PROCESSING')
+            messages.success(request, f"Đã gửi yêu cầu thanh toán bằng hình thức: {dict(Penalty.PAYMENT_METHODS).get(method)}.")
+        else:
+            messages.info(request, "Khanh hiện không có khoản phạt nào cần thanh toán.")
+            
+        return redirect('profile')

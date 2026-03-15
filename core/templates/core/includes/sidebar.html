@@ -38,8 +38,11 @@
 <style>
     .sticky-sidebar { 
         position: sticky; 
-        top: 150px; 
-        z-index: 10;
+        /* Tăng giá trị này lên để Sidebar lùi xuống dưới Navbar */
+        top: 160px; 
+        z-index: 10; 
+        /* Thêm một chút margin để lúc bình thường nó không dính sát lên trên */
+        margin-top: 10px;
     }
     /* Thêm hiệu ứng cho badge để giống trang Yêu thích */
     .badge {

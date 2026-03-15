@@ -1015,6 +1015,7 @@
     color: #f8f9fa;
     padding-top: 5rem;
     padding-bottom: 0rem; /* Không padding dưới để copyright nằm sát chân */
+    
 }
 
 .full-footer h3 {
@@ -1078,3 +1079,34 @@
 .copyright-bar a {
     font-weight: 600;
 }
+
+/* Ép Dropdown menu luôn bám sát lề phải của nút bấm */
+/* Tìm và cập nhật đoạn cuối file style.css */
+
+.dropdown-menu-end {
+    right: 0 !important;
+    left: auto !important;
+    /* Đảm bảo menu không bị vỡ trên màn hình nhỏ */
+    min-width: 200px; 
+}
+
+/* Tinh chỉnh hiệu ứng hiện ra mượt mà hơn */
+.dropdown-menu.animate__animated {
+    animation-duration: 0.3s; /* Nhanh hơn một chút để che giấu độ trễ */
+}
+
+/* Thêm hiệu ứng hiện ra mượt mà (Fade In) để che đi sự chuyển đổi vị trí nếu có */
+.dropdown-menu {
+    display: block;
+    visibility: hidden;
+    opacity: 0;
+    transition: all 0.2s ease-in-out;
+    transform: translateY(10px);
+}
+
+.dropdown-menu.show {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+}
+

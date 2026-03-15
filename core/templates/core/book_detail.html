@@ -1,21 +1,36 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}{{ book.title }} - Alovu{% endblock %}
+{% block title %}{{ book.title }} - Thư viện Alovu{% endblock %}
 
 {% block content %}
-<div class="container py-5">
+<div class="container py-5 mt-5">
     <div class="row g-5">
         <div class="col-lg-4 wow fadeInLeft">
-            <div class="card shadow-sm border-0 p-2 rounded-4">
+            <div class="card shadow border-0 p-2 rounded-4 sticky-top" style="top: 150px;">
                 <img src="{{ book.cover_image }}" class="img-fluid rounded-4" alt="{{ book.title }}">
             </div>
         </div>
 
         <div class="col-lg-8 wow fadeInRight">
-            <span class="badge bg-primary mb-2 px-3 py-2 rounded-pill">{{ book.category.name }}</span>
+            <nav aria-label="breadcrumb" class="mb-3">
+                <ol class="breadcrumb mb-0">
+                    <li class="breadcrumb-item"><a href="{% url 'home' %}">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="{% url 'book_list' %}">Kho sách</a></li>
+                    <li class="breadcrumb-item active">{{ book.category.name }}</li>
+                </ol>
+            </nav>
+            
             <h1 class="display-5 fw-bold mb-3 text-dark">{{ book.title }}</h1>
             <p class="fs-5 text-muted">Tác giả: <span class="text-primary fw-bold">{{ book.author }}</span></p>
+            
+            <div class="d-flex align-items-center mb-4">
+                <div class="text-warning me-2">
+                    <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+                </div>
+                <span class="text-muted">({{ reviews.count }} nhận xét)</span>
+            </div>
+
             <hr class="my-4">
 
             <h4 class="fw-bold text-dark mb-3">Tóm tắt nội dung:</h4>
@@ -23,92 +38,128 @@
                 {{ book.description|default:"Đang cập nhật nội dung tóm tắt cho cuốn sách này..." }}
             </p>
             
+            <div class="book-location-info mt-4">
+                <div class="alert alert-info border-0 shadow-sm rounded-4 d-flex align-items-center">
+                    <div class="icon-box me-3 bg-white rounded-circle p-2 text-primary shadow-sm">
+                        <i class="fas fa-map-marker-alt fs-4"></i>
+                    </div>
+                    <div>
+                        <h6 class="mb-1 fw-bold text-dark">Vị trí sách trong thư viện:</h6>
+                        <p class="mb-0 text-muted">
+                            <strong>Tầng {{ book.floor }}</strong> - <strong>Kệ {{ book.shelf }}</strong> 
+                            {% if book.area %}(Khu vực: {{ book.area }}){% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+
             <div class="mt-4 pt-2">
                 {% if book.id in borrowed_book_ids %}
-                    <button class="btn btn-secondary btn-lg px-5 rounded-pill fw-bold shadow-sm disabled">
+                    <button class="btn btn-secondary btn-lg px-5 rounded-pill fw-bold shadow-sm disabled w-100 w-md-auto">
                         <i class="fas fa-book-reader me-2"></i> ĐANG MƯỢN
                     </button>
-                    <p class="text-muted small mt-2 italic">* Bạn đang mượn cuốn sách này, hãy trả sách trước khi mượn lại nhé!</p>
+                    <p class="text-muted small mt-2 italic">* Khanh đang mượn cuốn sách này, hãy trả trước khi mượn lại nhé!</p>
                 {% elif book.quantity > 0 %}
                     <a href="{% url 'borrow_book' book.id %}" 
-                       class="btn btn-warning btn-lg px-5 rounded-pill fw-bold shadow transition-hover"
-                       onclick="return confirm('Khanh chắc chắn muốn mượn cuốn sách [{{ book.title }}] này chứ?')">
+                       class="btn btn-warning btn-lg px-5 rounded-pill fw-bold shadow transition-hover w-100 w-md-auto text-white"
+                       onclick="return confirm('Bạn chắc chắn muốn mượn cuốn sách [{{ book.title }}] này chứ?')">
                         <i class="fas fa-hand-holding-heart me-2"></i> Mượn sách ngay
                     </a>
                 {% else %}
-                    <button class="btn btn-danger btn-lg px-5 rounded-pill fw-bold shadow-sm disabled">
+                    <button class="btn btn-danger btn-lg px-5 rounded-pill fw-bold shadow-sm disabled w-100 w-md-auto">
                         <i class="fas fa-times-circle me-2"></i> HẾT SÁCH
                     </button>
                 {% endif %}
             </div>
 
-            <div class="book-location-info mt-3">
-    <div class="alert alert-info border-0 shadow-sm rounded-4 d-flex align-items-center">
-        <div class="icon-box me-3 bg-white rounded-circle p-2 text-primary">
-            <i class="fas fa-map-marker-alt fs-4"></i>
-        </div>
-        <div>
-            <h6 class="mb-1 fw-bold text-dark">Vị trí sách trong thư viện:</h6>
-            <p class="mb-0 text-muted">
-                Tầng {{ book.floor }} - Kệ {{ book.shelf }} {% if book.area %}(Khu vực: {{ book.area }}){% endif %}
-            </p>
-        </div>
-    </div>
-</div>
+            <div class="mt-5 pt-5">
+                <div class="d-flex justify-content-between align-items-end mb-4">
+                    <div>
+                        <h4 class="fw-bold text-dark mb-1">Có thể Khanh sẽ thích</h4>
+                        <div class="bg-primary" style="width: 60px; height: 3px;"></div>
+                    </div>
+                    <a href="{% url 'book_list' %}?category={{ book.category.id }}" class="btn btn-link text-decoration-none p-0">Xem thêm</a>
+                </div>
+                
+                <div class="row g-3">
+                    {% for rec_book in recommended_books %}
+                    <div class="col-md-3">
+                        <div class="card border-0 shadow-sm rounded-4 h-100 product-card-mini transition-hover">
+                            <div class="p-2 text-center bg-light rounded-top-4">
+                                <a href="{% url 'book_detail' rec_book.id %}">
+                                    <img src="{{ rec_book.cover_image }}" class="rounded shadow-sm" 
+                                         style="height: 120px; object-fit: contain; width: 100%;" alt="{{ rec_book.title }}">
+                                </a>
+                            </div>
+                            <div class="card-body p-2 text-center">
+                                <h6 class="fw-bold text-truncate mb-1 small">{{ rec_book.title }}</h6>
+                                <a href="{% url 'book_detail' rec_book.id %}" class="btn btn-sm btn-outline-primary w-100 rounded-pill py-0" style="font-size: 0.7rem;">Chi tiết</a>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                        <p class="text-muted small italic">Đang cập nhật sách tương tự...</p>
+                    {% endfor %}
+                </div>
+            </div>
 
             <div class="mt-5 pt-5 border-top">
-                <h3 class="fw-bold mb-4">Độc giả nhận xét ({{ reviews.count }})</h3>
+                <h3 class="fw-bold mb-4">Độc giả nhận xét</h3>
                 
                 {% if user.is_authenticated %}
-                    <form action="{% url 'add_review' book.id %}" method="POST" class="bg-light p-4 rounded-4 shadow-sm mb-5 border">
+                    <form action="{% url 'add_review' book.id %}" method="POST" class="bg-white p-4 rounded-4 shadow-sm mb-5 border border-primary border-opacity-25">
                         {% csrf_token %}
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Đánh giá của bạn:</label>
-                            <select name="rating" class="form-select border-primary rounded-3" required>
-                                <option value="5">⭐⭐⭐⭐⭐ (Rất hay)</option>
-                                <option value="4">⭐⭐⭐⭐ (Hay)</option>
-                                <option value="3">⭐⭐⭐ (Bình thường)</option>
-                                <option value="2">⭐⭐ (Kém)</option>
-                                <option value="1">⭐ (Tệ)</option>
-                            </select>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold small text-muted">Đánh giá sao:</label>
+                                <select name="rating" class="form-select border-light bg-light rounded-3" required>
+                                    <option value="5">⭐⭐⭐⭐⭐ (Xuất sắc)</option>
+                                    <option value="4">⭐⭐⭐⭐ (Rất tốt)</option>
+                                    <option value="3">⭐⭐⭐ (Trung bình)</option>
+                                    <option value="2">⭐⭐ (Kém)</option>
+                                    <option value="1">⭐ (Rất tệ)</option>
+                                </select>
+                            </div>
+                            <div class="col-12 mb-3">
+                                <label class="form-label fw-bold small text-muted">Cảm nghĩ của Khanh:</label>
+                                <textarea name="comment" class="form-control border-light bg-light rounded-3" rows="3" 
+                                          placeholder="Viết cảm nghĩ của bạn về cuốn sách này..." required></textarea>
+                            </div>
                         </div>
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Cảm nghĩ của bạn:</label>
-                            <textarea name="comment" class="form-control rounded-3" rows="3" 
-                                      placeholder="Viết cảm nghĩ của Khanh về cuốn sách này..." required></textarea>
-                        </div>
-                        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">Gửi nhận xét</button>
+                        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">Gửi nhận xét ngay</button>
                     </form>
                 {% else %}
-                    <div class="alert alert-info rounded-4 border-0 shadow-sm mb-5">
-                        <i class="fas fa-info-circle me-2"></i> Vui lòng <a href="{% url 'login' %}" class="fw-bold">đăng nhập</a> để viết nhận xét.
+                    <div class="alert alert-warning rounded-4 border-0 shadow-sm mb-5 d-flex align-items-center">
+                        <i class="fas fa-lock me-3 fs-4"></i>
+                        <span>Vui lòng <a href="{% url 'login' %}" class="fw-bold text-dark">đăng nhập</a> để chia sẻ cảm nhận của Khanh.</span>
                     </div>
                 {% endif %}
 
                 <div class="review-list">
                     {% for r in reviews %}
-                        <div class="d-flex mb-4 border-bottom pb-4">
+                        <div class="d-flex mb-4 p-3 bg-white rounded-4 shadow-sm border-start border-primary border-4">
                             <div class="flex-shrink-0">
-                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" 
-                                     style="width: 50px; height: 50px;">
-                                    <i class="fas fa-user"></i>
-                                </div>
+                                <img src="{{ r.user.avatar_url }}" class="rounded-circle shadow-sm" 
+                                     style="width: 50px; height: 50px; object-fit: cover;" alt="{{ r.user.username }}">
                             </div>
                             <div class="ms-3 w-100">
                                 <div class="d-flex justify-content-between align-items-start mb-1">
                                     <h6 class="fw-bold mb-0 text-dark">
-                                        {{ r.user.username }} 
-                                        <span class="text-warning ms-2">
+                                        {{ r.user.get_full_name|default:r.user.username }} 
+                                        <span class="text-warning ms-2 small">
                                             {% if r.rating == 5 %}⭐⭐⭐⭐⭐{% elif r.rating == 4 %}⭐⭐⭐⭐{% else %}⭐⭐⭐{% endif %}
                                         </span>
                                     </h6>
                                     <small class="text-muted italic">{{ r.created_at|date:"d/m/Y" }}</small>
                                 </div>
-                                <p class="mt-2 text-secondary mb-0">{{ r.comment }}</p>
+                                <p class="mt-2 text-secondary mb-0 small">{{ r.comment }}</p>
                             </div>
                         </div>
                     {% empty %}
-                        <p class="text-muted italic">Chưa có nhận xét nào cho cuốn sách này. Hãy là người đầu tiên!</p>
+                        <div class="text-center py-4 bg-light rounded-4 border border-dashed">
+                            <i class="fas fa-comment-dots fa-2x text-muted mb-2"></i>
+                            <p class="text-muted italic mb-0">Chưa có nhận xét nào. Khanh hãy là người đầu tiên nhé!</p>
+                        </div>
                     {% endfor %}
                 </div>
             </div>
@@ -117,20 +168,20 @@
 </div>
 
 <style>
-    /* Hiệu ứng di chuột cho nút */
     .transition-hover { transition: all 0.3s ease; }
-    .transition-hover:hover { transform: translateY(-3px); box-shadow: 0 8px 15px rgba(0,0,0,0.15) !important; }
+    .transition-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
     .italic { font-style: italic; }
+    .product-card-mini { border: 1px solid #eee; }
+    
+    /* Animation cho marker vị trí */
+    .icon-box i { animation: pulse-marker 2s infinite; }
+    @keyframes pulse-marker {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.15); color: #ffc107; }
+        100% { transform: scale(1); }
+    }
 
-    /* Thêm vào trong thẻ <style> cuối file notifications.html hoặc style.css */
-.icon-box i {
-    animation: pulse-marker 2s infinite;
-}
-
-@keyframes pulse-marker {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); color: #dc3545; } /* Đổi sang màu đỏ nhẹ khi giãn ra */
-    100% { transform: scale(1); }
-}
+    .breadcrumb-item + .breadcrumb-item::before { content: "›"; color: #adb5bd; font-size: 1.2rem; line-height: 1; }
+    .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 </style>
 {% endblock %}
