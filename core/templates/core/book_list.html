@@ -5,6 +5,7 @@
 {% block nav_book %}active fw-bold{% endblock %}
 
 {% block content %}
+<link href="{% static 'css/style.css' %}" rel="stylesheet">
 <div class="container-fluid px-lg-5 py-4">
     <div class="row g-4">
         <div class="col-lg-3">
@@ -72,16 +73,23 @@
                                 </div>
                                 
                                 <div class="mt-auto">
-                                    {% if book.id in borrowed_book_ids %}
+                                    {% if book.id in pending_book_ids %}
+                                        <button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled" style="opacity: 0.85;">
+                                            <i class="fas fa-clock me-1"></i>CHỜ XÁC NHẬN
+                                        </button>
+                                        
+                                    {% elif book.id in borrowed_book_ids %}
                                         <button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 shadow-sm disabled">
                                             ĐANG MƯỢN
                                         </button>
+                                        
                                     {% elif book.quantity > 0 %}
                                         <a href="{% url 'borrow_book' book.id %}" 
                                            class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm"
                                            onclick="return confirm('Bạn ơi, bạn có chắc chắn muốn mượn sách [{{ book.title }}] không?')">
                                             MƯỢN SÁCH
                                         </a>
+                                        
                                     {% else %}
                                         <button class="btn btn-danger rounded-pill fw-bold w-100 py-2 shadow-sm disabled">
                                             HẾT SÁCH
@@ -149,26 +157,4 @@
     </div>
 </div>
 
-<style>
-    .btn-primary { 
-        background-color: var(--bs-primary) !important; 
-        border-color: var(--bs-primary) !important; 
-        color: #fff !important;
-    }
-    .btn-primary:hover { filter: brightness(0.9); }
-    .transition-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
-    .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-    .fa-heart.fas { color: #ff4d6d !important; }
-    .sticky-sidebar { position: sticky; top: 120px; z-index: 10; }
-    .rounded-4 { border-radius: 1rem !important; }
-
-    .sticky-sidebar { 
-        position: sticky; 
-        /* Tăng giá trị này lên để Sidebar lùi xuống dưới Navbar */
-        top: 160px; 
-        z-index: 10; 
-        /* Thêm một chút margin để lúc bình thường nó không dính sát lên trên */
-        margin-top: 10px;
-    }
-</style>
 {% endblock %}

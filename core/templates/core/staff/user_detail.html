@@ -1,0 +1,84 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Chi tiết người đọc - Alovu{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-5 mt-5">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="sticky-sidebar">
+                {% include 'core/includes/sidebar.html' %}
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm rounded-4 p-4 mb-4">
+                <div class="d-flex align-items-center mb-4">
+                    <img src="{{ reader.avatar_url }}" class="rounded-circle me-3 border" style="width: 80px; height: 80px; object-fit: cover;">
+                    <div>
+                        <h3 class="fw-bold mb-1">{{ reader.get_full_name|default:reader.username }}</h3>
+                        <p class="text-muted mb-0">MSSV: {{ reader.msv|default:"Chưa có" }} | Lớp: {{ reader.lop|default:"Chưa có" }}</p>
+                    </div>
+                </div>
+
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-4 h-100 border shadow-sm">
+                            <h6 class="text-uppercase small fw-bold text-primary mb-3">
+                                <i class="fas fa-book me-2"></i>Lịch sử mượn gần đây
+                            </h6>
+                            <ul class="list-unstyled mb-0">
+                                {% for item in borrow_history|slice:":5" %}
+                                <li class="mb-3 border-bottom pb-2">
+                                    <div class="fw-bold text-dark">{{ item.book.title }}</div>
+                                    <div class="d-flex justify-content-between align-items-center mt-1">
+                                        <small class="text-muted">Hạn: {{ item.due_date|date:"d/m/Y" }}</small>
+                                        <span class="badge {% if item.status == 'BORROWED' %}bg-warning text-dark{% else %}bg-success{% endif %} rounded-pill px-2 py-1" style="font-size: 0.7rem;">
+                                            {{ item.get_status_display }}
+                                        </span>
+                                    </div>
+                                </li>
+                                {% empty %}
+                                <li class="text-muted fst-italic py-3">Chưa có dữ liệu mượn sách</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="col-md-6">
+                        <div class="p-3 bg-light rounded-4 h-100 border shadow-sm">
+                            <h6 class="text-uppercase small fw-bold text-danger mb-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Tình trạng phạt ({{ reader.total_fine }} VNĐ)
+                            </h6>
+                            <ul class="list-unstyled mb-0">
+                                {% for p in penalties %}
+                                <li class="mb-3 border-bottom pb-2">
+                                    <div class="d-flex justify-content-between">
+                                        <span class="text-danger fw-bold small">{{ p.amount }} VNĐ</span>
+                                        <span class="badge {% if p.status == 'PAID' %}bg-success{% else %}bg-danger{% endif %} rounded-pill px-2" style="font-size: 0.65rem;">
+                                            {{ p.get_status_display }}
+                                        </span>
+                                    </div>
+                                    <div class="small text-muted mt-1">{{ p.reason }}</div>
+                                </li>
+                                {% empty %}
+                                <li class="text-success fst-italic py-3">
+                                    <i class="fas fa-check-circle me-1"></i>Người đọc này không có khoản phạt nào.
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-3 border-top text-end">
+                    <a href="{% url 'staff_user_management' %}" class="btn btn-outline-secondary rounded-pill px-4 btn-sm">
+                        <i class="fas fa-arrow-left me-2"></i>Quay lại danh sách
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

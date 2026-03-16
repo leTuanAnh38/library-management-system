@@ -4,6 +4,7 @@
 {% block title %}Sách Yêu Thích - Thư viện Alovu{% endblock %}
 
 {% block content %}
+<link href="{% static 'css/style.css' %}" rel="stylesheet">
 <div class="container-fluid px-lg-5 py-5">
     <div class="row g-4">
         <div class="col-lg-3">
@@ -78,14 +79,5 @@
     </div>
 </div>
 
-<style>
-    /* Sửa lỗi che Sidebar khi lướt trang */
-    .sticky-sidebar { 
-        position: sticky; 
-        top: 90px; 
-        z-index: 10; 
-    }
-    .transition-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
-    .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-</style>
+
 {% endblock %}

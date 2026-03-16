@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.contrib.auth.models import AbstractUser
 from django.conf import settings
 from django.dispatch import receiver
@@ -131,33 +132,41 @@ class BookImage(TimeStampedModel):
 # 6. Bảng BORROW_TRANSACTIONS
 class BorrowTransaction(TimeStampedModel):
     STATUS_CHOICES = (
-        ('BORROWED', 'Borrowed'),
-        ('RETURNED', 'Returned'),
-        ('OVERDUE', 'Overdue'),
+        ('BORROWED', 'Đang mượn'),
+        ('PENDING', 'Chờ xác nhận'), # [MỚI THÊM] Trạng thái sinh viên đã ấn trả, chờ thủ thư duyệt
+        ('RETURNED', 'Đã trả'),
+        ('OVERDUE', 'Quá hạn'),
     )
 
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='borrow_records')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='borrow_records')
-    borrow_date = models.DateField(auto_now_add=True)
-    return_date = models.DateField(null=True, blank=True)
+    
+    borrow_date = models.DateField(auto_now_add=True, verbose_name="Ngày mượn")
+    due_date = models.DateField(null=True, blank=True, verbose_name="Hạn trả")
+    return_date = models.DateField(null=True, blank=True, verbose_name="Ngày trả thực tế")
+    
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='BORROWED')
     reason = models.CharField(max_length=255, null=True, blank=True)
-    borrow_date = models.DateField(auto_now_add=True)
-    due_date = models.DateField(null=True, blank=True, verbose_name="Hạn trả") # Thêm dòng này
-    return_date = models.DateField(null=True, blank=True, verbose_name="Ngày trả thực tế")
+
     @property
     def is_late(self):
         """Kiểm tra xem giao dịch này có bị trả trễ không"""
         if self.return_date and self.due_date:
             return self.return_date > self.due_date
+        elif not self.return_date and self.due_date:
+            return timezone.now().date() > self.due_date
         return False
 
     @property
     def penalty_amount(self):
         """Lấy số tiền phạt của giao dịch này (nếu có)"""
-        # Truy cập ngược từ BorrowTransaction sang Penalty thông qua related_name='penalties'
-        penalty = self.penalties.first()
-        return penalty.amount if penalty else 0
+        try:
+            penalty = self.penalty_set.first() 
+            return penalty.amount if penalty else 0
+        except AttributeError:
+            penalty = self.penalties.first()
+            return penalty.amount if penalty else 0
+
     class Meta:
         verbose_name = 'Giao dịch mượn'
         verbose_name_plural = 'Quản lý Mượn/Trả'

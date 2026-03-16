@@ -1,0 +1,68 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Quản lý Tiền Phạt - Admin Alovu{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-5 mt-5">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            {% include 'core/includes/sidebar.html' %}
+        </div>
+        
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 border-start border-4 border-danger ps-3">
+                        <h4 class="fw-bold m-0 text-dark">💰 QUẢN LÝ TIỀN PHẠT</h4>
+                        <div class="text-danger fw-bold">Tổng nợ cần thu: {{ total_pending_fines }} VNĐ</div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="bg-light text-muted small text-uppercase">
+                                <tr>
+                                    <th class="border-0 py-3">Sinh viên</th>
+                                    <th class="border-0">Lý do phạt</th>
+                                    <th class="border-0 text-center">Số tiền</th>
+                                    <th class="border-0 text-center">Trạng thái</th>
+                                    <th class="border-0 text-end">Xử lý</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for p in penalties %}
+                                <tr>
+                                    <td class="py-3">
+                                        <div class="fw-bold text-dark">{{ p.user.get_full_name|default:p.user.username }}</div>
+                                        <small class="text-muted">MSV: {{ p.user.msv }}</small>
+                                    </td>
+                                    <td><small class="text-secondary">{{ p.reason }}</small></td>
+                                    <td class="text-center fw-bold text-danger">{{ p.amount }} VNĐ</td>
+                                    <td class="text-center">
+                                        {% if p.status == 'UNPAID' %}
+                                            <span class="badge bg-danger-subtle text-danger border border-danger rounded-pill px-3">Chưa đóng</span>
+                                        {% else %}
+                                            <span class="badge bg-info-subtle text-info border border-info rounded-pill px-3">Chờ duyệt</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="{% url 'staff_confirm_penalty' p.id %}" 
+                                           class="btn btn-sm btn-success rounded-pill px-3 shadow-sm"
+                                           onclick="return confirm('Xác nhận đã nhận đủ số tiền {{ p.amount }} VNĐ?')">
+                                            Đã thu tiền
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted fst-italic">Hiện tại không có khoản nợ tiền phạt nào cần xử lý.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

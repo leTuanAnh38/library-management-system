@@ -1110,3 +1110,95 @@
     transform: translateY(0);
 }
 
+/* =========================================
+   CÁC CLASS DÙNG CHUNG (UTILITIES)
+   ========================================= */
+.cursor-pointer { cursor: pointer; }
+.hover-bg-light:hover { background-color: #f8f9fa; }
+.italic { font-style: italic; }
+.border-dashed { border-style: dashed !important; }
+
+/* Hiệu ứng mượt mà khi hover vào Card */
+.transition-hover { transition: all 0.3s ease; }
+.transition-hover:hover { 
+    transform: translateY(-3px); 
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1) !important; 
+}
+
+/* Hiệu ứng Fade In */
+.animate__fadeIn { animation: fadeIn 0.5s; }
+@keyframes fadeIn { 
+    from { opacity: 0; transform: translateY(-10px); } 
+    to { opacity: 1; transform: translateY(0); } 
+}
+
+/* Hiệu ứng chớp nháy cho icon Vị trí sách */
+.icon-box i { animation: pulse-marker 2s infinite; }
+@keyframes pulse-marker {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.15); color: #ffc107; }
+    100% { transform: scale(1); }
+}
+
+/* =========================================
+   CSS RIÊNG CHO TỪNG TRANG
+   ========================================= */
+/* Fix thanh Sidebar trượt mượt mà (Trang Profile) */
+@media (min-width: 992px) {
+    .sticky-sidebar {
+        position: -webkit-sticky !important;
+        position: sticky !important;
+        top: 160px !important; 
+        z-index: 10 !important;
+    }
+}
+
+/* Chỉnh mũi tên cho thanh Breadcrumb (Trang Chi tiết sách) */
+.breadcrumb-item + .breadcrumb-item::before { 
+    content: "›"; 
+    color: #adb5bd; 
+    font-size: 1.2rem; 
+    line-height: 1; 
+}
+
+.product-card-mini { border: 1px solid #eee; }
+.text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+/* =========================================
+   CSS RIÊNG CHO TRANG CHỦ (INDEX)
+   ========================================= */
+    .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
+    .z-index-1 { z-index: 1; }
+    .main-book-img { width: 180px; height: 260px; object-fit: cover; border: 5px solid white; transition: transform 0.3s ease; }
+    .main-book-img:hover { transform: scale(1.05); }
+    .header-carousel .owl-nav { position: absolute; top: 50%; width: 100%; transform: translateY(-50%); pointer-events: none; }
+    .header-carousel .owl-prev, .header-carousel .owl-next { 
+        position: absolute; pointer-events: auto; width: 45px; height: 45px; line-height: 45px; 
+        background: #ff9800 !important; color: white !important; border-radius: 50%; font-size: 20px; transition: 0.3s;
+    }
+    .header-carousel .owl-prev { left: 10px; }
+    .header-carousel .owl-next { right: 10px; }
+    .fa-heart.fas { color: #ff4d6d !important; }
+    .transition-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
+    .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+/*kho sach */
+    .btn-primary { 
+        background-color: var(--bs-primary) !important; 
+        border-color: var(--bs-primary) !important; 
+        color: #fff !important;
+    }
+    .btn-primary:hover { filter: brightness(0.9); }
+    .transition-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
+    .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .fa-heart.fas { color: #ff4d6d !important; }
+    .sticky-sidebar { position: sticky; top: 120px; z-index: 10; }
+    .rounded-4 { border-radius: 1rem !important; }
+
+    .sticky-sidebar { 
+        position: sticky; 
+        /* Tăng giá trị này lên để Sidebar lùi xuống dưới Navbar */
+        top: 160px; 
+        z-index: 10; 
+        /* Thêm một chút margin để lúc bình thường nó không dính sát lên trên */
+        margin-top: 10px;
+    }

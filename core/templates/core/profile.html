@@ -4,20 +4,24 @@
 {% block title %}Hồ sơ cá nhân - Alovu{% endblock %}
 
 {% block content %}
+<link href="{% static 'css/style.css' %}?v=1.1" rel="stylesheet">
+
 <div class="container-fluid px-lg-5 py-5 mt-5">
-    <div class="row g-4 align-items-start">
-        <div class="col-lg-3">
-            <div class="sticky-sidebar">
-                {% include 'core/includes/sidebar.html' %}
+    <div class="row g-4">
+        <div class="col-lg-3 d-flex flex-column">
+            <div class="h-100 w-100">
+                <div class="sticky-sidebar">
+                    {% include 'core/includes/sidebar.html' %}
+                </div>
             </div>
         </div>
 
         <div class="col-lg-9">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4 border-start border-4 border-primary ps-3">
                         <h4 class="fw-bold m-0 text-dark">
-                            <i class="fas fa-user-circle me-2 text-primary"></i>Hồ sơ cá nhân của Khanh
+                            <i class="fas fa-user-circle me-2 text-primary"></i>Hồ sơ cá nhân của bạn
                         </h4>
                         <button id="btn-edit-toggle" class="btn btn-outline-primary rounded-pill px-4 fw-bold shadow-sm">
                             <i class="fas fa-edit me-2"></i>Chỉnh sửa hồ sơ
@@ -26,22 +30,33 @@
                     
                     <div class="row g-4 mb-4">
                         <div class="col-md-6">
-                            <div class="alert {% if user.total_fine > 0 %}alert-danger{% else %}alert-success{% endif %} border-0 rounded-4 shadow-sm h-100 d-flex flex-column justify-content-center p-4 mb-0">
+                            <div class="alert {% if user.total_fine > 0 %}alert-danger{% elif has_processing %}alert-warning{% else %}alert-success{% endif %} border-0 rounded-4 shadow-sm h-100 d-flex flex-column justify-content-center p-4 mb-0">
                                 <div class="d-flex align-items-center mb-2">
-                                    <div class="bg-white rounded-circle p-2 text-{% if user.total_fine > 0 %}danger{% else %}success{% endif %} me-3 shadow-sm">
+                                    <div class="bg-white rounded-circle p-2 text-{% if user.total_fine > 0 %}danger{% elif has_processing %}warning{% else %}success{% endif %} me-3 shadow-sm">
                                         <i class="fas fa-hand-holding-usd fs-5"></i>
                                     </div>
                                     <div>
                                         <strong class="d-block text-dark">Tình trạng phí phạt</strong>
-                                        <small class="text-muted">Tổng nợ quá hạn</small>
+                                        {% if has_processing %}
+                                            <small class="text-warning fw-bold">Đang chờ xác nhận</small>
+                                        {% else %}
+                                            <small class="text-muted">Tổng nợ quá hạn</small>
+                                        {% endif %}
                                     </div>
                                 </div>
                                 <div class="d-flex align-items-center justify-content-between mt-2">
-                                    <h4 class="mb-0 fw-bold">{{ user.total_fine|default:0 }} VNĐ</h4>
-                                    {% if user.total_fine > 0 %}
-                                        <button class="btn btn-light btn-sm rounded-pill fw-bold px-3 shadow-sm border" data-bs-toggle="modal" data-bs-target="#paymentModal">
-                                            Thanh toán
+                                    {% if has_processing and not has_unpaid %}
+                                        <h4 class="mb-0 fw-bold text-dark">{{ processing_amount|default:0 }} VNĐ</h4>
+                                        <button class="btn btn-warning btn-sm rounded-pill fw-bold px-3 shadow-sm border text-dark" disabled style="opacity: 0.85;">
+                                            <i class="fas fa-clock me-1"></i>Chờ duyệt...
                                         </button>
+                                    {% else %}
+                                        <h4 class="mb-0 fw-bold">{{ user.total_fine|default:0 }} VNĐ</h4>
+                                        {% if user.total_fine > 0 %}
+                                            <button class="btn btn-light btn-sm rounded-pill fw-bold px-3 shadow-sm border" data-bs-toggle="modal" data-bs-target="#paymentModal">
+                                                Thanh toán
+                                            </button>
+                                        {% endif %}
                                     {% endif %}
                                 </div>
                             </div>
@@ -112,6 +127,50 @@
                                         <p class="fs-5 text-dark fw-medium">{{ user.dia_chi|default:"Chưa cập nhật" }}</p>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-5 pt-4 border-top">
+                            <h5 class="fw-bold mb-4 text-primary">
+                                <i class="fas fa-star text-warning me-2"></i>Sách bạn đã đánh giá
+                            </h5>
+                            
+                            <div class="row g-3">
+                                {% for review in user_reviews %}
+                                <div class="col-md-6 col-lg-4">
+                                    <a href="{% url 'book_detail' review.book.id %}" class="text-decoration-none">
+                                        <div class="card border-0 bg-light shadow-sm h-100 transition-hover" style="border-radius: 12px;">
+                                            <div class="card-body d-flex align-items-center p-3">
+                                                <img src="{{ review.book.cover_image }}" alt="{{ review.book.title }}" 
+                                                     style="width: 50px; height: 75px; object-fit: cover;" class="rounded me-3 shadow-sm">
+                                                <div>
+                                                    <h6 class="text-dark fw-bold mb-1 text-truncate" style="max-width: 160px;" title="{{ review.book.title }}">
+                                                        {{ review.book.title }}
+                                                    </h6>
+                                                    <div class="text-warning small mb-1">
+                                                        {% for i in "12345" %}
+                                                            {% if forloop.counter <= review.rating %}
+                                                                <i class="fas fa-star"></i>
+                                                            {% else %}
+                                                                <i class="far fa-star"></i>
+                                                            {% endif %}
+                                                        {% endfor %}
+                                                    </div>
+                                                    <small class="text-muted fst-italic">{{ review.created_at|date:"d/m/Y" }}</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </div>
+                                {% empty %}
+                                <div class="col-12">
+                                    <div class="p-4 bg-light rounded-4 text-center border border-dashed">
+                                        <i class="fas fa-comment-slash fa-2x text-muted mb-2"></i>
+                                        <p class="text-muted small italic mb-0">Bạn chưa để lại đánh giá cho cuốn sách nào.</p>
+                                        <a href="{% url 'book_list' %}" class="btn btn-sm btn-outline-primary mt-3 rounded-pill">Khám phá sách ngay</a>
+                                    </div>
+                                </div>
+                                {% endfor %}
                             </div>
                         </div>
                     </div>
@@ -205,57 +264,46 @@
     </div>
 </div>
 
-<style>
-    .cursor-pointer { cursor: pointer; }
-    .hover-bg-light:hover { background-color: #f8f9fa; }
-    .italic { font-style: italic; }
-    .animate__fadeIn { animation: fadeIn 0.5s; }
-    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-    
-    /* FIX LỖI SIDEBAR KHÔNG ĐI THEO */
-    @media (min-width: 992px) {
-        .sticky-sidebar {
-            position: -webkit-sticky;
-            position: sticky;
-            /* Để 140px để nằm ngay dưới Menu màu cam của Khanh */
-            top: 140px !important; 
-            z-index: 100;
-            /* Khóa cứng transition để nó không bị lướt trễ gây khó chịu */
-            transition: none !important;
-        }
-    }
-</style>
-
 <script>
-    // JS CHUYỂN ĐỔI CHẾ ĐỘ XEM/SỬA
-    const btnToggle = document.getElementById('btn-edit-toggle');
-    const btnCancel = document.getElementById('btn-cancel-edit');
-    const viewSection = document.getElementById('profile-view-mode');
-    const editSection = document.getElementById('profile-edit-mode');
+    document.addEventListener("DOMContentLoaded", function() {
+        // 1. CHUYỂN ĐỔI CHẾ ĐỘ XEM/SỬA
+        const btnToggle = document.getElementById('btn-edit-toggle');
+        const btnCancel = document.getElementById('btn-cancel-edit');
+        const viewSection = document.getElementById('profile-view-mode');
+        const editSection = document.getElementById('profile-edit-mode');
 
-    btnToggle.addEventListener('click', () => {
-        viewSection.classList.add('d-none');
-        editSection.classList.remove('d-none');
-        btnToggle.classList.add('d-none');
-    });
+        if (btnToggle && btnCancel && viewSection && editSection) {
+            btnToggle.addEventListener('click', function() {
+                viewSection.classList.add('d-none');
+                editSection.classList.remove('d-none');
+                btnToggle.classList.add('d-none');
+            });
 
-    btnCancel.addEventListener('click', () => {
-        viewSection.classList.remove('d-none');
-        editSection.classList.add('d-none');
-        btnToggle.classList.remove('d-none');
-    });
+            btnCancel.addEventListener('click', function() {
+                viewSection.classList.remove('d-none');
+                editSection.classList.add('d-none');
+                btnToggle.classList.remove('d-none');
+            });
+        }
 
-    // JS HIỂN THỊ QR
-    const methodTransfer = document.getElementById('methodTransfer');
-    const methodCounter = document.getElementById('methodCounter');
-    const qrSection = document.getElementById('qr-section');
+        // 2. HIỂN THỊ MÃ QR THANH TOÁN
+        const methodTransfer = document.getElementById('methodTransfer');
+        const methodCounter = document.getElementById('methodCounter');
+        const qrSection = document.getElementById('qr-section');
 
-    methodTransfer.addEventListener('change', function() {
-        if (this.checked) qrSection.classList.remove('d-none');
-    });
+        if (methodTransfer && methodCounter && qrSection) {
+            methodTransfer.addEventListener('change', function() {
+                if (this.checked) {
+                    qrSection.classList.remove('d-none');
+                }
+            });
 
-    methodCounter.addEventListener('change', function() {
-        if (this.checked) qrSection.classList.add('d-none');
+            methodCounter.addEventListener('change', function() {
+                if (this.checked) {
+                    qrSection.classList.add('d-none');
+                }
+            });
+        }
     });
 </script>
 {% endblock %}

@@ -1,0 +1,117 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Quản lý Mượn Trả - Admin Alovu{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-5 mt-5">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            {% include 'core/includes/sidebar.html' %}
+        </div>
+        
+        <div class="col-lg-9">
+            <div class="row mb-4">
+                <div class="col-md-6 col-lg-5">
+                    <form method="GET" action="{% url 'staff_borrow_management' %}" class="input-group shadow-sm">
+                        <input type="text" name="q" class="form-control border-warning" 
+                               placeholder="Nhập MSSV hoặc tên sinh viên..." 
+                               value="{{ query|default:'' }}">
+                        <button class="btn btn-warning px-4 fw-bold text-dark" type="submit">
+                            <i class="fas fa-search me-2"></i>Tìm kiếm
+                        </button>
+                        {% if query %}
+                            <a href="{% url 'staff_borrow_management' %}" class="btn btn-outline-secondary d-flex align-items-center">Xóa lọc</a>
+                        {% endif %}
+                    </form>
+                    
+                    {% if query %}
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                Tìm thấy <strong>{{ transactions.count }}</strong> kết quả cho: <mark class="px-2 rounded-1">{{ query }}</mark>
+                            </small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 border-start border-4 border-warning ps-3">
+                        <h4 class="fw-bold m-0 text-dark">📋 QUẢN LÝ MƯỢN / TRẢ SÁCH</h4>
+                        <span class="badge bg-light text-dark border px-3 rounded-pill">Tổng: {{ transactions.count }} giao dịch</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle border-light">
+                            <thead class="bg-light text-muted small text-uppercase">
+                                <tr>
+                                    <th class="border-0 py-3">Sinh viên</th>
+                                    <th class="border-0">Cuốn sách</th>
+                                    <th class="border-0 text-center">Ngày hết hạn</th>
+                                    <th class="border-0 text-center">Trạng thái</th>
+                                    <th class="border-0 text-end">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for trans in transactions %}
+                                <tr>
+                                    <td class="py-3">
+                                        <div class="fw-bold text-dark">{{ trans.user.get_full_name|default:trans.user.username }}</div>
+                                        <small class="text-muted">MSV: {{ trans.user.msv }}</small>
+                                    </td>
+                                    <td>
+                                        <div class="text-truncate" style="max-width: 200px;" title="{{ trans.book.title }}">{{ trans.book.title }}</div>
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="{% if trans.status == 'BORROWED' and trans.due_date < today %}text-danger fw-bold{% endif %}">
+                                            {{ trans.due_date|date:"d/m/Y" }}
+                                        </span>
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        {% if trans.status == 'BORROWED' %}
+                                            <span class="badge bg-primary rounded-pill px-3 shadow-sm">Đang mượn</span>
+                                        {% elif trans.status == 'PENDING' %}
+                                            <span class="badge bg-warning text-dark rounded-pill px-3 shadow-sm">
+                                                <i class="fas fa-clock me-1"></i>Chờ xác nhận
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-success rounded-pill px-3 shadow-sm">Đã trả</span>
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <td class="text-end">
+                                        {% if trans.status == 'PENDING' %}
+                                            <a href="{% url 'staff_confirm_return' trans.id %}" 
+                                               class="btn btn-sm btn-success rounded-pill px-3 shadow-sm fw-bold"
+                                               onclick="return confirm('Xác nhận sinh viên đã mang sách ra quầy trả?')">
+                                                <i class="fas fa-check-circle me-1"></i>Xác nhận trả
+                                            </a>
+                                        {% elif trans.status == 'BORROWED' %}
+                                            <a href="{% url 'staff_confirm_return' trans.id %}" 
+                                               class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm"
+                                               onclick="return confirm('Sinh viên chưa gửi yêu cầu trả trên web. Bạn vẫn muốn thu hồi sách trực tiếp chứ?')">
+                                                Thu hồi sách
+                                            </a>
+                                        {% else %}
+                                            <span class="text-success fw-bold small">
+                                                <i class="fas fa-check-double me-1"></i>Hoàn tất
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted fst-italic">Không tìm thấy giao dịch nào phù hợp.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

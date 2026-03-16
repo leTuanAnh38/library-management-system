@@ -1,0 +1,57 @@
+{% extends 'core/base.html' %}
+
+{% block title %}Quản lý người đọc - Alovu{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-5 mt-5">
+    <div class="row g-4">
+        <div class="col-lg-3">{% include 'core/includes/sidebar.html' %}</div>
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold mb-4 border-start border-4 border-warning ps-3">👥 DANH SÁCH NGƯỜI ĐỌC</h4>
+                    
+                    <form method="GET" class="mb-4">
+                        <div class="input-group shadow-sm" style="max-width: 400px;">
+                            <input type="text" name="q" class="form-control" placeholder="Tìm tên, MSV..." value="{{ request.GET.q|default:'' }}">
+                            <button class="btn btn-primary" type="submit"><i class="fas fa-search"></i></button>
+                        </div>
+                    </form>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Người đọc</th>
+                                    <th>MSSV / Lớp</th>
+                                    <th class="text-center">Điểm tích lũy</th>
+                                    <th class="text-center">Tổng nợ phạt</th>
+                                    <th class="text-end">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reader in readers %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold">{{ reader.get_full_name|default:reader.username }}</div>
+                                        <small class="text-muted">{{ reader.email }}</small>
+                                    </td>
+                                    <td>{{ reader.msv|default:"-" }} / {{ reader.lop|default:"-" }}</td>
+                                    <td class="text-center"><span class="badge bg-info rounded-pill">{{ reader.points }}</span></td>
+                                    <td class="text-center text-danger fw-bold">{{ reader.total_fine }} VNĐ</td>
+                                    <td class="text-end">
+                                        <a href="{% url 'staff_user_detail' reader.id %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                            Xem chi tiết
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

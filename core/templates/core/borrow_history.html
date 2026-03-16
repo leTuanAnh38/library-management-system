@@ -70,6 +70,8 @@
                                         {% endif %}
                                     {% elif item.status == 'BORROWED' %}
                                         <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm">Đang mượn</span>
+                                    {% elif item.status == 'PENDING' %}
+                                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill shadow-sm">Đang chờ duyệt</span>
                                     {% else %}
                                         <span class="badge bg-dark px-3 py-2 rounded-pill shadow-sm">Quá hạn</span>
                                     {% endif %}
@@ -81,6 +83,10 @@
                                            onclick="return confirm('Khanh chắc chắn muốn trả cuốn sách [{{ item.book.title }}] này chứ?')">
                                             Trả sách
                                         </a>
+                                    {% elif item.status == 'PENDING' %}
+                                        <button class="btn btn-secondary btn-sm rounded-pill px-3 fw-bold shadow-sm" disabled style="opacity: 0.7;">
+                                            <i class="fas fa-clock me-1"></i>Chờ xác nhận...
+                                        </button>
                                     {% else %}
                                         <span class="text-muted small"><i class="fas fa-check-double text-success me-1"></i>Xong</span>
                                     {% endif %}

@@ -23,4 +23,20 @@ urlpatterns = [
     path('notifications/', views.notification_list, name='notification_list'),
     path('profile/', views.profile_view, name='profile'),
     path('profile/pay-all/', views.pay_all_penalties, name='pay_all_penalties'),
+    path('api/books/', views.api_get_books, name='api_get_books'),
+    path('api/books/add/', views.api_create_book, name='api_create_book'),
+    path('api/books/delete/<int:book_id>/', views.api_delete_book, name='api_delete_book'),
+    # core/urls.py
+    path('staff/add-book/', views.add_book, name='add_book'),
+    # URL cho quản lý Mượn / Trả của Thủ thư
+    path('staff/borrows/', views.staff_borrow_management, name='staff_borrow_management'),
+    path('staff/borrows/<int:transaction_id>/confirm/', views.staff_confirm_return, name='staff_confirm_return'),
+    
+    # URL cho quản lý Tiền Phạt của Thủ thư
+    path('staff/penalties/', views.staff_penalty_management, name='staff_penalty_management'),
+    path('staff/penalties/<int:penalty_id>/confirm/', views.staff_confirm_penalty, name='staff_confirm_penalty'),
+
+    # core/urls.py
+    path('staff/users/', views.staff_user_management, name='staff_user_management'),
+    path('staff/users/<int:user_id>/', views.staff_user_detail, name='staff_user_detail'),
 ]

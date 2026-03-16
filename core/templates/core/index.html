@@ -5,6 +5,8 @@
 {% block nav_home %}active fw-bold{% endblock %}
 
 {% block content %}
+<link href="{% static 'css/style.css' %}" rel="stylesheet">
+
 <div class="featured-slider-wrapper mb-5">
     <div class="container-fluid py-5" style="background: url('https://img7.thuthuatphanmem.vn/uploads/2023/05/26/hinh-nen-may-tinh-dep-lung-linh-hd_084038308.jpg') center/cover no-repeat; position: relative; min-height: 450px;">
         <div class="overlay"></div>
@@ -53,7 +55,11 @@
                                 </div>
                                 
                                 <div class="mt-auto">
-                                    {% if book.id in borrowed_book_ids %}
+                                    {% if book.id in pending_book_ids %}
+                                        <button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled" style="opacity: 0.85;">
+                                            <i class="fas fa-clock me-1"></i>CHỜ XÁC NHẬN
+                                        </button>
+                                    {% elif book.id in borrowed_book_ids %}
                                         <button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 shadow-sm disabled">
                                             ĐANG MƯỢN
                                         </button>
@@ -110,23 +116,6 @@
         </div>
     </div>
 </div>
-
-<style>
-    .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); }
-    .z-index-1 { z-index: 1; }
-    .main-book-img { width: 180px; height: 260px; object-fit: cover; border: 5px solid white; transition: transform 0.3s ease; }
-    .main-book-img:hover { transform: scale(1.05); }
-    .header-carousel .owl-nav { position: absolute; top: 50%; width: 100%; transform: translateY(-50%); pointer-events: none; }
-    .header-carousel .owl-prev, .header-carousel .owl-next { 
-        position: absolute; pointer-events: auto; width: 45px; height: 45px; line-height: 45px; 
-        background: #ff9800 !important; color: white !important; border-radius: 50%; font-size: 20px; transition: 0.3s;
-    }
-    .header-carousel .owl-prev { left: 10px; }
-    .header-carousel .owl-next { right: 10px; }
-    .fa-heart.fas { color: #ff4d6d !important; }
-    .transition-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
-    .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-</style>
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>

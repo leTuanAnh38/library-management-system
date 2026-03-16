@@ -46,3 +46,4 @@ class UserProfileForm(forms.ModelForm):
         widgets = {
             'dia_chi': forms.Textarea(attrs={'rows': 3}),
         }
+

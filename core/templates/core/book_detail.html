@@ -4,6 +4,8 @@
 {% block title %}{{ book.title }} - Thư viện Alovu{% endblock %}
 
 {% block content %}
+<link href="{% static 'css/style.css' %}?v=1.1" rel="stylesheet">
+
 <div class="container py-5 mt-5">
     <div class="row g-5">
         <div class="col-lg-4 wow fadeInLeft">
@@ -46,7 +48,7 @@
                     <div>
                         <h6 class="mb-1 fw-bold text-dark">Vị trí sách trong thư viện:</h6>
                         <p class="mb-0 text-muted">
-                            <strong>Tầng {{ book.floor }}</strong> - <strong>Kệ {{ book.shelf }}</strong> 
+                            <strong>Tầng {{ book.floor|default:"-" }}</strong> - <strong>Kệ {{ book.shelf|default:"-" }}</strong> 
                             {% if book.area %}(Khu vực: {{ book.area }}){% endif %}
                         </p>
                     </div>
@@ -54,17 +56,25 @@
             </div>
 
             <div class="mt-4 pt-2">
-                {% if book.id in borrowed_book_ids %}
+                {% if book.id in pending_book_ids %}
+                    <button class="btn btn-warning btn-lg px-5 rounded-pill fw-bold shadow-sm disabled w-100 w-md-auto text-dark" style="opacity: 0.85;">
+                        <i class="fas fa-clock me-2"></i> CHỜ XÁC NHẬN
+                    </button>
+                    <p class="text-muted small mt-2 italic">* Bạn đã yêu cầu trả cuốn sách này, vui lòng chờ Thủ thư xác nhận hoàn tất nhé!</p>
+                
+                {% elif book.id in borrowed_book_ids %}
                     <button class="btn btn-secondary btn-lg px-5 rounded-pill fw-bold shadow-sm disabled w-100 w-md-auto">
                         <i class="fas fa-book-reader me-2"></i> ĐANG MƯỢN
                     </button>
-                    <p class="text-muted small mt-2 italic">* Khanh đang mượn cuốn sách này, hãy trả trước khi mượn lại nhé!</p>
+                    <p class="text-muted small mt-2 italic">* Bạn đang mượn cuốn sách này, hãy trả trước khi mượn lại nhé!</p>
+                
                 {% elif book.quantity > 0 %}
                     <a href="{% url 'borrow_book' book.id %}" 
-                       class="btn btn-warning btn-lg px-5 rounded-pill fw-bold shadow transition-hover w-100 w-md-auto text-white"
+                       class="btn btn-primary btn-lg px-5 rounded-pill fw-bold shadow transition-hover w-100 w-md-auto text-white"
                        onclick="return confirm('Bạn chắc chắn muốn mượn cuốn sách [{{ book.title }}] này chứ?')">
                         <i class="fas fa-hand-holding-heart me-2"></i> Mượn sách ngay
                     </a>
+                
                 {% else %}
                     <button class="btn btn-danger btn-lg px-5 rounded-pill fw-bold shadow-sm disabled w-100 w-md-auto">
                         <i class="fas fa-times-circle me-2"></i> HẾT SÁCH
@@ -107,31 +117,38 @@
                 <h3 class="fw-bold mb-4">Độc giả nhận xét</h3>
                 
                 {% if user.is_authenticated %}
-                    <form action="{% url 'add_review' book.id %}" method="POST" class="bg-white p-4 rounded-4 shadow-sm mb-5 border border-primary border-opacity-25">
-                        {% csrf_token %}
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold small text-muted">Đánh giá sao:</label>
-                                <select name="rating" class="form-select border-light bg-light rounded-3" required>
-                                    <option value="5">⭐⭐⭐⭐⭐ (Xuất sắc)</option>
-                                    <option value="4">⭐⭐⭐⭐ (Rất tốt)</option>
-                                    <option value="3">⭐⭐⭐ (Trung bình)</option>
-                                    <option value="2">⭐⭐ (Kém)</option>
-                                    <option value="1">⭐ (Rất tệ)</option>
-                                </select>
-                            </div>
-                            <div class="col-12 mb-3">
-                                <label class="form-label fw-bold small text-muted">Cảm nghĩ của Khanh:</label>
-                                <textarea name="comment" class="form-control border-light bg-light rounded-3" rows="3" 
-                                          placeholder="Viết cảm nghĩ của bạn về cuốn sách này..." required></textarea>
-                            </div>
+                    {% if user_has_reviewed %}
+                        <div class="alert alert-success border-0 shadow-sm rounded-4 mb-5 d-flex align-items-center">
+                            <i class="fas fa-check-circle text-success fs-4 me-3"></i>
+                            <span class="text-dark fw-medium">Bạn đã để lại đánh giá cho cuốn sách này rồi. Cảm ơn đóng góp của bạn!</span>
                         </div>
-                        <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">Gửi nhận xét ngay</button>
-                    </form>
+                    {% else %}
+                        <form action="{% url 'add_review' book.id %}" method="POST" class="bg-white p-4 rounded-4 shadow-sm mb-5 border border-primary border-opacity-25">
+                            {% csrf_token %}
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label fw-bold small text-muted">Đánh giá sao:</label>
+                                    <select name="rating" class="form-select border-light bg-light rounded-3" required>
+                                        <option value="5">⭐⭐⭐⭐⭐ (Xuất sắc)</option>
+                                        <option value="4">⭐⭐⭐⭐ (Rất tốt)</option>
+                                        <option value="3">⭐⭐⭐ (Trung bình)</option>
+                                        <option value="2">⭐⭐ (Kém)</option>
+                                        <option value="1">⭐ (Rất tệ)</option>
+                                    </select>
+                                </div>
+                                <div class="col-12 mb-3">
+                                    <label class="form-label fw-bold small text-muted">Cảm nghĩ của Bạn:</label>
+                                    <textarea name="comment" class="form-control border-light bg-light rounded-3" rows="3" 
+                                              placeholder="Viết cảm nghĩ của bạn về cuốn sách này..." required></textarea>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow-sm">Gửi nhận xét ngay</button>
+                        </form>
+                    {% endif %}
                 {% else %}
                     <div class="alert alert-warning rounded-4 border-0 shadow-sm mb-5 d-flex align-items-center">
                         <i class="fas fa-lock me-3 fs-4"></i>
-                        <span>Vui lòng <a href="{% url 'login' %}" class="fw-bold text-dark">đăng nhập</a> để chia sẻ cảm nhận của Khanh.</span>
+                        <span>Vui lòng <a href="{% url 'login' %}" class="fw-bold text-dark">đăng nhập</a> để chia sẻ cảm nhận của Bạn.</span>
                     </div>
                 {% endif %}
 
@@ -147,7 +164,7 @@
                                     <h6 class="fw-bold mb-0 text-dark">
                                         {{ r.user.get_full_name|default:r.user.username }} 
                                         <span class="text-warning ms-2 small">
-                                            {% if r.rating == 5 %}⭐⭐⭐⭐⭐{% elif r.rating == 4 %}⭐⭐⭐⭐{% else %}⭐⭐⭐{% endif %}
+                                            {% if r.rating == 5 %}⭐⭐⭐⭐⭐{% elif r.rating == 4 %}⭐⭐⭐⭐{% elif r.rating == 3 %}⭐⭐⭐{% elif r.rating == 2 %}⭐⭐{% else %}⭐{% endif %}
                                         </span>
                                     </h6>
                                     <small class="text-muted italic">{{ r.created_at|date:"d/m/Y" }}</small>
@@ -158,7 +175,7 @@
                     {% empty %}
                         <div class="text-center py-4 bg-light rounded-4 border border-dashed">
                             <i class="fas fa-comment-dots fa-2x text-muted mb-2"></i>
-                            <p class="text-muted italic mb-0">Chưa có nhận xét nào. Khanh hãy là người đầu tiên nhé!</p>
+                            <p class="text-muted italic mb-0">Chưa có nhận xét nào. Bạn hãy là người đầu tiên nhé!</p>
                         </div>
                     {% endfor %}
                 </div>
@@ -167,21 +184,5 @@
     </div>
 </div>
 
-<style>
-    .transition-hover { transition: all 0.3s ease; }
-    .transition-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
-    .italic { font-style: italic; }
-    .product-card-mini { border: 1px solid #eee; }
-    
-    /* Animation cho marker vị trí */
-    .icon-box i { animation: pulse-marker 2s infinite; }
-    @keyframes pulse-marker {
-        0% { transform: scale(1); }
-        50% { transform: scale(1.15); color: #ffc107; }
-        100% { transform: scale(1); }
-    }
-
-    .breadcrumb-item + .breadcrumb-item::before { content: "›"; color: #adb5bd; font-size: 1.2rem; line-height: 1; }
-    .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-</style>
+<script src="{% static 'js/main.js' %}"></script>
 {% endblock %}
