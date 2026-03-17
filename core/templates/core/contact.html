@@ -1,0 +1,114 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Liên hệ - Thư viện Alovu{% endblock %}
+{% block nav_contact %}active fw-bold{% endblock %}
+
+{% block content %}
+<link href="{% static 'css/style.css' %}" rel="stylesheet">
+
+<div class="container py-5 mt-4">
+    <div class="text-center mb-5">
+        <h1 class="display-5 fw-bold text-primary mb-3">Liên Hệ Với thư viện Alovu</h1>
+        <div class="mx-auto bg-warning mb-4" style="width: 80px; height: 4px; border-radius: 2px;"></div>
+        <p class="text-muted fs-5">Chúng tôi luôn sẵn sàng lắng nghe và hỗ trợ bạn mọi lúc, mọi nơi.</p>
+    </div>
+
+    <div class="row g-4 align-items-stretch">
+        <div class="col-lg-5 d-flex flex-column">
+            <div class="card border-0 shadow-sm rounded-4 flex-grow-1 overflow-hidden">
+                <div class="card-body p-5 text-white position-relative" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+                    <i class="fas fa-quote-right position-absolute opacity-10" style="font-size: 8rem; right: -20px; bottom: -20px;"></i>
+                    
+                    <h4 class="fw-bold mb-4 text-warning">Thông Tin Liên Hệ</h4>
+                    
+                    <div class="d-flex align-items-start mb-4">
+                        <div class="bg-warning bg-opacity-25 text-warning p-3 rounded-circle me-3">
+                            <i class="fas fa-map-marker-alt fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Địa chỉ</h6>
+                            <p class="mb-0 text-light small opacity-75">Trường Đại học Kiến trúc Đà Nẵng<br>566 Núi Thành, Hải Châu, Đà Nẵng</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-start mb-4">
+                        <div class="bg-warning bg-opacity-25 text-warning p-3 rounded-circle me-3">
+                            <i class="fas fa-phone-alt fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Điện thoại</h6>
+                            <p class="mb-0 text-light small opacity-75">0236 3866 066</p>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-start">
+                        <div class="bg-warning bg-opacity-25 text-warning p-3 rounded-circle me-3">
+                            <i class="fas fa-envelope fs-5"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-1">Email hỗ trợ</h6>
+                            <p class="mb-0 text-light small opacity-75">tuananhih271@gmail.com</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-0 m-0" style="height: 320px;">
+                    <iframe src="https://maps.google.com/maps?q=Đại+học+Kiến+trúc+Đà+Nẵng,+566+Núi+Thành,+Hải+Châu,+Đà+Nẵng&t=&z=16&ie=UTF8&iwloc=&output=embed" 
+                            width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7 d-flex flex-column">
+            <div class="card border-0 shadow-sm rounded-4 flex-grow-1 p-4 p-md-5">
+                <h4 class="fw-bold mb-4 text-dark"><i class="fas fa-paper-plane text-primary me-2"></i>Gửi lời nhắn cho chúng tôi</h4>
+                
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} rounded-3 small fw-medium">
+                            <i class="fas fa-{% if message.tags == 'error' %}exclamation-triangle{% else %}check-circle{% endif %} me-2"></i>{{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <form method="POST" action="">
+                    {% csrf_token %}
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase">Họ và tên</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 rounded-start-3"><i class="fas fa-user text-muted"></i></span>
+                                <input type="text" name="name" class="form-control bg-light border-start-0 rounded-end-3 py-2" placeholder="VD: Nguyễn Văn A" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold text-dark small text-uppercase">Email của bạn</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 rounded-start-3"><i class="fas fa-envelope text-muted"></i></span>
+                                <input type="email" name="email" class="form-control bg-light border-start-0 rounded-end-3 py-2" placeholder="name@example.com" required>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-dark small text-uppercase">Chủ đề cần hỗ trợ</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light border-end-0 rounded-start-3"><i class="fas fa-tag text-muted"></i></span>
+                                <input type="text" name="subject" class="form-control bg-light border-start-0 rounded-end-3 py-2" placeholder="VD: Lỗi mượn sách, Góp ý..." required>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold text-dark small text-uppercase">Nội dung chi tiết</label>
+                            <textarea name="message" class="form-control bg-light rounded-3 p-3" rows="6" placeholder="Viết chi tiết lời nhắn của bạn ở đây..." required></textarea>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-sm fs-6 transition-hover">
+                                GỬI YÊU CẦU ĐẾN THƯ VIỆN <i class="fas fa-arrow-right ms-2"></i>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

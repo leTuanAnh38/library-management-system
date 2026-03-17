@@ -39,4 +39,9 @@ urlpatterns = [
     # core/urls.py
     path('staff/users/', views.staff_user_management, name='staff_user_management'),
     path('staff/users/<int:user_id>/', views.staff_user_detail, name='staff_user_detail'),
+    path('contact/', views.contact_view, name='contact'),
+    path('guide/', views.guide_view, name='guide'),
+    path('api/admin-chart/', views.admin_chart_data, name='admin_chart_data'),
+    path('premium-books/', views.premium_book_list, name='premium_books'),
+    path('staff/borrow/approve/<int:transaction_id>/', views.staff_approve_borrow, name='staff_approve_borrow'),
 ]

@@ -1,8 +1,7 @@
 {% extends 'core/base.html' %}
 {% load static %}
 
-{% block title %}Kho sách - Thư viện Alovu{% endblock %}
-{% block nav_book %}active fw-bold{% endblock %}
+{% block title %}Kho sách VIP - Thư viện Alovu{% endblock %}
 
 {% block content %}
 <link href="{% static 'css/style.css' %}" rel="stylesheet">
@@ -18,49 +17,23 @@
 
         <div class="col-lg-9">
             <div class="bg-white p-4 rounded-3 shadow-sm border mb-4">
-                <div class="text-center mb-5">
-                    <h1 class="display-5 fw-bold text-primary">Toàn Bộ Kho Sách</h1>
-                    <div class="mx-auto bg-primary" style="width: 100px; height: 3px;"></div>
-                </div>
                 
-                <form method="GET" action="{% url 'book_list' %}" class="row g-3 mb-4">
-                    {% if query %}
-                        <input type="hidden" name="q" value="{{ query }}">
-                    {% endif %}
-
-                    <div class="col-md-6">
-                        <label class="small text-muted mb-1 fw-bold">Sắp xếp theo:</label>
-                        <select name="sort" class="form-select border-light shadow-none bg-light text-muted" onchange="this.form.submit()">
-                            <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Mới nhất</option>
-                            <option value="title" {% if current_sort == 'title' %}selected{% endif %}>Tiêu đề (A-Z)</option>
-                            <option value="oldest" {% if current_sort == 'oldest' %}selected{% endif %}>Cũ nhất</option>
-                        </select>
-                    </div>
-
-                    <div class="col-md-6">
-                        <label class="small text-muted mb-1 fw-bold">Lọc theo danh mục:</label>
-                        <select name="category" class="form-select border-light shadow-none bg-light text-muted" onchange="this.form.submit()">
-                            <option value="">Tất cả danh mục</option>
-                            {% for cat in categories %}
-                                <option value="{{ cat.id }}" {% if current_category == cat.id|stringformat:"s" %}selected{% endif %}>
-                                    {{ cat.name }}
-                                </option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                </form>
+                <div class="text-center mb-5">
+                    <h1 class="display-5 fw-bold text-warning"><i class="fas fa-crown me-2"></i> Kho Sách VIP</h1>
+                    <div class="mx-auto bg-warning" style="width: 100px; height: 3px;"></div>
+                    <p class="text-muted mt-3">Bộ sưu tập các tài liệu chuyên ngành cao cấp. Yêu cầu thanh toán phí mượn để sử dụng.</p>
+                </div>
 
                 <div class="row g-4">
                     {% for book in books %}
                     <div class="col-md-6 col-lg-4 d-flex align-items-stretch">
+                        
                         <div class="product-item bg-white border rounded shadow-sm w-100 d-flex flex-column p-2 transition-hover position-relative">
                             
-                            {% if book.price and book.price > 0 %}
-                                <div class="position-absolute bg-danger text-white px-3 py-1 fw-bold" 
-                                     style="top: 15px; right: -5px; border-radius: 20px 0 0 20px; z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-                                    {{ book.price }} VNĐ
-                                </div>
-                            {% endif %}
+                            <div class="position-absolute bg-danger text-white px-3 py-1 fw-bold" 
+                                 style="top: 15px; right: -5px; border-radius: 20px 0 0 20px; z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                                {{ book.price }} VNĐ
+                            </div>
 
                             <div class="text-center p-3 bg-light rounded" style="height: 200px; overflow: hidden;">
                                 <a href="{% url 'book_detail' book.id %}">
@@ -71,6 +44,7 @@
                             <div class="p-3 text-center d-flex flex-column flex-grow-1">
                                 <h6 class="fw-bold text-dark text-truncate-2 mb-2">{{ book.title }}</h6>
                                 <p class="small text-muted mb-1">Tác giả: <b>{{ book.author|default:"Chưa rõ" }}</b></p>
+                                <p class="small text-muted mb-2"><i class="fas fa-tags me-1"></i> Thể loại: {{ book.category.name }}</p>
                                 
                                 <div class="mb-3 mt-2">
                                     {% if book.quantity > 0 %}
@@ -92,17 +66,9 @@
                                         </button>
                                         
                                     {% elif book.quantity > 0 %}
-                                        {% if book.price and book.price > 0 %}
-                                            <button type="button" class="btn btn-warning w-100 fw-bold rounded-pill text-dark shadow-sm py-2" data-bs-toggle="modal" data-bs-target="#paymentModal{{ book.id }}">
-                                                <i class="fas fa-shopping-cart me-1"></i> MƯỢN VIP
-                                            </button>
-                                        {% else %}
-                                            <a href="{% url 'borrow_book' book.id %}" 
-                                               class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm"
-                                               onclick="return confirm('Bạn ơi, bạn có chắc chắn muốn mượn sách [{{ book.title }}] không?')">
-                                                MƯỢN SÁCH
-                                            </a>
-                                        {% endif %}
+                                        <button type="button" class="btn btn-warning w-100 fw-bold rounded-pill text-dark shadow-sm py-2" data-bs-toggle="modal" data-bs-target="#paymentModal{{ book.id }}">
+                                            <i class="fas fa-shopping-cart me-1"></i> MƯỢN VIP
+                                        </button>
                                         
                                     {% else %}
                                         <button class="btn btn-danger rounded-pill fw-bold w-100 py-2 shadow-sm disabled">
@@ -124,8 +90,7 @@
                             </div>
                         </div>
 
-                        {% if book.price and book.price > 0 %}
-                        <div class="modal fade payment-modal" id="paymentModal{{ book.id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal fade" id="paymentModal{{ book.id }}" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered">
                                 <div class="modal-content" style="border-radius: 20px; border: none;">
                                     <div class="modal-header bg-warning border-0" style="border-radius: 20px 20px 0 0;">
@@ -140,41 +105,39 @@
                                             
                                             <p class="text-start fw-bold mb-2">Chọn phương thức thanh toán:</p>
                                             
-                                            <label class="w-100 text-start border p-3 rounded-3 mb-3 cursor-pointer payment-option selected-payment shadow-sm transition">
+                                            <label class="w-100 text-start border p-3 rounded-3 mb-3 cursor-pointer payment-option shadow-sm transition">
                                                 <div class="form-check d-flex align-items-center m-0">
-                                                    <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="CASH" data-book-id="{{ book.id }}" required checked style="transform: scale(1.3);">
+                                                    <input class="form-check-input me-3" type="radio" name="payment_method" value="CASH" required checked style="transform: scale(1.3);" onchange="toggleQR('{{ book.id }}', 'CASH')">
                                                     <div>
                                                         <div class="fw-bold text-dark"><i class="fas fa-money-bill-wave text-success me-2"></i> Thanh toán tại quầy</div>
-                                                        <small class="text-muted">Đóng tiền mặt trực tiếp cho Thủ thư khi đến nhận sách.</small>
+                                                        <small class="text-muted">Đóng tiền mặt trực tiếp cho Thủ thư.</small>
                                                     </div>
                                                 </div>
                                             </label>
 
                                             <label class="w-100 text-start border p-3 rounded-3 cursor-pointer payment-option shadow-sm transition">
                                                 <div class="form-check d-flex align-items-center m-0">
-                                                    <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="BANK" data-book-id="{{ book.id }}" required style="transform: scale(1.3);">
+                                                    <input class="form-check-input me-3" type="radio" name="payment_method" value="BANK" required style="transform: scale(1.3);" onchange="toggleQR('{{ book.id }}', 'BANK')">
                                                     <div>
                                                         <div class="fw-bold text-dark"><i class="fas fa-qrcode text-primary me-2"></i> Chuyển khoản (Mã QR)</div>
-                                                        <small class="text-muted">Chuyển khoản trước, Thủ thư sẽ kiểm tra và duyệt trên hệ thống.</small>
+                                                        <small class="text-muted">Chuyển khoản trước, Thủ thư sẽ kiểm tra.</small>
                                                     </div>
                                                 </div>
                                             </label>
                                             
-                                            <div id="qrCodeSection{{ book.id }}" class="qr-box mt-3" style="display: none;">
+                                            <div id="qrCodeSection{{ book.id }}" style="display: none; margin-top: 15px;">
                                                 <div class="p-3 bg-light border border-warning rounded-3 text-center shadow-sm">
                                                     <p class="fw-bold text-dark mb-2">Quét mã MoMo/Ngân hàng</p>
-                                                    
                                                     <img src="{% static 'img/qr.png' %}" alt="Mã QR Thanh Toán" class="img-fluid rounded border mb-2" style="max-width: 160px;">
-                                                    
                                                     <div class="small text-dark mt-2 bg-white p-2 rounded border border-dashed">
                                                         Nội dung chuyển khoản:<br>
                                                         <strong class="text-danger fs-6">Sách {{ book.id }} - {{ request.user.msv }}</strong>
                                                     </div>
                                                 </div>
                                             </div>
-                                            
+
                                             <div class="alert alert-info mt-4 small text-start mb-0" style="border-radius: 10px;">
-                                                <i class="fas fa-info-circle me-1"></i> Sau khi đăng ký, trạng thái đơn sẽ là <b>"Chờ xác nhận"</b> cho đến khi Thủ thư nhận được tiền phí.
+                                                <i class="fas fa-info-circle me-1"></i> Sau khi đăng ký, trạng thái đơn sẽ là <b>"Chờ xác nhận"</b> cho đến khi Thủ thư duyệt tiền.
                                             </div>
                                         </div>
                                         <div class="modal-footer border-0 pb-4 pt-0 justify-content-center">
@@ -185,81 +148,32 @@
                                 </div>
                             </div>
                         </div>
-                        {% endif %}
 
                     </div>
                     {% empty %}
                         <div class="col-12 text-center py-5">
-                            <i class="fas fa-book-open fa-3x text-muted opacity-25 mb-3"></i>
-                            <p class="text-muted">Không tìm thấy cuốn sách nào phù hợp với yêu cầu của bạn.</p>
+                            <i class="fas fa-box-open fa-3x text-muted opacity-25 mb-3"></i>
+                            <p class="text-muted">Hiện tại chưa có tài liệu VIP nào được đăng tải.</p>
                         </div>
                     {% endfor %}
                 </div>
 
-                {% if books.has_other_pages %}
-                <div class="mt-5 text-center">
-                    <nav aria-label="Page navigation">
-                        <ul class="pagination justify-content-center">
-                            {% if books.has_previous %}
-                                <li class="page-item">
-                                    <a class="page-link border-0 bg-light rounded-start px-3" 
-                                       href="?page={{ books.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">
-                                        Trước
-                                    </a>
-                                </li>
-                            {% endif %}
-
-                            {% for i in books.paginator.page_range %}
-                                <li class="page-item {% if books.number == i %}active{% endif %}">
-                                    <a class="page-link border-0 {% if books.number == i %}bg-primary text-white{% else %}bg-light{% endif %} px-3" 
-                                       href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">
-                                        {{ i }}
-                                    </a>
-                                </li>
-                            {% endfor %}
-
-                            {% if books.has_next %}
-                                <li class="page-item">
-                                    <a class="page-link border-0 bg-light rounded-end px-3" 
-                                       href="?page={{ books.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">
-                                        Sau
-                                    </a>
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
 </div>
 
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-    $(document).ready(function() {
-        $('.radio-payment-toggle').change(function() {
-            var bookId = $(this).data('book-id');
-            var selectedValue = $(this).val();
-            var modalBody = $(this).closest('.modal-body');
-            
-            // Xóa class highlight màu vàng
-            modalBody.find('.payment-option').removeClass('selected-payment');
-            $(this).closest('.payment-option').addClass('selected-payment');
-            
-            var qrBox = $('#qrCodeSection' + bookId);
-            
-            if (selectedValue === 'BANK') {
-                qrBox.slideDown(300);
+    // Hàm ẩn hiện QR giống hệt các trang kia
+    function toggleQR(bookId, paymentMethod) {
+        var qrSection = document.getElementById('qrCodeSection' + bookId);
+        if (qrSection) {
+            if (paymentMethod === 'BANK') {
+                qrSection.style.display = 'block';
             } else {
-                qrBox.slideUp(300);
+                qrSection.style.display = 'none';
             }
-        });
-
-        // Tự động gán lại Tiền Mặt khi tắt Modal
-        $('.payment-modal').on('hidden.bs.modal', function () {
-            $(this).find('input[value="CASH"]').prop('checked', true).trigger('change');
-        });
-    });
+        }
+    }
 </script>
 {% endblock %}

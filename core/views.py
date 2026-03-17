@@ -14,6 +14,13 @@ from .models import Notification
 from .services import check_and_create_due_reminders
 import re
 from django.db.models import Sum
+from django.core.mail import send_mail
+from django.conf import settings
+from django.contrib import messages
+from django.db.models import Count, Avg
+from django.http import JsonResponse
+from django.contrib.admin.views.decorators import staff_member_required
+from .models import BorrowTransaction # Đảm bảo đã import model này
 
 
 def user_logout(request):
@@ -96,9 +103,22 @@ def home(request):
     books = Book.objects.all().order_by('-created_at')[:6]
     categories = Category.objects.all()
 
+    popular_books = Book.objects.annotate(
+        borrow_count=Count('borrow_records')
+    ).filter(borrow_count__gt=0).order_by('-borrow_count')[:3]
+
+    # =========================================================
+    # [MỚI] 2. LẤY SÁCH ĐƯỢC ĐÁNH GIÁ TỪ 4 SAO TRỞ LÊN (Top 3)
+    # Tính trung bình cộng số sao (rating). Giả sử model đánh giá của bạn tên là Review.
+    # Nếu code báo lỗi 'review', hãy đổi thành 'reviews__rating' (tuỳ thuộc vào related_name bạn đặt).
+    # =========================================================
+    top_rated_books = Book.objects.annotate(
+        avg_rating=Avg('reviews__rating') 
+    ).filter(avg_rating__gte=4).order_by('-avg_rating')[:3]
+
     wishlist_book_ids = []
     borrowed_book_ids = []
-    pending_book_ids = [] # [MỚI] Khởi tạo danh sách sách đang chờ duyệt
+    pending_book_ids = [] # Khởi tạo danh sách sách đang chờ duyệt
     
     if request.user.is_authenticated:
         # Lấy danh sách ID sách đã yêu thích
@@ -107,7 +127,7 @@ def home(request):
         # Lấy danh sách ID sách đang mượn chưa trả
         borrowed_book_ids = BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True)
         
-        # [MỚI] Lấy danh sách ID sách mà sinh viên đã bấm trả, đang chờ Thủ thư xác nhận
+        # Lấy danh sách ID sách mà sinh viên đã bấm trả, đang chờ Thủ thư xác nhận
         pending_book_ids = BorrowTransaction.objects.filter(user=request.user, status='PENDING').values_list('book_id', flat=True)
 
     return render(request, 'core/index.html', {
@@ -115,9 +135,11 @@ def home(request):
         'recommended_books': recommended_books, 
         'books': books,
         'categories': categories,
+        'popular_books': popular_books,      # [MỚI] Truyền sách mượn nhiều ra HTML
+        'top_rated_books': top_rated_books,  # [MỚI] Truyền sách đánh giá cao ra HTML
         'wishlist_book_ids': list(wishlist_book_ids),
         'borrowed_book_ids': list(borrowed_book_ids),
-        'pending_book_ids': list(pending_book_ids) # [MỚI] Truyền ra giao diện để xử lý nút bấm
+        'pending_book_ids': list(pending_book_ids) 
     })
 # HÀM BOOK_LIST CHUẨN (Đã gộp cả tìm kiếm, lọc và phân trang)
 def book_list(request):
@@ -181,30 +203,120 @@ def book_list(request):
         'pending_book_ids': list(pending_book_ids) # [MỚI] Gửi biến này ra template
     }
     return render(request, 'core/book_list.html', context)
+def guide_view(request):
+    """Trang hướng dẫn sử dụng thư viện cho sinh viên"""
+    return render(request, 'core/guide.html')
 
+def contact_view(request):
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        email = request.POST.get('email')
+        subject = request.POST.get('subject')
+        message = request.POST.get('message')
+
+        # Đóng gói nội dung email để gửi cho bạn
+        full_message = f"HỆ THỐNG THƯ VIỆN ALOVU - CÓ LIÊN HỆ MỚI\n\n" \
+                       f"Từ: {name}\n" \
+                       f"Email: {email}\n\n" \
+                       f"Nội dung lời nhắn:\n{message}"
+
+        try:
+            # Gửi email thực tế
+            send_mail(
+                subject=f"[Alovu Contact] {subject}",
+                message=full_message,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=['tuananhih271@gmail.com'], # <--- Email của Khanh nhận tin
+                fail_silently=False,
+            )
+            messages.success(request, f'Cảm ơn {name}! Lời nhắn của bạn đã được gửi thành công đến ban quản trị.')
+        except Exception as e:
+            messages.error(request, 'Có lỗi xảy ra khi gửi email. Vui lòng thử lại sau.')
+
+        return redirect('contact')
+        
+    return render(request, 'core/contact.html')
+
+# ==========================================
+# [MỚI] 1. HÀM HIỂN THỊ DANH SÁCH SÁCH VIP CÓ PHÍ
+# ==========================================
+def premium_book_list(request):
+    # Lấy những sách có thuộc tính price (giá tiền) lớn hơn 0
+    books = Book.objects.filter(price__gt=0).order_by('-created_at')
+    
+    # Khởi tạo các danh sách ID trống
+    borrowed_book_ids = []
+    pending_book_ids = []
+    wishlist_book_ids = []
+    
+    if request.user.is_authenticated:
+        # Lấy danh sách ID sách đang mượn
+        borrowed_book_ids = BorrowTransaction.objects.filter(
+            user=request.user, status='BORROWED'
+        ).values_list('book_id', flat=True)
+        
+        # Lấy danh sách ID sách đang chờ duyệt
+        pending_book_ids = BorrowTransaction.objects.filter(
+            user=request.user, status='PENDING'
+        ).values_list('book_id', flat=True)
+        
+        # Lấy danh sách ID sách đã thêm vào yêu thích
+        from .models import Wishlist  # Đảm bảo đã import model này
+        wishlist_book_ids = Wishlist.objects.filter(
+            user=request.user
+        ).values_list('book_id', flat=True)
+        
+    return render(request, 'core/premium_books.html', {
+        'books': books,
+        'borrowed_book_ids': list(borrowed_book_ids),
+        'pending_book_ids': list(pending_book_ids),
+        'wishlist_book_ids': list(wishlist_book_ids) # Truyền biến này ra giao diện
+    })
+# ==========================================
+# [ĐÃ NÂNG CẤP] 2. HÀM XỬ LÝ MƯỢN SÁCH (HỖ TRỢ THANH TOÁN)
+# ==========================================
 @login_required(login_url='login')
 def borrow_book(request, book_id):
     user = request.user
     
-    # 1. KIỂM TRA PHÍ PHẠT: Phải trả hết nợ (UNPAID) mới được mượn tiếp
-    # Sử dụng thuộc tính total_fine từ models.py
+    # 1. KIỂM TRA PHÍ PHẠT
     if user.total_fine > 0:
         messages.error(request, f"Bạn hiện đang có khoản phí phạt chưa thanh toán ({user.total_fine} VNĐ). Vui lòng hoàn tất nghĩa vụ để tiếp tục mượn sách!")
         return redirect('profile')
 
-    # 2. KIỂM TRA HỒ SƠ: Nếu thiếu MSSV hoặc Lớp thì không cho mượn
+    # 2. KIỂM TRA HỒ SƠ
     if not user.msv or not user.lop:
         messages.warning(request, "Vui lòng cập nhật MSSV và Lớp trong hồ sơ cá nhân trước khi thực hiện mượn sách!")
         return redirect('profile')
 
-    # 3. Logic mượn sách
+    # 3. Lấy thông tin sách
     book = get_object_or_404(Book, id=book_id)
     
     if book.quantity <= 0:
         messages.error(request, f"Sách '{book.title}' đã hết trong kho!")
-        return redirect('book_list')
+        return redirect(request.META.get('HTTP_REFERER', 'book_list'))
+
+    # ==========================================
+    # [MỚI] XỬ LÝ SÁCH CÓ PHÍ VÀ PHƯƠNG THỨC THANH TOÁN
+    # ==========================================
+    # Kiểm tra xem sách này có phí không (price > 0)
+    is_premium = book.price and book.price > 0
+
+    if request.method == 'POST':
+        # Lấy phương thức thanh toán từ Modal HTML gửi lên (Mặc định là FREE nếu k có)
+        payment_method = request.POST.get('payment_method', 'FREE')
+    else:
+        # Nếu mượn sách VIP mà không thông qua nút bấm (gọi GET trực tiếp) -> Chặn lại
+        if is_premium:
+            messages.warning(request, "Vui lòng chọn phương thức thanh toán tại trang Danh mục để mượn sách VIP!")
+            return redirect('premium_books')
+        payment_method = 'FREE'
 
     han_tra = timezone.now().date() + timedelta(days=14)
+    
+    # Phân loại trạng thái: Sách có phí -> PENDING (Chờ đóng tiền). Sách Free -> BORROWED (Mượn luôn)
+    status = 'PENDING' if is_premium else 'BORROWED'
+    is_paid = False if is_premium else True
 
     try:
         with db_transaction.atomic():
@@ -212,13 +324,23 @@ def borrow_book(request, book_id):
                 user=user,
                 book=book,
                 due_date=han_tra, 
-                status='BORROWED'
+                status=status,
+                payment_method=payment_method, # Lưu cách sinh viên chọn trả tiền
+                is_paid=is_paid                # Lưu trạng thái đã nộp tiền chưa
             )
+
+            # Cảnh báo/Thông báo tương ứng
+            if is_premium:
+                # Dùng dict để dịch chữ CASH thành 'Thanh toán tại quầy' cho đẹp
+                payment_display = dict(BorrowTransaction.PAYMENT_CHOICES).get(payment_method, payment_method)
+                msg = f"Đã ghi nhận yêu cầu mượn '{book.title}'. Vui lòng thanh toán {book.price:,.0f} VNĐ qua hình thức [{payment_display}] để Thủ thư duyệt!"
+            else:
+                msg = f"Mượn thành công! Hạn trả cuốn '{book.title}' là ngày {han_tra.strftime('%d/%m/%Y')}."
 
             # Tạo thông báo hệ thống
             Notification.objects.create(
                 user=user,
-                message=f"Mượn thành công! Hạn trả cuốn '{book.title}' là ngày {han_tra.strftime('%d/%m/%Y')}.",
+                message=msg,
                 type='SYSTEM',
                 status='UNREAD'
             )
@@ -226,11 +348,12 @@ def borrow_book(request, book_id):
             book.quantity -= 1
             book.save()
 
-        messages.success(request, f"Mượn thành công! Hạn trả cuốn '{book.title}' là ngày {han_tra.strftime('%d/%m/%Y')}.")
+        messages.success(request, msg)
     except Exception as e:
         messages.error(request, f"Đã có lỗi xảy ra trong quá trình mượn sách: {str(e)}")
     
-    return redirect('book_list')
+    # [MỚI] Thông minh hơn: Đang đứng ở trang nào bấm mượn thì tự động F5 lại trang đó
+    return redirect(request.META.get('HTTP_REFERER', 'book_list'))
 
 @login_required(login_url='login')
 def borrow_history(request):
@@ -672,7 +795,38 @@ def staff_borrow_management(request):
         'transactions': transactions,
         'query': query  # Gửi lại từ khóa để hiển thị trong ô nhập liệu
     })
-
+@user_passes_test(is_staff, login_url='login')
+def staff_approve_borrow(request, transaction_id):
+    # Lấy giao dịch đang ở trạng thái PENDING và chưa thanh toán (is_paid=False)
+    borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, status='PENDING', is_paid=False)
+    
+    try:
+        with db_transaction.atomic():
+            # 1. Chuyển trạng thái sang ĐANG MƯỢN
+            borrow_record.status = 'BORROWED'
+            
+            # 2. Cập nhật đã thu tiền
+            borrow_record.is_paid = True
+            
+            # 3. Tính lại hạn trả (14 ngày kể từ lúc thủ thư duyệt)
+            borrow_record.borrow_date = timezone.now().date()
+            borrow_record.due_date = timezone.now().date() + timedelta(days=14)
+            borrow_record.save()
+            
+            # 4. Gửi thông báo cho sinh viên đến lấy sách
+            from .models import Notification
+            Notification.objects.create(
+                user=borrow_record.user,
+                message=f"Thủ thư đã duyệt tiền và giao cuốn VIP '{borrow_record.book.title}' cho bạn. Hạn trả là {borrow_record.due_date.strftime('%d/%m/%Y')}.",
+                type='SYSTEM',
+                status='UNREAD'
+            )
+            
+        messages.success(request, f"Đã xác nhận thu tiền và giao sách VIP cho sinh viên {borrow_record.user.msv}.")
+    except Exception as e:
+        messages.error(request, f"Lỗi hệ thống: {str(e)}")
+        
+    return redirect('staff_borrow_management')
 # 2. DÀNH CHO THỦ THƯ: Chốt giao dịch, tính tiền phạt và hoàn sách về kho
 @user_passes_test(is_staff, login_url='login')
 def staff_confirm_return(request, transaction_id):
@@ -800,3 +954,22 @@ def staff_user_detail(request, user_id):
         'borrow_history': borrow_history,
         'penalties': penalties
     })
+
+@login_required # Chỉ cần đăng nhập là gọi được, nhưng ta sẽ check quyền bên trong
+def admin_chart_data(request):
+    # Kiểm tra: Phải là Admin hệ thống HOẶC người có role ADMIN/STAFF
+    is_admin = request.user.is_superuser or (hasattr(request.user, 'role') and request.user.role == 'ADMIN')
+    is_staff_user = hasattr(request.user, 'role') and request.user.role == 'STAFF'
+
+    if is_admin or is_staff_user:
+        borrowed = BorrowTransaction.objects.filter(status='BORROWED').count()
+        pending = BorrowTransaction.objects.filter(status='PENDING').count()
+        returned = BorrowTransaction.objects.filter(status='RETURNED').count()
+        overdue = BorrowTransaction.objects.filter(status='OVERDUE').count()
+
+        return JsonResponse({
+            'labels': ['Đang mượn', 'Chờ xác nhận', 'Đã trả', 'Quá hạn'],
+            'data': [borrowed, pending, returned, overdue]
+        })
+    
+    return JsonResponse({'error': 'Bạn không có quyền xem dữ liệu này!'}, status=403)

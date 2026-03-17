@@ -51,7 +51,7 @@
                                 <a href="{% url 'logout' %}" class="dropdown-item text-danger fw-bold py-2">Đăng xuất</a>
                             {% else %}
                                 <a href="{% url 'login' %}" class="dropdown-item py-2">Đăng nhập</a>
-                                <a href="{% url 'register' %}" class="dropdown-item text-primary fw-bold py-2">Đăng ký</a>
+                                <a href="{% url 'register' %}" class="dropdown-item py-2">Đăng ký</a>
                             {% endif %}
                         </div>
                     </div>
@@ -84,8 +84,9 @@
                         <div class="navbar-nav ms-auto py-0">
                             <a href="{% url 'home' %}" class="nav-item nav-link text-white py-4 px-4 {% block nav_home %}{% endblock %}">Trang chủ</a>
                             <a href="{% url 'book_list' %}" class="nav-item nav-link text-white py-4 px-4 {% block nav_book %}{% endblock %}">Kho sách</a>
-                            <a href="#" class="nav-item nav-link text-white py-4 px-4">Hướng dẫn</a>
-                            <a href="#" class="nav-item nav-link text-white py-4 px-4">Liên hệ</a>
+                            <a href="{% url 'premium_books' %}" class="nav-item nav-link text-white py-4 px-4 "><i class="fas fa-crown"></i> SÁCH VIP</a>
+                            <a href="{% url 'guide' %}" class="nav-item nav-link text-white py-4 px-4">Hướng dẫn</a>
+                            <a href="{% url 'contact' %}" class="nav-item nav-link text-white py-4 px-4">Liên hệ</a>
                         </div>
                     </nav>
                 </div>
@@ -132,8 +133,8 @@
                     <div class="d-flex flex-column footer-link-list justify-content-start">
                         <a href="{% url 'home' %}"><i class="fas fa-chevron-right me-2"></i>Trang chủ</a>
                         <a href="{% url 'book_list' %}"><i class="fas fa-chevron-right me-2"></i>Kho sách</a>
-                        <a href="#"><i class="fas fa-chevron-right me-2"></i>Hướng dẫn mượn sách</a>
-                        <a href="#"><i class="fas fa-chevron-right me-2"></i>Liên hệ</a>
+                        <a href="{% url 'guide' %}"><i class="fas fa-chevron-right me-2"></i>Hướng dẫn mượn sách</a>
+                        <a href="{% url 'contact' %}"><i class="fas fa-chevron-right me-2"></i>Liên hệ</a>
                         <a href="{% url 'borrow_history' %}"><i class="fas fa-chevron-right me-2"></i>Lịch sử mượn</a>
                     </div>
                 </div>

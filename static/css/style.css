@@ -1171,13 +1171,28 @@
     .z-index-1 { z-index: 1; }
     .main-book-img { width: 180px; height: 260px; object-fit: cover; border: 5px solid white; transition: transform 0.3s ease; }
     .main-book-img:hover { transform: scale(1.05); }
-    .header-carousel .owl-nav { position: absolute; top: 50%; width: 100%; transform: translateY(-50%); pointer-events: none; }
+    
+    /* CHỈNH LẠI KHU VỰC NÚT BẤM SLIDER (BỎ MÀU CAM, CHUYỂN THÀNH KÍNH MỜ) */
+    .header-carousel .owl-nav { position: absolute; top: 50%; width: 100%; transform: translateY(-50%); pointer-events: none; margin-top: 0 !important; }
     .header-carousel .owl-prev, .header-carousel .owl-next { 
-        position: absolute; pointer-events: auto; width: 45px; height: 45px; line-height: 45px; 
-        background: #ff9800 !important; color: white !important; border-radius: 50%; font-size: 20px; transition: 0.3s;
+        position: absolute; pointer-events: auto; width: 45px; height: 45px; 
+        display: flex !important; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.6) !important; /* Nền trắng kính mờ */
+        color: #333 !important; /* Mũi tên màu xám đậm */
+        border-radius: 50% !important; font-size: 20px !important; transition: all 0.3s ease;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.15);
     }
-    .header-carousel .owl-prev { left: 10px; }
-    .header-carousel .owl-next { right: 10px; }
+    .header-carousel .owl-prev:hover, .header-carousel .owl-next:hover { 
+        background: rgba(255, 255, 255, 0.95) !important; color: #000 !important; transform: scale(1.1); 
+    }
+    .header-carousel .owl-prev { left: 20px; }
+    .header-carousel .owl-next { right: 20px; }
+
+    /* ÉP DẤU CHẤM (DOTS) VÀO TRONG MÉP DƯỚI ẢNH */
+    .header-carousel .owl-dots { position: absolute; bottom: 15px; width: 100%; text-align: center; }
+    .header-carousel .owl-dots .owl-dot span { background: rgba(255, 255, 255, 0.5) !important; }
+    .header-carousel .owl-dots .owl-dot.active span { background: #ffffff !important; box-shadow: 0 0 5px rgba(0,0,0,0.3); }
+
     .fa-heart.fas { color: #ff4d6d !important; }
     .transition-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
     .text-truncate-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
@@ -1202,3 +1217,80 @@
         /* Thêm một chút margin để lúc bình thường nó không dính sát lên trên */
         margin-top: 10px;
     }
+
+    /* ==========================================
+   GIAO DIỆN ĐĂNG NHẬP / ĐĂNG KÝ (AUTH PAGES)
+   ========================================== */
+body.auth-page { 
+    background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)), 
+                url('../img/nenDHKT.jpg') center/cover no-repeat fixed;
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    padding: 40px 0;
+}
+
+.auth-container { 
+    width: 100%;
+    margin: auto; 
+    padding: 20px;
+}
+.auth-container.login-box { max-width: 450px; }
+.auth-container.register-box { max-width: 500px; }
+
+.auth-card { 
+    background: #ffffff;
+    backdrop-filter: blur(10px);
+    border-radius: 20px; 
+    border: none; 
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2); 
+    overflow: hidden;
+}
+
+.auth-card .form-control {
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+
+.auth-card .form-control:focus {
+    background-color: #fff;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
+
+.btn-auth {
+    border-radius: 10px;
+    padding: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.brand-logo img {
+    max-height: 70px;
+    object-fit: contain;
+}
+
+ /* CSS trang trí */
+    /* ĐÃ FIX LỖI NHẤP NHÁY: Cố định viền 2px ngay từ đầu, chỉ đổi màu khi hover/checked */
+    .payment-option { 
+        border: 2px solid #dee2e6 !important; 
+        cursor: pointer; 
+    }
+    .payment-option:hover { 
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1) !important; 
+        border-color: #ffc107 !important; 
+    }
+    .payment-option:has(input:checked) { 
+        border-color: #ffc107 !important; 
+        background-color: #fffdf5; 
+    }
+    
+    .transition { transition: all 0.2s ease-in-out; }
+    .card:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0,0.1) !important; }
+    .sticky-sidebar { position: sticky; top: 100px; }
+    .hover-zoom { transition: transform 0.4s ease; }
+    .hover-zoom:hover { transform: scale(1.08); }
+    .border-dashed { border-style: dashed !important; }

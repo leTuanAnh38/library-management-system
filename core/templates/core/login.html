@@ -6,47 +6,59 @@
     <title>Đăng nhập - Thư viện Alovu</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
-    <style>
-        body { background-color: #f3f6f9; }
-        .login-container { max-width: 450px; margin: 80px auto; }
-        .card { border-radius: 15px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="{% static 'css/style.css' %}?v=1.2" rel="stylesheet">
 </head>
-<body>
-    <div class="container login-container">
-        <div class="card p-4 border-top border-primary border-4">
-            <div class="text-center mb-4 mt-2">
-                <h2 class="text-primary fw-bold">Đăng nhập</h2>
-                <p class="text-muted">Hệ thống Thư viện Alovu</p>
+<body class="auth-page">
+    <div class="container auth-container login-box">
+        <div class="card auth-card p-4 p-md-5 border-top border-primary border-4">
+            
+            <div class="text-center brand-logo mb-3">
+                <img src="{% static 'img/logo.png' %}" alt="Alovu Logo" 
+                     onerror="this.outerHTML='<i class=\'fas fa-book-reader text-primary\' style=\'font-size: 3.5rem;\'></i>'">
+            </div>
+
+            <div class="text-center mb-4">
+                <h3 class="text-primary fw-bold mb-1">Chào mừng trở lại!</h3>
+                <p class="text-muted small">Đăng nhập để mượn sách tại Thư viện Alovu</p>
             </div>
             
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %}">
-                        {{ message }}
+                    <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} rounded-3 small fw-medium">
+                        <i class="fas fa-info-circle me-2"></i>{{ message }}
                     </div>
                 {% endfor %}
             {% endif %}
 
             <form method="POST" action="">
                 {% csrf_token %}
-                
                 <div class="mb-3">
-                    <label class="form-label fw-bold">Tên đăng nhập</label>
-                    <input type="text" name="username" class="form-control form-control-lg" placeholder="Nhập tên đăng nhập của bạn" required>
+                    <label class="form-label fw-bold text-dark small text-uppercase">Tên đăng nhập</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 rounded-start-3 text-muted"><i class="fas fa-user"></i></span>
+                        <input type="text" name="username" class="form-control border-start-0 rounded-end-3 px-2" placeholder="Nhập tên đăng nhập của bạn" required>
+                    </div>
                 </div>
 
                 <div class="mb-4">
-                    <label class="form-label fw-bold">Mật khẩu</label>
-                    <input type="password" name="password" class="form-control form-control-lg" placeholder="••••••••" required>
+                    <label class="form-label fw-bold text-dark small text-uppercase">Mật khẩu</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0 rounded-start-3 text-muted"><i class="fas fa-lock"></i></span>
+                        <input type="password" name="password" class="form-control border-start-0 rounded-end-3 px-2" placeholder="••••••••" required>
+                    </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary w-100 py-2 rounded-pill fw-bold fs-5">Đăng nhập</button>
+                <button type="submit" class="btn btn-primary btn-auth w-100 shadow-sm">
+                    Đăng nhập <i class="fas fa-sign-in-alt ms-1"></i>
+                </button>
             </form>
             
             <div class="text-center mt-4">
-                <small>Chưa có tài khoản? <a href="{% url 'register' %}" class="text-primary fw-bold text-decoration-none">Đăng ký ngay</a></small><br>
-                <small class="d-block mt-2"><a href="{% url 'home' %}" class="text-secondary text-decoration-none">← Trở về Trang chủ</a></small>
+                <p class="mb-2 text-muted small">Chưa có tài khoản? <a href="{% url 'register' %}" class="text-primary fw-bold text-decoration-none">Đăng ký ngay</a></p>
+                <a href="{% url 'home' %}" class="text-secondary text-decoration-none small fw-medium transition-hover">
+                    <i class="fas fa-arrow-left me-1"></i> Trở về Trang chủ
+                </a>
             </div>
         </div>
     </div>

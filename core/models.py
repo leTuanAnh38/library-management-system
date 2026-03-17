@@ -133,9 +133,18 @@ class BookImage(TimeStampedModel):
 class BorrowTransaction(TimeStampedModel):
     STATUS_CHOICES = (
         ('BORROWED', 'Đang mượn'),
-        ('PENDING', 'Chờ xác nhận'), # [MỚI THÊM] Trạng thái sinh viên đã ấn trả, chờ thủ thư duyệt
+        ('PENDING', 'Chờ xác nhận'), # Dùng cho cả: Chờ duyệt TRẢ sách và Chờ duyệt MƯỢN (nếu sách có phí)
         ('RETURNED', 'Đã trả'),
         ('OVERDUE', 'Quá hạn'),
+    )
+
+    # ==========================================
+    # [MỚI THÊM] Các lựa chọn phương thức thanh toán
+    # ==========================================
+    PAYMENT_CHOICES = (
+        ('FREE', 'Miễn phí'),
+        ('CASH', 'Thanh toán tại quầy'),
+        ('BANK', 'Chuyển khoản ngân hàng'),
     )
 
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='borrow_records')
@@ -147,6 +156,12 @@ class BorrowTransaction(TimeStampedModel):
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='BORROWED')
     reason = models.CharField(max_length=255, null=True, blank=True)
+
+    # ==========================================
+    # [MỚI THÊM] Trường lưu thông tin thanh toán
+    # ==========================================
+    payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default='FREE', verbose_name="Phương thức thanh toán")
+    is_paid = models.BooleanField(default=False, verbose_name="Trạng thái thanh toán")
 
     @property
     def is_late(self):
@@ -207,17 +222,26 @@ class Review(TimeStampedModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reviews')
     rating = models.SmallIntegerField() 
     comment = models.TextField(null=True, blank=True)
+    class Meta:
+        verbose_name = 'Đánh giá'
+        verbose_name_plural = 'Danh sách Đánh giá'
 
 # 9. Bảng WISHLISTS
 class Wishlist(TimeStampedModel):
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='wishlisted_by')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='wishlists')
+    class Meta:
+        verbose_name = 'Yêu thích'
+        verbose_name_plural = 'Danh sách Yêu thích'
 
 # 10. Bảng RECOMMENDATIONS
 class Recommendation(TimeStampedModel):
     book = models.ForeignKey(Book, on_delete=models.CASCADE, related_name='recommendations')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recommended_to')
     score = models.FloatField()
+    class Meta:
+        verbose_name = 'Đề xuất sách'
+        verbose_name_plural = 'Danh sách Đề xuất'
 
 # 11. Bảng MEMBERSHIPS
 class Membership(TimeStampedModel):
@@ -229,6 +253,9 @@ class Membership(TimeStampedModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='memberships')
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='STANDARD')
     points = models.IntegerField(default=0)
+    class Meta:
+        verbose_name = 'Hạng thành viên'
+        verbose_name_plural = 'Quản lý Hạng thành viên'
 
 # 12. Bảng NOTIFICATIONS
 class Notification(TimeStampedModel):
@@ -245,18 +272,27 @@ class Notification(TimeStampedModel):
     message = models.TextField()
     type = models.CharField(max_length=20, choices=TYPE_CHOICES, default='SYSTEM')
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='UNREAD')
+    class Meta:
+        verbose_name = 'Thông báo'
+        verbose_name_plural = 'Hệ thống Thông báo'
 
 # 13. Bảng CHAT_ROOMS
 class ChatRoom(TimeStampedModel):
     name = models.CharField(max_length=150)
     is_private = models.BooleanField(default=False)
     admin = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='managed_rooms')
+    class Meta:
+        verbose_name = 'Phòng Chat'
+        verbose_name_plural = 'Danh sách Phòng Chat'
 
 # 14. Bảng CHATS
 class Chat(TimeStampedModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chats')
     chat_room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, related_name='chats')
     message = models.TextField()
+    class Meta:
+        verbose_name = 'Tin nhắn Chat'
+        verbose_name_plural = 'Lịch sử Tin nhắn'
 
 # core/models.py
 

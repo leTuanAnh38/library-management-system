@@ -6,23 +6,27 @@
     <title>Đăng ký tài khoản - Thư viện Alovu</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
-    <style>
-        body { background-color: #f3f6f9; }
-        .register-container { max-width: 500px; margin: 50px auto; }
-        .card { border-radius: 15px; border: none; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-    </style>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="{% static 'css/style.css' %}?v=1.3" rel="stylesheet">
 </head>
-<body>
-    <div class="container register-container">
-        <div class="card p-4">
+<body class="auth-page">
+    <div class="container auth-container register-box">
+        <div class="card auth-card p-4 p-md-5 border-top border-warning border-4">
+            
+            <div class="text-center brand-logo mb-3">
+                <img src="{% static 'img/logo.png' %}" alt="Alovu Logo" 
+                     style="mix-blend-mode: multiply; max-height: 80px; object-fit: contain;"
+                     onerror="this.outerHTML='<i class=\'fas fa-book-reader text-warning\' style=\'font-size: 3.5rem;\'></i>'">
+            </div>
+
             <div class="text-center mb-4">
-                <h2 class="text-primary fw-bold">Đăng ký tài khoản</h2>
-                <p class="text-muted">Tham gia mượn sách tại thư viện Alovu</p>
+                <h3 class="text-dark fw-bold mb-1">Tạo tài khoản mới</h3>
+                <p class="text-muted small">Tham gia cộng đồng đọc sách tại Alovu</p>
             </div>
             
             {% if form.errors %}
-                <div class="alert alert-danger">
-                    Vui lòng kiểm tra lại các thông tin bên dưới.
+                <div class="alert alert-danger rounded-3 small fw-medium">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Vui lòng kiểm tra lại các thông tin bên dưới.
                 </div>
             {% endif %}
 
@@ -31,20 +35,38 @@
                 
                 {% for field in form %}
                     <div class="mb-3">
-                        <label class="form-label fw-bold">{{ field.label }}</label>
-                        <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" class="form-control" placeholder="Nhập {{ field.label|lower }}">
+                        <label class="form-label fw-bold text-dark small text-uppercase">
+                            {% if field.name == 'username' %}Tên đăng nhập
+                            {% elif field.name == 'email' %}Địa chỉ Email
+                            {% elif field.name == 'first_name' %}Họ và tên đệm
+                            {% elif field.name == 'last_name' %}Tên của bạn
+                            {% elif field.name == 'phone' or field.name == 'phone_number' %}Số điện thoại
+                            {% elif 'password' in field.name and 'confirm' in field.name %}Xác nhận mật khẩu
+                            {% elif 'password' in field.name %}Mật khẩu
+                            {% else %}{{ field.label }}{% endif %}
+                        </label>
+                        
+                        <div class="input-wrapper">
+                            <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" class="form-control" 
+                                   placeholder="Nhập {% if field.name == 'username' %}tên đăng nhập{% elif field.name == 'email' %}địa chỉ email{% elif field.name == 'first_name' %}họ và tên đệm{% elif field.name == 'last_name' %}tên của bạn{% elif field.name == 'phone' or field.name == 'phone_number' %}số điện thoại{% elif 'password' in field.name %}mật khẩu{% else %}{{ field.label|lower }}{% endif %}">
+                        </div>
+                        
                         {% if field.errors %}
-                            <small class="text-danger">{{ field.errors|striptags }}</small>
+                            <small class="text-danger fw-medium d-block mt-1"><i class="fas fa-times-circle me-1"></i>{{ field.errors|striptags }}</small>
                         {% endif %}
                     </div>
                 {% endfor %}
 
-                <button type="submit" class="btn btn-primary w-100 py-2 mt-3 rounded-pill fw-bold">Đăng ký ngay</button>
+                <button type="submit" class="btn btn-warning btn-auth w-100 shadow-sm text-dark mt-3">
+                    Đăng ký ngay <i class="fas fa-user-plus ms-1"></i>
+                </button>
             </form>
             
-            <div class="text-center mt-3">
-                <small>Đã có tài khoản? <a href="{% url 'login' %}" class="text-primary text-decoration-none">Đăng nhập</a></small><br>
-                <small><a href="{% url 'home' %}" class="text-secondary text-decoration-none">← Trở về Trang chủ</a></small>
+            <div class="text-center mt-4 pt-3 border-top">
+                <p class="mb-2 text-muted small">Đã có tài khoản? <a href="{% url 'login' %}" class="text-primary fw-bold text-decoration-none">Đăng nhập</a></p>
+                <a href="{% url 'home' %}" class="text-secondary text-decoration-none small fw-medium transition-hover">
+                    <i class="fas fa-arrow-left me-1"></i> Trở về Trang chủ
+                </a>
             </div>
         </div>
     </div>

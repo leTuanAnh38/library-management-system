@@ -151,6 +151,8 @@ JAZZMIN_SETTINGS = {
     "welcome_sign": "Chào mừng Khanh đến với hệ thống quản trị",
     "copyright": "Alovu Library",
     "search_model": ["core.Book", "core.User"], 
+    "custom_js": "js/admin_chart.js",
+
     
     "topmenu_links": [
         {"name": "Trang chủ", "url": "admin:index", "permissions": ["core.view_user"]},
@@ -168,20 +170,44 @@ JAZZMIN_SETTINGS = {
         "core.User", "core.Membership", "core.Wishlist", "core.Recommendation",
         "core.Review", "core.Notification", "core.ChatRoom", "core.Chat"
     ],
+
+    # [BỔ SUNG] GẮN ICON CHO TỪNG BẢNG ĐỂ MENU BÊN TRÁI ĐẸP HƠN
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "core.Book": "fas fa-book",
+        "core.Category": "fas fa-tags",
+        "core.Publisher": "fas fa-building",
+        "core.BookImage": "fas fa-images",
+        "core.BorrowTransaction": "fas fa-exchange-alt",
+        "core.Penalty": "fas fa-money-bill-wave",
+        "core.User": "fas fa-user-graduate",
+        "core.Membership": "fas fa-medal",
+        "core.Wishlist": "fas fa-heart",
+        "core.Recommendation": "fas fa-thumbs-up",
+        "core.Review": "fas fa-star",
+        "core.Notification": "fas fa-bell",
+        "core.ChatRoom": "fas fa-comments",
+        "core.Chat": "fas fa-comment-dots"
+    },
+    
+    # Icon mặc định nếu bảng nào chưa được gắn
+    "default_icon_parents": "fas fa-folder",
+    "default_icon_children": "fas fa-circle",
     
     "changeform_format": "vertical_tabs", 
     "default_theme_mode": "light", 
     "show_ui_builder": False,
 }
 
+# (Đoạn JAZZMIN_UI_TWEAKS của bạn giữ nguyên, màu cam rất đẹp rồi)
 JAZZMIN_UI_TWEAKS = {
-    # Dùng nền trắng, chữ đậm để nút tài khoản admin hiện rõ ràng nhất
     "navbar": "navbar-white navbar-light", 
-    "brand_colour": "navbar-orange", # Nền logo góc trái màu cam
-    "accent": "accent-orange", # Màu viền và các điểm nhấn màu cam
-    "sidebar": "sidebar-dark-primary", # Cột menu bên trái màu tối
+    "brand_colour": "navbar-orange",
+    "accent": "accent-orange",
+    "sidebar": "sidebar-dark-primary",
     
-    # Các thiết lập kích thước (giữ nguyên của Khanh)
     "navbar_small_text": False,
     "footer_small_text": False,
     "body_small_text": False,
@@ -208,6 +234,26 @@ JAZZMIN_UI_TWEAKS = {
         "success": "btn-success"
     }
 }
-
 # Khi gọi hàm logout, hệ thống sẽ tự tìm đến URL có name='login'
 LOGOUT_REDIRECT_URL = 'login'
+
+# CẤU HÌNH GỬI EMAIL QUA GMAIL
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+# Điền email dùng để GỬI TIN ĐI (Có thể dùng chính email của bạn)
+EMAIL_HOST_USER = 'tuananhih271@gmail.com' 
+
+# MẬT KHẨU ỨNG DỤNG (Lưu ý: Không phải mật khẩu đăng nhập Gmail)
+EMAIL_HOST_PASSWORD = 'ytzc xuks imdn xgpt' 
+
+DEFAULT_FROM_EMAIL = 'Thư viện Alovu <tuananhih271@gmail.com>'
+
+# Sửa 'en-us' thành 'vi'
+LANGUAGE_CODE = 'vi'
+
+# Đảm bảo cài đặt i18n đang được bật
+USE_I18N = True
+USE_TZ = True
