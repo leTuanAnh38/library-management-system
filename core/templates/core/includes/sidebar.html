@@ -48,11 +48,10 @@
 
                 <a href="{% url 'notification_list' %}" class="list-group-item list-group-item-action py-3 border-0 {% if request.resolver_match.url_name == 'notification_list' %}active bg-light text-primary fw-bold{% endif %}">
                     <i class="fas fa-bell text-primary me-3"></i>Thông báo 
-                    {% if unread_notifications_count > 0 %}
-                        <span class="badge bg-danger rounded-pill float-end">
-                            {{ unread_notifications_count }}
-                        </span>
-                    {% endif %}
+                    <span id="unread-count-sidebar" class="badge bg-danger rounded-pill float-end" 
+                          style="{% if not unread_notifications_count > 0 %}display: none;{% endif %}">
+                        {{ unread_notifications_count }}
+                    </span>
                 </a>
 
                 <a href="{% url 'book_list' %}" class="list-group-item list-group-item-action py-3 border-0 {% if request.resolver_match.url_name == 'book_list' %}active bg-light text-primary fw-bold{% endif %}">

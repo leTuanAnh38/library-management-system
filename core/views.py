@@ -1,3 +1,7 @@
+import re
+import json
+from datetime import timedelta
+from django.utils.timesince import timesince
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.contrib.auth.forms import PasswordChangeForm, AuthenticationForm
@@ -5,23 +9,18 @@ from django.contrib.auth import update_session_auth_hash, authenticate, login, l
 from django.contrib.auth.decorators import login_required, user_passes_test
 from django.contrib import messages
 from django.utils import timezone
-from datetime import timedelta
-from django.db.models import Q
-from .models import Book, BorrowTransaction, Review, Category, Wishlist, Penalty,User # Thêm Wishlist vào đây
-from .forms import CustomUserCreationForm, BookForm
-from django.db import transaction as db_transaction # Đổi tên để tránh trùng với biến transaction
-from .models import Notification
-from .services import check_and_create_due_reminders
-import re
-from django.db.models import Sum
+from django.utils.dateformat import format
+from django.db.models import Q, Sum, Count, Avg
+from django.db import transaction as db_transaction
 from django.core.mail import send_mail
 from django.conf import settings
-from django.contrib import messages
-from django.db.models import Count, Avg
 from django.http import JsonResponse
-from django.contrib.admin.views.decorators import staff_member_required
-from .models import BorrowTransaction # Đảm bảo đã import model này
-
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.urls import reverse
+from .models import Book, BorrowTransaction, Review, Category, Wishlist, Penalty, User, Notification
+from .forms import CustomUserCreationForm, BookForm
+from .services import check_and_create_due_reminders
 
 def user_logout(request):
     logout(request)
@@ -107,11 +106,7 @@ def home(request):
         borrow_count=Count('borrow_records')
     ).filter(borrow_count__gt=0).order_by('-borrow_count')[:3]
 
-    # =========================================================
     # [MỚI] 2. LẤY SÁCH ĐƯỢC ĐÁNH GIÁ TỪ 4 SAO TRỞ LÊN (Top 3)
-    # Tính trung bình cộng số sao (rating). Giả sử model đánh giá của bạn tên là Review.
-    # Nếu code báo lỗi 'review', hãy đổi thành 'reviews__rating' (tuỳ thuộc vào related_name bạn đặt).
-    # =========================================================
     top_rated_books = Book.objects.annotate(
         avg_rating=Avg('reviews__rating') 
     ).filter(avg_rating__gte=4).order_by('-avg_rating')[:3]
@@ -237,13 +232,21 @@ def contact_view(request):
         
     return render(request, 'core/contact.html')
 
-# ==========================================
 # [MỚI] 1. HÀM HIỂN THỊ DANH SÁCH SÁCH VIP CÓ PHÍ
-# ==========================================
 def premium_book_list(request):
     # Lấy những sách có thuộc tính price (giá tiền) lớn hơn 0
-    books = Book.objects.filter(price__gt=0).order_by('-created_at')
+    books_list = Book.objects.filter(price__gt=0).order_by('-created_at')
     
+    paginator = Paginator(books_list, 6) 
+    page = request.GET.get('page')
+    try:
+        books = paginator.page(page)
+    except PageNotAnInteger:
+        books = paginator.page(1)
+    except EmptyPage:
+        books = paginator.page(paginator.num_pages)
+    # ---------------------------------------------------------
+
     # Khởi tạo các danh sách ID trống
     borrowed_book_ids = []
     pending_book_ids = []
@@ -260,21 +263,17 @@ def premium_book_list(request):
             user=request.user, status='PENDING'
         ).values_list('book_id', flat=True)
         
-        # Lấy danh sách ID sách đã thêm vào yêu thích
-        from .models import Wishlist  # Đảm bảo đã import model này
         wishlist_book_ids = Wishlist.objects.filter(
             user=request.user
         ).values_list('book_id', flat=True)
         
     return render(request, 'core/premium_books.html', {
-        'books': books,
+        'books': books, # Truyền biến books đã được phân trang ra giao diện
         'borrowed_book_ids': list(borrowed_book_ids),
         'pending_book_ids': list(pending_book_ids),
-        'wishlist_book_ids': list(wishlist_book_ids) # Truyền biến này ra giao diện
+        'wishlist_book_ids': list(wishlist_book_ids)
     })
-# ==========================================
 # [ĐÃ NÂNG CẤP] 2. HÀM XỬ LÝ MƯỢN SÁCH (HỖ TRỢ THANH TOÁN)
-# ==========================================
 @login_required(login_url='login')
 def borrow_book(request, book_id):
     user = request.user
@@ -295,10 +294,7 @@ def borrow_book(request, book_id):
     if book.quantity <= 0:
         messages.error(request, f"Sách '{book.title}' đã hết trong kho!")
         return redirect(request.META.get('HTTP_REFERER', 'book_list'))
-
-    # ==========================================
     # [MỚI] XỬ LÝ SÁCH CÓ PHÍ VÀ PHƯƠNG THỨC THANH TOÁN
-    # ==========================================
     # Kiểm tra xem sách này có phí không (price > 0)
     is_premium = book.price and book.price > 0
 
@@ -357,7 +353,17 @@ def borrow_book(request, book_id):
 
 @login_required(login_url='login')
 def borrow_history(request):
-    history = BorrowTransaction.objects.filter(user=request.user).order_by('-created_at')
+    history_list = BorrowTransaction.objects.filter(user=request.user).order_by('-created_at')
+    
+    # Phân trang: Mỗi lần tải 8 giao dịch
+    paginator = Paginator(history_list, 8) 
+    page = request.GET.get('page', 1)
+    
+    try:
+        history = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        history = paginator.page(1)
+        
     return render(request, 'core/borrow_history.html', {'history': history})
 
 # 1. DÀNH CHO NGƯỜI ĐỌC: Chỉ gửi yêu cầu trả sách
@@ -441,10 +447,7 @@ def book_detail(request, book_id):
 def add_review(request, book_id):
     if request.method == 'POST':
         book = get_object_or_404(Book, id=book_id)
-        
-        # ==========================================
         # [MỚI] KIỂM TRA USER ĐÃ ĐÁNH GIÁ CHƯA
-        # ==========================================
         if Review.objects.filter(book=book, user=request.user).exists():
             messages.error(request, "Bạn đã đánh giá cuốn sách này rồi! Mỗi người chỉ được đánh giá 1 lần.")
             return redirect('book_detail', book_id=book_id)
@@ -568,27 +571,39 @@ def toggle_wishlist(request, book_id):
 # Hàm 2: Hiển thị trang Danh sách yêu thích
 @login_required(login_url='login')
 def wishlist_view(request):
-    # Lấy toàn bộ sách yêu thích của người dùng hiện tại
     wishlist_items = Wishlist.objects.filter(user=request.user).order_by('-created_at')
     
-    # BỔ SUNG: Lấy ID các sách đang mượn (status='BORROWED')
-    borrowed_book_ids = BorrowTransaction.objects.filter(
-        user=request.user, 
-        status='BORROWED'
-    ).values_list('book_id', flat=True)
+    # Phân trang: Mỗi lần tải 6 cuốn
+    paginator = Paginator(wishlist_items, 6) 
+    page = request.GET.get('page', 1)
+    try:
+        items = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        items = paginator.page(1)
+        
+    borrowed_book_ids = BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True)
+    pending_book_ids = BorrowTransaction.objects.filter(user=request.user, status='PENDING').values_list('book_id', flat=True)
     
     return render(request, 'core/wishlist.html', {
-        'wishlist_items': wishlist_items,
-        'borrowed_book_ids': list(borrowed_book_ids)
+        'wishlist_items': items, # Truyền biến đã phân trang
+        'borrowed_book_ids': list(borrowed_book_ids),
+        'pending_book_ids': list(pending_book_ids)
     })
 
 @login_required
 def notification_list(request):
-    # 1. Lấy tất cả thông báo của người dùng, mới nhất lên đầu
-    notifications = Notification.objects.filter(user=request.user).order_by('-created_at')
+    notifications_list = Notification.objects.filter(user=request.user).order_by('-created_at')
+    paginator = Paginator(notifications_list, 8) # Lần đầu chỉ tải 8 thông báo cho nhẹ
+    page = request.GET.get('page', 1)
     
-    # 2. Đánh dấu tất cả thông báo UNREAD của người dùng này thành READ
-    notifications.filter(status='UNREAD').update(status='READ')
+    try:
+        notifications = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        notifications = paginator.page(1)
+        
+    # Đánh dấu đã đọc những thông báo hiện ra
+    if notifications:
+        Notification.objects.filter(id__in=[n.id for n in notifications], status='UNREAD').update(status='READ')
     
     return render(request, 'core/notifications.html', {'notifications': notifications})
 
@@ -671,25 +686,7 @@ def profile_view(request):
         'has_processing': has_processing,
         'processing_amount': processing_amount # Gửi số tiền đang chờ duyệt ra ngoài
     })
-    # ==========================================
-    # [MỚI] LẤY DANH SÁCH SÁCH ĐÃ ĐÁNH GIÁ 
-    # ==========================================
-    # Dùng select_related('book') để tối ưu tốc độ tải trang
-    user_reviews = Review.objects.filter(user=request.user).select_related('book').order_by('-created_at')
     
-    # ==========================================
-    # [MỚI] KIỂM TRA TRẠNG THÁI NỢ PHẠT ĐỂ ĐỔI NÚT TRÊN GIAO DIỆN
-    # ==========================================
-    has_unpaid = Penalty.objects.filter(user=request.user, status='UNPAID').exists()
-    has_processing = Penalty.objects.filter(user=request.user, status='PROCESSING').exists()
-    
-    return render(request, 'core/profile.html', {
-        'user_reviews': user_reviews, # Truyền biến này ra giao diện
-        'has_unpaid': has_unpaid,     # Truyền cờ này ra giao diện
-        'has_processing': has_processing # Truyền cờ này ra giao diện
-    })
-# core/views.py
-
 @login_required
 def pay_all_penalties(request):
     if request.method == 'POST':
@@ -713,13 +710,7 @@ def pay_all_penalties(request):
             
         return redirect('profile')
 
-# ==========================================
 # PHẦN API ENDPOINTS (Dành cho Yêu cầu số 2 & 3)
-# ==========================================
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-import json
-
 # 1. READ: Lấy danh sách sách (GET /api/books/)
 def api_get_books(request):
     if request.method == 'GET':
@@ -814,7 +805,6 @@ def staff_approve_borrow(request, transaction_id):
             borrow_record.save()
             
             # 4. Gửi thông báo cho sinh viên đến lấy sách
-            from .models import Notification
             Notification.objects.create(
                 user=borrow_record.user,
                 message=f"Thủ thư đã duyệt tiền và giao cuốn VIP '{borrow_record.book.title}' cho bạn. Hạn trả là {borrow_record.due_date.strftime('%d/%m/%Y')}.",
@@ -841,9 +831,6 @@ def staff_confirm_return(request, transaction_id):
             borrow_record.status = 'RETURNED'
             borrow_record.return_date = today
             borrow_record.save()
-            
-            # Đảm bảo bạn đã import Notification (nếu import ở đầu file rồi thì có thể bỏ dòng này)
-            from .models import Notification 
             
             # KIỂM TRA TRẢ TRỄ (Logic dồn hết về đây)
             if today > borrow_record.due_date:
@@ -973,3 +960,287 @@ def admin_chart_data(request):
         })
     
     return JsonResponse({'error': 'Bạn không có quyền xem dữ liệu này!'}, status=403)
+
+# Tạo API để thao tác bằng AJAX
+@login_required
+@require_POST # API đổi trạng thái nên dùng POST cho bảo mật
+def toggle_wishlist_api(request, book_id):
+    book = get_object_or_404(Book, id=book_id)
+    
+    # Kiểm tra xem sinh viên đã thả tim cuốn này chưa
+    wishlist_item = Wishlist.objects.filter(user=request.user, book=book).first()
+    
+    if wishlist_item:
+        # Nếu có rồi thì xóa đi (Bỏ tim)
+        wishlist_item.delete()
+        is_wished = False
+    else:
+        # Nếu chưa có thì tạo mới (Thả tim)
+        Wishlist.objects.create(user=request.user, book=book)
+        is_wished = True
+        
+    # Trả về kết quả cho Javascript xử lý dạng JSON
+    return JsonResponse({
+        'status': 'success',
+        'is_wished': is_wished
+    })
+
+def live_search_api(request):
+    query = request.GET.get('q', '').strip()
+    
+    if query:
+        # Tìm sách có tên HOẶC tác giả chứa từ khóa (không phân biệt hoa thường)
+        # Giới hạn lấy 5 kết quả đầu tiên cho nhẹ Web
+        books = Book.objects.filter(
+            Q(title__icontains=query) | Q(author__icontains=query)
+        )[:5]
+        
+        results = []
+        for book in books:
+            # Xử lý cover_image an toàn (nếu dùng ImageField thì lấy .url, nếu dạng Text thì lấy thẳng)
+            image_url = book.cover_image.url if hasattr(book.cover_image, 'url') else book.cover_image
+            
+            results.append({
+                'id': book.id,
+                'title': book.title,
+                'author': book.author if book.author else 'Chưa rõ',
+                'cover_image': image_url,
+                'price': book.price,
+                'url': reverse('book_detail', args=[book.id]) # Tự động tạo link chi tiết sách
+            })
+            
+        return JsonResponse({'status': 'success', 'data': results})
+        
+    return JsonResponse({'status': 'empty', 'data': []})
+
+@login_required
+@require_POST
+def api_add_review(request, book_id):
+    book = get_object_or_404(Book, id=book_id)
+    rating = request.POST.get('rating')
+    comment = request.POST.get('comment')
+
+    if not rating or not comment:
+        return JsonResponse({'status': 'error', 'message': 'Vui lòng nhập đủ thông tin.'})
+
+    # Kiểm tra xem đã đánh giá chưa để tránh spam
+    if Review.objects.filter(user=request.user, book=book).exists():
+         return JsonResponse({'status': 'error', 'message': 'Bạn đã đánh giá sách này rồi.'})
+
+    # Lưu đánh giá mới vào cơ sở dữ liệu
+    review = Review.objects.create(
+        user=request.user,
+        book=book,
+        rating=int(rating),
+        comment=comment
+    )
+
+    # Chuẩn bị dữ liệu trả về cho Javascript vẽ giao diện
+    # Lấy avatar (nếu có, không có thì dùng ảnh mặc định)
+    avatar_url = request.user.avatar_url if hasattr(request.user, 'avatar_url') and request.user.avatar_url else '/static/img/user.jpg'
+    full_name = request.user.get_full_name() or request.user.username
+    
+    # Tạo chuỗi ngôi sao
+    stars_html = '⭐' * review.rating
+
+    return JsonResponse({
+        'status': 'success',
+        'review': {
+            'author': full_name,
+            'avatar': avatar_url,
+            'stars': stars_html,
+            'date': format(review.created_at, 'd/m/Y'),
+            'comment': review.comment
+        }
+    })
+
+# Thêm vào cuối file views.py
+def api_load_more_books(request):
+    page = int(request.GET.get('page', 1))
+    query = request.GET.get('q', '')
+    category_id = request.GET.get('category', '')
+    sort = request.GET.get('sort', 'newest')
+    
+    # [ĐÃ THÊM]: Nhận diện cờ is_premium từ AJAX (Javascript) gửi lên
+    is_premium = request.GET.get('is_premium', 'false')
+
+    books_list = Book.objects.all()
+
+    # [ĐÃ THÊM]: Nếu người dùng bấm Load More ở trang VIP thì chỉ lấy sách có phí
+    if is_premium == 'true':
+        books_list = books_list.filter(price__gt=0)
+
+    # Lọc giống hệt hàm book_list
+    if category_id:
+        books_list = books_list.filter(category_id=category_id)
+    if query:
+        books_list = books_list.filter(
+            Q(title__icontains=query) | Q(author__icontains=query) | Q(category__name__icontains=query)
+        ).distinct()
+
+    if sort == 'title':
+        books_list = books_list.order_by('title')
+    elif sort == 'oldest':
+        books_list = books_list.order_by('created_at')
+    else:
+        books_list = books_list.order_by('-created_at')
+
+    # Lấy thông tin cá nhân hóa
+    wishlist_ids = []
+    borrowed_ids = []
+    pending_ids = []
+    if request.user.is_authenticated:
+        wishlist_ids = list(Wishlist.objects.filter(user=request.user).values_list('book_id', flat=True))
+        borrowed_ids = list(BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True))
+        pending_ids = list(BorrowTransaction.objects.filter(user=request.user, status='PENDING').values_list('book_id', flat=True))
+
+    paginator = Paginator(books_list, 6) # Mỗi lần Load More lấy 6 cuốn
+    
+    try:
+        books = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        return JsonResponse({'status': 'empty', 'data': [], 'has_next': False})
+
+    data = []
+    for b in books:
+        # Nhận diện trạng thái sách đối với user hiện tại
+        if b.id in pending_ids: btn_status = 'PENDING'
+        elif b.id in borrowed_ids: btn_status = 'BORROWED'
+        elif b.quantity <= 0: btn_status = 'OUT_OF_STOCK'
+        elif b.price and b.price > 0: btn_status = 'VIP'
+        else: btn_status = 'AVAILABLE'
+
+        # Xử lý ảnh an toàn
+        image_url = b.cover_image.url if hasattr(b.cover_image, 'url') else b.cover_image
+
+        data.append({
+            'id': b.id,
+            'title': b.title,
+            'author': b.author if b.author else 'Chưa rõ',
+            'category_name': b.category.name if b.category else 'Khác', # Cung cấp thêm category name
+            'cover_image': image_url,
+            'price': b.price,
+            'quantity': b.quantity,
+            'btn_status': btn_status,
+            'is_wished': b.id in wishlist_ids,
+            'url': reverse('book_detail', args=[b.id]),
+            'borrow_url': reverse('borrow_book', args=[b.id]),
+            'wishlist_api_url': reverse('api_toggle_wishlist', args=[b.id])
+        })
+
+    return JsonResponse({
+        'status': 'success',
+        'data': data,
+        'has_next': books.has_next()
+    })
+
+@login_required
+def api_unread_notification_count(request):
+    # Đếm số lượng thông báo chưa đọc của user hiện tại
+    count = Notification.objects.filter(user=request.user, status='UNREAD').count()
+    return JsonResponse({'status': 'success', 'unread_count': count})
+
+# 2. HÀM API MỚI: Trả về thông báo khi cuộn trang
+@login_required
+def api_load_more_notifications(request):
+    page = int(request.GET.get('page', 1))
+    notifications_list = Notification.objects.filter(user=request.user).order_by('-created_at')
+    paginator = Paginator(notifications_list, 8) # Mỗi lần cuộn tải thêm 8 cái
+    
+    try:
+        notifications = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        return JsonResponse({'status': 'empty', 'data': [], 'has_next': False})
+        
+    data = []
+    for n in notifications:
+        data.append({
+            'id': n.id,
+            'message': n.message,
+            'type': n.type,
+            'status': n.status,
+            'time_since': timesince(n.created_at) + " trước"
+        })
+        
+    # Đánh dấu đã đọc
+    Notification.objects.filter(id__in=[n.id for n in notifications], status='UNREAD').update(status='READ')
+        
+    return JsonResponse({'status': 'success', 'data': data, 'has_next': notifications.has_next()})
+
+# 2. HÀM API MỚI: Trả về lịch sử khi cuộn trang
+@login_required
+def api_load_more_history(request):
+    page = int(request.GET.get('page', 1))
+    history_list = BorrowTransaction.objects.filter(user=request.user).order_by('-created_at')
+    paginator = Paginator(history_list, 8)
+    
+    try:
+        history = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        return JsonResponse({'status': 'empty', 'data': [], 'has_next': False})
+        
+    data = []
+    for item in history:
+        cover_image = item.book.cover_image.url if hasattr(item.book.cover_image, 'url') else item.book.cover_image
+        
+        # Đóng gói dữ liệu JSON để gửi xuống JS
+        data.append({
+            'id': item.id,
+            'book_title': item.book.title,
+            'book_author': item.book.author or "Chưa rõ",
+            'cover_image': cover_image,
+            'borrow_date': item.borrow_date.strftime("%d/%m/%Y") if item.borrow_date else '-',
+            'due_date': item.due_date.strftime("%d/%m/%Y") if item.due_date else '-',
+            'return_date': item.return_date.strftime("%d/%m/%Y") if item.return_date else '-',
+            'status': item.status,
+            'is_late': getattr(item, 'is_late', False), # Lấy thuộc tính trả trễ
+            'penalty_amount': getattr(item, 'penalty_amount', 0),
+            'return_url': reverse('return_book', args=[item.id])
+        })
+        
+    return JsonResponse({'status': 'success', 'data': data, 'has_next': history.has_next()})
+
+# 2. HÀM API MỚI: Trả về sách yêu thích khi cuộn trang
+@login_required
+def api_load_more_wishlist(request):
+    page = int(request.GET.get('page', 1))
+    wishlist_items = Wishlist.objects.filter(user=request.user).order_by('-created_at')
+    paginator = Paginator(wishlist_items, 6)
+    
+    try:
+        items = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        return JsonResponse({'status': 'empty', 'data': [], 'has_next': False})
+        
+    borrowed_ids = list(BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True))
+    pending_ids = list(BorrowTransaction.objects.filter(user=request.user, status='PENDING').values_list('book_id', flat=True))
+
+    data = []
+    for item in items:
+        b = item.book
+        
+        # Nhận diện trạng thái nút mượn
+        if b.id in pending_ids: btn_status = 'PENDING'
+        elif b.id in borrowed_ids: btn_status = 'BORROWED'
+        elif b.quantity <= 0: btn_status = 'OUT_OF_STOCK'
+        elif b.price and b.price > 0: btn_status = 'VIP'
+        else: btn_status = 'AVAILABLE'
+
+        image_url = b.cover_image.url if hasattr(b.cover_image, 'url') else b.cover_image
+
+        # Đóng gói dữ liệu giống hệt api_load_more_books để xài chung hàm JS
+        data.append({
+            'id': b.id,
+            'title': b.title,
+            'author': b.author or "Chưa rõ",
+            'cover_image': image_url,
+            'price': b.price,
+            'quantity': b.quantity,
+            'btn_status': btn_status,
+            'is_wished': True, # Chắc chắn là True vì đang ở trang Yêu thích
+            'url': reverse('book_detail', args=[b.id]),
+            'borrow_url': reverse('borrow_book', args=[b.id]),
+            'wishlist_api_url': reverse('api_toggle_wishlist', args=[b.id])
+        })
+        
+    return JsonResponse({'status': 'success', 'data': data, 'has_next': items.has_next()})

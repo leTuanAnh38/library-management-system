@@ -30,7 +30,7 @@
 
                     <div class="col-md-6">
                         <label class="small text-muted mb-1 fw-bold">Sắp xếp theo:</label>
-                        <select name="sort" class="form-select border-light shadow-none bg-light text-muted" onchange="this.form.submit()">
+                        <select name="sort" id="sort-filter" class="form-select border-light shadow-none bg-light text-muted">
                             <option value="newest" {% if current_sort == 'newest' %}selected{% endif %}>Mới nhất</option>
                             <option value="title" {% if current_sort == 'title' %}selected{% endif %}>Tiêu đề (A-Z)</option>
                             <option value="oldest" {% if current_sort == 'oldest' %}selected{% endif %}>Cũ nhất</option>
@@ -39,7 +39,7 @@
 
                     <div class="col-md-6">
                         <label class="small text-muted mb-1 fw-bold">Lọc theo danh mục:</label>
-                        <select name="category" class="form-select border-light shadow-none bg-light text-muted" onchange="this.form.submit()">
+                        <select name="category" id="category-filter" class="form-select border-light shadow-none bg-light text-muted">
                             <option value="">Tất cả danh mục</option>
                             {% for cat in categories %}
                                 <option value="{{ cat.id }}" {% if current_category == cat.id|stringformat:"s" %}selected{% endif %}>
@@ -50,7 +50,7 @@
                     </div>
                 </form>
 
-                <div class="row g-4">
+                <div class="row g-4" id="book-list-container">
                     {% for book in books %}
                     <div class="col-md-6 col-lg-4 d-flex align-items-stretch">
                         <div class="product-item bg-white border rounded shadow-sm w-100 d-flex flex-column p-2 transition-hover position-relative">
@@ -111,14 +111,12 @@
                                     {% endif %}
 
                                     <div class="text-center mt-2">
-                                        <a href="{% url 'toggle_wishlist' book.id %}" class="btn btn-link btn-sm p-0 text-decoration-none text-muted">
-                                            {% if book.id in wishlist_book_ids %}
-                                                <i class="fas fa-heart text-danger fs-5"></i>
-                                            {% else %}
-                                                <i class="far fa-heart text-danger fs-5"></i>
-                                            {% endif %}
-                                            Yêu thích
-                                        </a>
+                                         <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted btn-toggle-wishlist" 
+                                             data-url="{% url 'api_toggle_wishlist' book.id %}" 
+                                                data-book-id="{{ book.id }}">
+                                                <i class="{% if book.id in wishlist_book_ids %}fas{% else %}far{% endif %} fa-heart text-danger fs-5 heart-icon-{{ book.id }}"></i>
+                                                 Yêu thích
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -189,77 +187,27 @@
 
                     </div>
                     {% empty %}
-                        <div class="col-12 text-center py-5">
-                            <i class="fas fa-book-open fa-3x text-muted opacity-25 mb-3"></i>
-                            <p class="text-muted">Không tìm thấy cuốn sách nào phù hợp với yêu cầu của bạn.</p>
-                        </div>
+                    <div class="col-12 text-center py-5">
+                        <i class="fas fa-book-open fa-3x text-muted opacity-25 mb-3"></i>
+                        <p class="text-muted">Không tìm thấy cuốn sách nào phù hợp với yêu cầu của bạn.</p>
+                    </div>
                     {% endfor %}
                 </div>
 
-                {% if books.has_other_pages %}
-                <div class="mt-5 text-center">
-                    <nav aria-label="Page navigation">
-                        <ul class="pagination justify-content-center">
-                            {% if books.has_previous %}
-                                <li class="page-item">
-                                    <a class="page-link border-0 bg-light rounded-start px-3" 
-                                       href="?page={{ books.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">
-                                        Trước
-                                    </a>
-                                </li>
-                            {% endif %}
-
-                            {% for i in books.paginator.page_range %}
-                                <li class="page-item {% if books.number == i %}active{% endif %}">
-                                    <a class="page-link border-0 {% if books.number == i %}bg-primary text-white{% else %}bg-light{% endif %} px-3" 
-                                       href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">
-                                        {{ i }}
-                                    </a>
-                                </li>
-                            {% endfor %}
-
-                            {% if books.has_next %}
-                                <li class="page-item">
-                                    <a class="page-link border-0 bg-light rounded-end px-3" 
-                                       href="?page={{ books.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if current_sort %}&sort={{ current_sort }}{% endif %}{% if current_category %}&category={{ current_category }}{% endif %}">
-                                        Sau
-                                    </a>
-                                </li>
-                            {% endif %}
-                        </ul>
-                    </nav>
+                {% if books.has_next %}
+                <div class="text-center mt-5 mb-3" id="load-more-section">
+                    <button id="btn-load-more" class="btn btn-outline-primary rounded-pill px-5 py-2 fw-bold shadow-sm"
+                            data-url="{% url 'api_load_more_books' %}" 
+                            data-page="2" 
+                            data-query="{{ query }}" 
+                            data-category="{{ current_category }}" 
+                            data-sort="{{ current_sort }}">
+                        <i class="fas fa-arrow-down me-2"></i>Xem thêm sách
+                    </button>
                 </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    $(document).ready(function() {
-        $('.radio-payment-toggle').change(function() {
-            var bookId = $(this).data('book-id');
-            var selectedValue = $(this).val();
-            var modalBody = $(this).closest('.modal-body');
-            
-            // Xóa class highlight màu vàng
-            modalBody.find('.payment-option').removeClass('selected-payment');
-            $(this).closest('.payment-option').addClass('selected-payment');
-            
-            var qrBox = $('#qrCodeSection' + bookId);
-            
-            if (selectedValue === 'BANK') {
-                qrBox.slideDown(300);
-            } else {
-                qrBox.slideUp(300);
-            }
-        });
-
-        // Tự động gán lại Tiền Mặt khi tắt Modal
-        $('.payment-modal').on('hidden.bs.modal', function () {
-            $(this).find('input[value="CASH"]').prop('checked', true).trigger('change');
-        });
-    });
-</script>
 {% endblock %}

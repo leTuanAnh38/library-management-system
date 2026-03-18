@@ -91,13 +91,12 @@
                                 </div>
                                 
                                 <div class="text-center mt-2">
-                                    <a href="{% url 'toggle_wishlist' book.id %}" class="btn btn-link btn-sm p-0 text-decoration-none text-muted">
-                                        {% if book.id in wishlist_book_ids %}
-                                            <i class="fas fa-heart text-danger fs-5"></i>
-                                        {% else %}
-                                            <i class="far fa-heart text-danger fs-5"></i>
-                                        {% endif %} Yêu thích
-                                    </a>
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted btn-toggle-wishlist" 
+                                      data-url="{% url 'api_toggle_wishlist' book.id %}" 
+                                         data-book-id="{{ book.id }}">
+                                            <i class="{% if book.id in wishlist_book_ids %}fas{% else %}far{% endif %} fa-heart text-danger fs-5 heart-icon-{{ book.id }}"></i>
+                                                Yêu thích
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -247,44 +246,4 @@
     </div>
 </div>
 
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    $(document).ready(function(){
-        // Khởi chạy Banner
-        $(".header-carousel").owlCarousel({
-            autoplay: true,
-            autoplayTimeout: 4000,
-            smartSpeed: 800,
-            items: 1,
-            dots: true,
-            loop: true,
-            nav : true,
-            navText : ['<i class="fas fa-chevron-left"></i>', '<i class="fas fa-chevron-right"></i>']
-        });
-
-        // XỬ LÝ ẨN/HIỆN MÃ QR
-        $('.radio-payment-toggle').change(function() {
-            var bookId = $(this).data('book-id');
-            var selectedValue = $(this).val();
-            var modalBody = $(this).closest('.modal-body');
-            
-            modalBody.find('.payment-option').removeClass('selected-payment');
-            $(this).closest('.payment-option').addClass('selected-payment');
-            
-            var qrBox = $('#qrCodeSection' + bookId);
-            
-            if (selectedValue === 'BANK') {
-                qrBox.slideDown(300);
-            } else {
-                qrBox.slideUp(300);
-            }
-        });
-
-        // Đặt lại mặc định khi đóng form
-        $('.payment-modal').on('hidden.bs.modal', function () {
-            $(this).find('input[value="CASH"]').prop('checked', true).trigger('change');
-        });
-    });
-</script>
 {% endblock %}

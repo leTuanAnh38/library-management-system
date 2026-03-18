@@ -208,7 +208,7 @@
                             <span class="text-dark fw-medium">Bạn đã để lại đánh giá cho cuốn sách này rồi. Cảm ơn đóng góp của bạn!</span>
                         </div>
                     {% else %}
-                        <form action="{% url 'add_review' book.id %}" method="POST" class="bg-white p-4 rounded-4 shadow-sm mb-5 border border-primary border-opacity-25">
+                        <form id="reviewForm" data-url="{% url 'api_add_review' book.id %}" method="POST" class="bg-white p-4 rounded-4 shadow-sm mb-5 border border-primary border-opacity-25">
                             {% csrf_token %}
                             <div class="row">
                                 <div class="col-md-6 mb-3">
@@ -269,33 +269,4 @@
     </div>
 </div>
 
-<script src="{% static 'js/main.js' %}"></script>
-
-<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-<script>
-    $(document).ready(function() {
-        $('.radio-payment-toggle').change(function() {
-            var bookId = $(this).data('book-id');
-            var selectedValue = $(this).val();
-            var modalBody = $(this).closest('.modal-body');
-            
-            // Xóa background vàng ở cái cũ và thêm vào cái vừa chọn
-            modalBody.find('.payment-option').removeClass('selected-payment');
-            $(this).closest('.payment-option').addClass('selected-payment');
-            
-            var qrBox = $('#qrCodeSection' + bookId);
-            
-            if (selectedValue === 'BANK') {
-                qrBox.slideDown(300); // Trượt xuống mượt mà
-            } else {
-                qrBox.slideUp(300); // Kéo lên ẩn đi
-            }
-        });
-
-        // Reset lại trạng thái Tiền Mặt khi đóng Modal
-        $('.payment-modal').on('hidden.bs.modal', function () {
-            $(this).find('input[value="CASH"]').prop('checked', true).trigger('change');
-        });
-    });
-</script>
 {% endblock %}

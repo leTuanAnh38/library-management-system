@@ -264,46 +264,4 @@
     </div>
 </div>
 
-<script>
-    document.addEventListener("DOMContentLoaded", function() {
-        // 1. CHUYỂN ĐỔI CHẾ ĐỘ XEM/SỬA
-        const btnToggle = document.getElementById('btn-edit-toggle');
-        const btnCancel = document.getElementById('btn-cancel-edit');
-        const viewSection = document.getElementById('profile-view-mode');
-        const editSection = document.getElementById('profile-edit-mode');
-
-        if (btnToggle && btnCancel && viewSection && editSection) {
-            btnToggle.addEventListener('click', function() {
-                viewSection.classList.add('d-none');
-                editSection.classList.remove('d-none');
-                btnToggle.classList.add('d-none');
-            });
-
-            btnCancel.addEventListener('click', function() {
-                viewSection.classList.remove('d-none');
-                editSection.classList.add('d-none');
-                btnToggle.classList.remove('d-none');
-            });
-        }
-
-        // 2. HIỂN THỊ MÃ QR THANH TOÁN
-        const methodTransfer = document.getElementById('methodTransfer');
-        const methodCounter = document.getElementById('methodCounter');
-        const qrSection = document.getElementById('qr-section');
-
-        if (methodTransfer && methodCounter && qrSection) {
-            methodTransfer.addEventListener('change', function() {
-                if (this.checked) {
-                    qrSection.classList.remove('d-none');
-                }
-            });
-
-            methodCounter.addEventListener('change', function() {
-                if (this.checked) {
-                    qrSection.classList.add('d-none');
-                }
-            });
-        }
-    });
-</script>
 {% endblock %}

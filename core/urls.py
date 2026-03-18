@@ -44,4 +44,15 @@ urlpatterns = [
     path('api/admin-chart/', views.admin_chart_data, name='admin_chart_data'),
     path('premium-books/', views.premium_book_list, name='premium_books'),
     path('staff/borrow/approve/<int:transaction_id>/', views.staff_approve_borrow, name='staff_approve_borrow'),
+    # API thả tim không cần load lại trang
+    path('api/wishlist/toggle/<int:book_id>/', views.toggle_wishlist_api, name='api_toggle_wishlist'),
+    # API Tìm kiếm thông minh
+    path('api/search/', views.live_search_api, name='api_live_search'),
+    # API Gửi đánh giá mượt mà
+    path('api/review/add/<int:book_id>/', views.api_add_review, name='api_add_review'),
+    # API Load More sách
+    path('api/books/load-more/', views.api_load_more_books, name='api_load_more_books'),
+    path('api/notifications/load-more/', views.api_load_more_notifications, name='api_load_more_notifications'),
+    path('api/history/load-more/', views.api_load_more_history, name='api_load_more_history'),
+    path('api/wishlist/load-more/', views.api_load_more_wishlist, name='api_load_more_wishlist'),
 ]

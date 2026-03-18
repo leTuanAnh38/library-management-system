@@ -8,7 +8,9 @@
 <div class="container-fluid px-lg-5 py-5">
     <div class="row g-4">
         <div class="col-lg-3">
-            {% include 'core/includes/sidebar.html' %}
+            <div class="sticky-sidebar">
+                {% include 'core/includes/sidebar.html' %}
+            </div>
         </div>
 
         <div class="col-lg-9">
@@ -19,10 +21,17 @@
                     <div class="mx-auto bg-primary" style="width: 100px; height: 3px;"></div>
                 </div>
                 
-                <div class="row g-4">
+                <div class="row g-4" id="wishlist-container">
                     {% for item in wishlist_items %}
-                    <div class="col-md-6 col-lg-4 d-flex align-items-stretch">
-                        <div class="product-item bg-white border rounded shadow-sm w-100 d-flex flex-column p-2 transition-hover">
+                    <div class="col-md-6 col-lg-4 d-flex align-items-stretch wishlist-card-item">
+                        <div class="product-item bg-white border rounded shadow-sm w-100 d-flex flex-column p-2 transition-hover position-relative">
+                            
+                            {% if item.book.price and item.book.price > 0 %}
+                                <div class="position-absolute bg-danger text-white px-3 py-1 fw-bold" 
+                                     style="top: 15px; right: -5px; border-radius: 20px 0 0 20px; z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                                    {{ item.book.price }} VNĐ
+                                </div>
+                            {% endif %}
                             
                             <div class="text-center p-3 bg-light rounded" style="height: 200px; overflow: hidden;">
                                 <a href="{% url 'book_detail' item.book.id %}">
@@ -32,52 +41,140 @@
 
                             <div class="p-3 text-center d-flex flex-column flex-grow-1">
                                 <h6 class="fw-bold text-dark text-truncate-2 mb-2">{{ item.book.title }}</h6>
-                                <p class="small text-muted mb-2">Tác giả: <b>{{ item.book.author|default:"Chưa rõ" }}</b></p>
+                                <p class="small text-muted mb-1">Tác giả: <b>{{ item.book.author|default:"Chưa rõ" }}</b></p>
                                 
                                 <div class="mb-3 mt-1">
                                     {% if item.book.quantity > 0 %}
                                         <span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i>Có sẵn: {{ item.book.quantity }} cuốn</span>
                                     {% else %}
-                                        <span class="text-danger small fw-bold"><i class="fas fa-times-circle me-1"></i>Đang mượn</span>
+                                        <span class="text-danger small fw-bold"><i class="fas fa-times-circle me-1"></i>Hết sách</span>
                                     {% endif %}
                                 </div>
                                 
                                 <div class="mt-auto">
-                                    {% if item.book.id in borrowed_book_ids %}
+                                    {% if item.book.id in pending_book_ids %}
+                                        <button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled" style="opacity: 0.85;">
+                                            <i class="fas fa-clock me-1"></i>CHỜ XÁC NHẬN
+                                        </button>
+                                        
+                                    {% elif item.book.id in borrowed_book_ids %}
                                         <button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 shadow-sm disabled">
                                             ĐANG MƯỢN
                                         </button>
+                                        
                                     {% elif item.book.quantity > 0 %}
-                                        <a href="{% url 'borrow_book' item.book.id %}" 
-                                           class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm"
-                                           onclick="return confirm('Khanh chắc chắn muốn mượn sách [{{ item.book.title }}] từ danh sách yêu thích không?')">
-                                            MƯỢN SÁCH
-                                        </a>
+                                        {% if item.book.price and item.book.price > 0 %}
+                                            <button type="button" class="btn btn-warning w-100 fw-bold rounded-pill text-dark shadow-sm py-2" data-bs-toggle="modal" data-bs-target="#paymentModal{{ item.book.id }}">
+                                                <i class="fas fa-shopping-cart me-1"></i> MƯỢN VIP
+                                            </button>
+                                        {% else %}
+                                            <a href="{% url 'borrow_book' item.book.id %}" 
+                                               class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm"
+                                               onclick="return confirm('Bạn ơi, bạn có chắc chắn muốn mượn sách [{{ item.book.title }}] từ danh sách yêu thích không?')">
+                                                MƯỢN SÁCH
+                                            </a>
+                                        {% endif %}
+                                        
                                     {% else %}
                                         <button class="btn btn-danger rounded-pill fw-bold w-100 py-2 shadow-sm disabled">
                                             HẾT SÁCH
                                         </button>
                                     {% endif %}
                                     
-                                    <a href="{% url 'toggle_wishlist' item.book.id %}" class="btn btn-outline-danger btn-sm rounded-pill fw-bold mt-2 w-100 border-0">
-                                        <i class="fas fa-trash-alt me-1"></i> Bỏ yêu thích
-                                    </a>
+                                    <div class="text-center mt-2">
+                                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted btn-toggle-wishlist" 
+                                                data-url="{% url 'api_toggle_wishlist' item.book.id %}" 
+                                                data-book-id="{{ item.book.id }}">
+                                            <i class="fas fa-heart text-danger fs-5 heart-icon-{{ item.book.id }}"></i>
+                                            Yêu thích
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+
+                        {% if item.book.price and item.book.price > 0 %}
+                        <div class="modal fade payment-modal" id="paymentModal{{ item.book.id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content" style="border-radius: 20px; border: none;">
+                                    <div class="modal-header bg-warning border-0" style="border-radius: 20px 20px 0 0;">
+                                        <h5 class="modal-title fw-bold text-dark"><i class="fas fa-money-check-alt me-2"></i> Xác nhận thanh toán</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <form method="POST" action="{% url 'borrow_book' item.book.id %}">
+                                        {% csrf_token %}
+                                        <div class="modal-body p-4 text-center">
+                                            <h6 class="fw-bold mb-3">{{ item.book.title }}</h6>
+                                            <h3 class="text-danger fw-bold mb-4">{{ item.book.price }} VNĐ</h3>
+                                            
+                                            <p class="text-start fw-bold mb-2">Chọn phương thức thanh toán:</p>
+                                            
+                                            <label class="w-100 text-start border p-3 rounded-3 mb-3 cursor-pointer payment-option selected-payment shadow-sm transition">
+                                                <div class="form-check d-flex align-items-center m-0">
+                                                    <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="CASH" data-book-id="{{ item.book.id }}" required checked style="transform: scale(1.3);">
+                                                    <div>
+                                                        <div class="fw-bold text-dark"><i class="fas fa-money-bill-wave text-success me-2"></i> Thanh toán tại quầy</div>
+                                                        <small class="text-muted">Đóng tiền mặt trực tiếp cho Thủ thư.</small>
+                                                    </div>
+                                                </div>
+                                            </label>
+
+                                            <label class="w-100 text-start border p-3 rounded-3 cursor-pointer payment-option shadow-sm transition">
+                                                <div class="form-check d-flex align-items-center m-0">
+                                                    <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="BANK" data-book-id="{{ item.book.id }}" required style="transform: scale(1.3);">
+                                                    <div>
+                                                        <div class="fw-bold text-dark"><i class="fas fa-qrcode text-primary me-2"></i> Chuyển khoản (Mã QR)</div>
+                                                        <small class="text-muted">Chuyển khoản trước, Thủ thư sẽ kiểm tra.</small>
+                                                    </div>
+                                                </div>
+                                            </label>
+                                            
+                                            <div id="qrCodeSection{{ item.book.id }}" class="qr-box mt-3" style="display: none;">
+                                                <div class="p-3 bg-light border border-warning rounded-3 text-center shadow-sm">
+                                                    <p class="fw-bold text-dark mb-2">Quét mã MoMo/Ngân hàng</p>
+                                                    <img src="{% static 'img/qr.png' %}" alt="Mã QR Thanh Toán" class="img-fluid rounded border mb-2" style="max-width: 160px;">
+                                                    <div class="small text-dark mt-2 bg-white p-2 rounded border border-dashed">
+                                                        Nội dung chuyển khoản:<br>
+                                                        <strong class="text-danger fs-6">Sách {{ item.book.id }} - {{ request.user.msv }}</strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="alert alert-info mt-4 small text-start mb-0" style="border-radius: 10px;">
+                                                <i class="fas fa-info-circle me-1"></i> Trạng thái đơn sẽ là <b>"Chờ xác nhận"</b> cho đến khi Thủ thư duyệt tiền.
+                                            </div>
+                                        </div>
+                                        <div class="modal-footer border-0 pb-4 pt-0 justify-content-center">
+                                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                                            <button type="submit" class="btn btn-warning rounded-pill px-5 fw-bold text-dark shadow-sm">Xác nhận mượn</button>
+                                        </div>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+
                     </div>
                     {% empty %}
                     <div class="col-12 text-center py-5">
                         <i class="far fa-heart fa-3x text-muted mb-3"></i>
-                        <h4 class="text-muted">Khanh chưa có cuốn sách yêu thích nào.</h4>
-                        <a href="{% url 'book_list' %}" class="btn btn-primary rounded-pill mt-3 px-4">Khám phá kho sách ngay</a>
+                        <h4 class="text-muted">Bạn chưa có cuốn sách yêu thích nào.</h4>
+                        <a href="{% url 'book_list' %}" class="btn btn-primary rounded-pill mt-3 px-4 fw-bold">Khám phá kho sách ngay</a>
                     </div>
                     {% endfor %}
                 </div>
+                
+                <div id="wishlist-scroll-trigger" 
+                     data-url="{% url 'api_load_more_wishlist' %}" 
+                     data-page="2" 
+                     data-has-next="{% if wishlist_items.has_next %}true{% else %}false{% endif %}">
+                </div>
+                <div id="wishlist-loading-spinner" class="text-center py-4" style="display: none;">
+                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                </div>
+
             </div>
         </div>
     </div>
 </div>
-
-
 {% endblock %}

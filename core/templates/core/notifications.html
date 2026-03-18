@@ -14,10 +14,10 @@
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h4 class="m-0 fw-bold text-dark">Hộp thư thông báo</h4>
-                        <span class="text-muted small">Bạn có {{ notifications.count }} thông báo</span>
+                        <span class="text-muted small">Bạn có {{ notifications.paginator.count|default:notifications.count }} thông báo</span>
                     </div>
 
-                    <div class="notification-list">
+                    <div class="notification-list" id="notification-container">
                         {% for n in notifications %}
                         <div class="p-3 mb-3 rounded-3 border-start border-4 {% if n.status == 'UNREAD' %}bg-light border-primary{% else %}border-secondary{% endif %}" style="transition: 0.3s;">
                             <div class="d-flex justify-content-between">
@@ -50,6 +50,17 @@
                         </div>
                         {% endfor %}
                     </div>
+
+                    <div id="scroll-trigger" 
+                         data-url="{% url 'api_load_more_notifications' %}" 
+                         data-page="2" 
+                         data-has-next="{% if notifications.has_next %}true{% else %}false{% endif %}">
+                    </div>
+                    
+                    <div id="loading-spinner" class="text-center py-4" style="display: none;">
+                        <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                    </div>
+
                 </div>
             </div>
         </div>
