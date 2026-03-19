@@ -39,8 +39,9 @@ def register(request):
     
     return render(request, 'core/register.html', {'form': form})
 
+# Hàm xử lý đăng nhập
 def user_login(request):
-    # 1. Kiểm tra nếu đã đăng nhập từ trước
+    # 1. Kiểm tra nếu đã đăng nhập tử trước
     if request.user.is_authenticated:
         user = request.user
         if user.is_superuser or user.role == 'ADMIN':
@@ -49,7 +50,7 @@ def user_login(request):
             return redirect('staff_borrow_management')
         return redirect('home')
 
-    # 2. Xử lý khi nhấn nút Đăng nhập (POST)
+    # 2. Xử lý khi nhấn nút đăng nhập (POST request)
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -61,7 +62,7 @@ def user_login(request):
                 login(request, user) 
                 messages.success(request, f'Chào mừng {username} đã quay lại!')
                 
-                # PHÂN LUỒNG SAU ĐĂNG NHẬP
+                # Phân luồng sau khi đăng nhập
                 if user.is_superuser or user.role == 'ADMIN':
                     return redirect('/admin/') # Admin vào trang quản trị hệ thống
                 elif user.is_staff or user.role == 'STAFF':
@@ -136,9 +137,10 @@ def home(request):
         'borrowed_book_ids': list(borrowed_book_ids),
         'pending_book_ids': list(pending_book_ids) 
     })
+
 # HÀM BOOK_LIST CHUẨN (Đã gộp cả tìm kiếm, lọc và phân trang)
 def book_list(request):
-    # Lấy các tham số từ thanh địa chỉ (URL)
+    # Lấy tham số từ thanh địa chỉ (URL)
     query = request.GET.get('q', '')
     sort = request.GET.get('sort', 'newest')  # Mặc định là mới nhất
     category_id = request.GET.get('category', '') # Lấy ID danh mục muốn lọc
@@ -247,13 +249,13 @@ def premium_book_list(request):
         books = paginator.page(paginator.num_pages)
     # ---------------------------------------------------------
 
-    # Khởi tạo các danh sách ID trống
+    # Khởi tạo các danh sách có ID trống
     borrowed_book_ids = []
     pending_book_ids = []
     wishlist_book_ids = []
     
     if request.user.is_authenticated:
-        # Lấy danh sách ID sách đang mượn
+        # Lấy danh sách ID sách đang mượn chưa trả
         borrowed_book_ids = BorrowTransaction.objects.filter(
             user=request.user, status='BORROWED'
         ).values_list('book_id', flat=True)
@@ -373,7 +375,7 @@ def return_book(request, transaction_id):
     borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, user=request.user, status='BORROWED')
     
     try:
-        # Chuyển trạng thái sang Chờ xác nhận
+        # Chuyển tạng thái sang chờ xác nhận
         borrow_record.status = 'PENDING'
         borrow_record.save()
         
