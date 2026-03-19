@@ -1,3 +1,4 @@
+"update thanh menu"
 {% load static %}
 <!DOCTYPE html>
 <html lang="vi">
@@ -18,7 +19,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/style.css' %}?v=1.8" rel="stylesheet">
-
     
 </head>
 
@@ -118,7 +118,6 @@
             </div>
         </div>
     </header>
-
     {% if messages %}
     <div class="container-fluid px-lg-5 mt-3">
         {% for message in messages %}
@@ -134,7 +133,6 @@
     <main>
         {% block content %}{% endblock %}
     </main>
-
     <footer class="full-footer">
         <div class="container-fluid px-lg-5">
             <div class="row g-5">
@@ -152,7 +150,6 @@
                         <a href="#" class="btn btn-outline-light btn-square rounded-circle"><i class="fab fa-linkedin-in"></i></a>
                     </div>
                 </div>
-
                 <div class="col-md-6 col-lg-4">
                     <h5 class="text-white mb-4">Liên kết nhanh</h5>
                     <div class="d-flex flex-column footer-link-list justify-content-start">
@@ -163,7 +160,6 @@
                         <a href="{% url 'borrow_history' %}"><i class="fas fa-chevron-right me-2"></i>Lịch sử mượn</a>
                     </div>
                 </div>
-
                 <div class="col-md-6 col-lg-4">
                     <h5 class="text-white mb-4">Hỗ trợ</h5>
                     <div class="d-flex flex-column footer-link-list justify-content-start">
@@ -175,14 +171,12 @@
                 </div>
             </div>
         </div>
-
         <div class="container-fluid copyright-bar py-3 mt-5 text-center">
             <div class="container">
                 <span class="text-white-50 small">© 2026 <strong>Thư viện Alovu</strong>. Designed by <a href="#" class="text-primary fw-bold text-decoration-none">Lê Tuấn Anh</a>.</span>
             </div>
         </div>
     </footer>
-
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.4/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
