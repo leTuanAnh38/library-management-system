@@ -1,0 +1,342 @@
+# file: core/views/api_views.py
+
+import json
+from django.http import JsonResponse
+from django.urls import reverse
+from django.views.decorators.http import require_POST
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404
+from django.db.models import Q
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.utils.timesince import timesince
+from django.utils.dateformat import format
+
+# Import models từ app core
+from core.models import Book, Wishlist, Review, BorrowTransaction, Notification
+
+# ==========================================
+# 1. API CƠ BẢN DÀNH CHO BÊN THỨ 3 (GET, POST, DELETE)
+# ==========================================
+
+def api_get_books(request):
+    if request.method == 'GET':
+        books = list(Book.objects.values('id', 'title', 'author', 'quantity'))
+        return JsonResponse({'status': 200, 'message': 'Thành công', 'data': books})
+
+@csrf_exempt 
+def api_create_book(request):
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            
+            if not data.get('title') or len(data.get('title')) < 2:
+                return JsonResponse({'status': 400, 'message': 'Lỗi: Tên sách không được để trống hoặc quá ngắn!'}, status=400)
+            if not data.get('author'):
+                return JsonResponse({'status': 400, 'message': 'Lỗi: Thiếu tên tác giả!'}, status=400)
+            if data.get('quantity', 0) < 0:
+                return JsonResponse({'status': 400, 'message': 'Lỗi: Số lượng sách không được nhỏ hơn 0!'}, status=400)
+
+            book = Book.objects.create(
+                title=data['title'],
+                author=data['author'],
+                quantity=data.get('quantity', 0),
+                category_id=data.get('category_id', 1) 
+            )
+            return JsonResponse({'status': 201, 'message': 'Tạo sách thành công!', 'book_id': book.id}, status=201)
+            
+        except Exception as e:
+            return JsonResponse({'status': 400, 'message': f'Lỗi hệ thống: {str(e)}'}, status=400)
+
+@csrf_exempt
+def api_delete_book(request, book_id):
+    if request.method == 'DELETE':
+        try:
+            book = Book.objects.get(id=book_id)
+            book.delete()
+            return JsonResponse({'status': 204, 'message': f'Đã xóa sách có ID {book_id} thành công!'})
+        except Book.DoesNotExist:
+            return JsonResponse({'status': 404, 'message': 'Lỗi: Không tìm thấy sách để xóa!'}, status=404)
+
+# ==========================================
+# 2. API PHỤC VỤ DASHBOARD VÀ TÌM KIẾM AJAX
+# ==========================================
+
+@login_required 
+def admin_chart_data(request):
+    is_admin = request.user.is_superuser or getattr(request.user, 'role', '') == 'ADMIN'
+    is_staff_user = getattr(request.user, 'role', '') == 'STAFF'
+
+    if is_admin or is_staff_user:
+        borrowed = BorrowTransaction.objects.filter(status='BORROWED').count()
+        pending = BorrowTransaction.objects.filter(status='PENDING').count()
+        returned = BorrowTransaction.objects.filter(status='RETURNED').count()
+        overdue = BorrowTransaction.objects.filter(status='OVERDUE').count()
+
+        return JsonResponse({
+            'labels': ['Đang mượn', 'Chờ xác nhận', 'Đã trả', 'Quá hạn'],
+            'data': [borrowed, pending, returned, overdue]
+        })
+    
+    return JsonResponse({'error': 'Bạn không có quyền xem dữ liệu này!'}, status=403)
+
+def live_search_api(request):
+    query = request.GET.get('q', '').strip()
+    
+    if query:
+        books = Book.objects.filter(
+            Q(title__icontains=query) | Q(author__icontains=query)
+        )[:5]
+        
+        results = []
+        for book in books:
+            image_url = book.cover_image.url if hasattr(book.cover_image, 'url') else book.cover_image
+            
+            results.append({
+                'id': book.id,
+                'title': book.title,
+                'author': book.author if book.author else 'Chưa rõ',
+                'cover_image': image_url,
+                'price': book.price,
+                'url': reverse('book_detail', args=[book.id]) 
+            })
+            
+        return JsonResponse({'status': 'success', 'data': results})
+        
+    return JsonResponse({'status': 'empty', 'data': []})
+
+# ==========================================
+# 3. API TƯƠNG TÁC NGƯỜI DÙNG (YÊU THÍCH, ĐÁNH GIÁ)
+# ==========================================
+
+@login_required
+@require_POST 
+def toggle_wishlist_api(request, book_id):
+    book = get_object_or_404(Book, id=book_id)
+    wishlist_item = Wishlist.objects.filter(user=request.user, book=book).first()
+    
+    if wishlist_item:
+        wishlist_item.delete()
+        is_wished = False
+    else:
+        Wishlist.objects.create(user=request.user, book=book)
+        is_wished = True
+        
+    return JsonResponse({
+        'status': 'success',
+        'is_wished': is_wished
+    })
+
+@login_required
+@require_POST
+def api_add_review(request, book_id):
+    book = get_object_or_404(Book, id=book_id)
+    rating = request.POST.get('rating')
+    comment = request.POST.get('comment')
+
+    if not rating or not comment:
+        return JsonResponse({'status': 'error', 'message': 'Vui lòng nhập đủ thông tin.'})
+
+    if Review.objects.filter(user=request.user, book=book).exists():
+         return JsonResponse({'status': 'error', 'message': 'Bạn đã đánh giá sách này rồi.'})
+
+    review = Review.objects.create(
+        user=request.user,
+        book=book,
+        rating=int(rating),
+        comment=comment
+    )
+
+    avatar_url = request.user.avatar_url if hasattr(request.user, 'avatar_url') and request.user.avatar_url else '/static/img/user.jpg'
+    full_name = request.user.get_full_name() or request.user.username
+    stars_html = '⭐' * review.rating
+
+    return JsonResponse({
+        'status': 'success',
+        'review': {
+            'author': full_name,
+            'avatar': avatar_url,
+            'stars': stars_html,
+            'date': format(review.created_at, 'd/m/Y'),
+            'comment': review.comment
+        }
+    })
+
+# ==========================================
+# 4. API TẢI THÊM DỮ LIỆU (LOAD MORE / INFINITE SCROLL)
+# ==========================================
+
+def api_load_more_books(request):
+    page = int(request.GET.get('page', 1))
+    query = request.GET.get('q', '')
+    category_id = request.GET.get('category', '')
+    sort = request.GET.get('sort', 'newest')
+    is_premium = request.GET.get('is_premium', 'false')
+
+    books_list = Book.objects.all()
+
+    if is_premium == 'true':
+        books_list = books_list.filter(price__gt=0)
+
+    if category_id:
+        books_list = books_list.filter(category_id=category_id)
+    if query:
+        books_list = books_list.filter(
+            Q(title__icontains=query) | Q(author__icontains=query) | Q(category__name__icontains=query)
+        ).distinct()
+
+    if sort == 'title':
+        books_list = books_list.order_by('title')
+    elif sort == 'oldest':
+        books_list = books_list.order_by('created_at')
+    else:
+        books_list = books_list.order_by('-created_at')
+
+    wishlist_ids = []
+    borrowed_ids = []
+    pending_ids = []
+    if request.user.is_authenticated:
+        wishlist_ids = list(Wishlist.objects.filter(user=request.user).values_list('book_id', flat=True))
+        borrowed_ids = list(BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True))
+        pending_ids = list(BorrowTransaction.objects.filter(user=request.user, status='PENDING').values_list('book_id', flat=True))
+
+    paginator = Paginator(books_list, 6) 
+    
+    try:
+        books = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        return JsonResponse({'status': 'empty', 'data': [], 'has_next': False})
+
+    data = []
+    for b in books:
+        if b.id in pending_ids: btn_status = 'PENDING'
+        elif b.id in borrowed_ids: btn_status = 'BORROWED'
+        elif b.quantity <= 0: btn_status = 'OUT_OF_STOCK'
+        elif b.price and b.price > 0: btn_status = 'VIP'
+        else: btn_status = 'AVAILABLE'
+
+        image_url = b.cover_image.url if hasattr(b.cover_image, 'url') else b.cover_image
+
+        data.append({
+            'id': b.id,
+            'title': b.title,
+            'author': b.author if b.author else 'Chưa rõ',
+            'category_name': b.category.name if getattr(b, 'category', None) else 'Khác', 
+            'cover_image': image_url,
+            'price': b.price,
+            'quantity': b.quantity,
+            'btn_status': btn_status,
+            'is_wished': b.id in wishlist_ids,
+            'url': reverse('book_detail', args=[b.id]),
+            'borrow_url': reverse('borrow_book', args=[b.id]),
+            'wishlist_api_url': reverse('api_toggle_wishlist', args=[b.id])
+        })
+
+    return JsonResponse({
+        'status': 'success',
+        'data': data,
+        'has_next': books.has_next()
+    })
+
+@login_required
+def api_unread_notification_count(request):
+    count = Notification.objects.filter(user=request.user, status='UNREAD').count()
+    return JsonResponse({'status': 'success', 'unread_count': count})
+
+@login_required
+def api_load_more_notifications(request):
+    page = int(request.GET.get('page', 1))
+    notifications_list = Notification.objects.filter(user=request.user).order_by('-created_at')
+    paginator = Paginator(notifications_list, 8) 
+    
+    try:
+        notifications = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        return JsonResponse({'status': 'empty', 'data': [], 'has_next': False})
+        
+    data = []
+    for n in notifications:
+        data.append({
+            'id': n.id,
+            'message': n.message,
+            'type': n.type,
+            'status': n.status,
+            'time_since': timesince(n.created_at) + " trước"
+        })
+        
+    Notification.objects.filter(id__in=[n.id for n in notifications], status='UNREAD').update(status='READ')
+        
+    return JsonResponse({'status': 'success', 'data': data, 'has_next': notifications.has_next()})
+
+@login_required
+def api_load_more_history(request):
+    page = int(request.GET.get('page', 1))
+    history_list = BorrowTransaction.objects.filter(user=request.user).order_by('-created_at')
+    paginator = Paginator(history_list, 8)
+    
+    try:
+        history = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        return JsonResponse({'status': 'empty', 'data': [], 'has_next': False})
+        
+    data = []
+    for item in history:
+        cover_image = item.book.cover_image.url if hasattr(item.book.cover_image, 'url') else item.book.cover_image
+        
+        data.append({
+            'id': item.id,
+            'book_title': item.book.title,
+            'book_author': item.book.author or "Chưa rõ",
+            'cover_image': cover_image,
+            'borrow_date': item.borrow_date.strftime("%d/%m/%Y") if item.borrow_date else '-',
+            'due_date': item.due_date.strftime("%d/%m/%Y") if item.due_date else '-',
+            'return_date': item.return_date.strftime("%d/%m/%Y") if item.return_date else '-',
+            'status': item.status,
+            'is_late': getattr(item, 'is_late', False), 
+            'penalty_amount': getattr(item, 'penalty_amount', 0),
+            'return_url': reverse('return_book', args=[item.id])
+        })
+        
+    return JsonResponse({'status': 'success', 'data': data, 'has_next': history.has_next()})
+
+@login_required
+def api_load_more_wishlist(request):
+    page = int(request.GET.get('page', 1))
+    wishlist_items = Wishlist.objects.filter(user=request.user).order_by('-created_at')
+    paginator = Paginator(wishlist_items, 6)
+    
+    try:
+        items = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        return JsonResponse({'status': 'empty', 'data': [], 'has_next': False})
+        
+    borrowed_ids = list(BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True))
+    pending_ids = list(BorrowTransaction.objects.filter(user=request.user, status='PENDING').values_list('book_id', flat=True))
+
+    data = []
+    for item in items:
+        b = item.book
+        
+        if b.id in pending_ids: btn_status = 'PENDING'
+        elif b.id in borrowed_ids: btn_status = 'BORROWED'
+        elif b.quantity <= 0: btn_status = 'OUT_OF_STOCK'
+        elif b.price and b.price > 0: btn_status = 'VIP'
+        else: btn_status = 'AVAILABLE'
+
+        image_url = b.cover_image.url if hasattr(b.cover_image, 'url') else b.cover_image
+
+        data.append({
+            'id': b.id,
+            'title': b.title,
+            'author': b.author or "Chưa rõ",
+            'cover_image': image_url,
+            'price': b.price,
+            'quantity': b.quantity,
+            'btn_status': btn_status,
+            'is_wished': True, 
+            'url': reverse('book_detail', args=[b.id]),
+            'borrow_url': reverse('borrow_book', args=[b.id]),
+            'wishlist_api_url': reverse('api_toggle_wishlist', args=[b.id])
+        })
+        
+    return JsonResponse({'status': 'success', 'data': data, 'has_next': items.has_next()})
