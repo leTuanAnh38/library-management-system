@@ -11,6 +11,12 @@ from django.db.models import Q
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.utils.timesince import timesince
 from django.utils.dateformat import format
+from rest_framework import generics
+from rest_framework.permissions import AllowAny
+from django.contrib.auth import get_user_model
+User = get_user_model()
+
+from core.serializers import RegisterSerializer
 
 # Import models từ app core
 from core.models import Book, Wishlist, Review, BorrowTransaction, Notification
@@ -18,7 +24,10 @@ from core.models import Book, Wishlist, Review, BorrowTransaction, Notification
 # ==========================================
 # 1. API CƠ BẢN DÀNH CHO BÊN THỨ 3 (GET, POST, DELETE)
 # ==========================================
-
+class RegisterView(generics.CreateAPIView):
+    queryset = User.objects.all()
+    permission_classes = (AllowAny,) # Cho phép ai cũng gọi được API này
+    serializer_class = RegisterSerializer
 def api_get_books(request):
     if request.method == 'GET':
         books = list(Book.objects.values('id', 'title', 'author', 'quantity'))

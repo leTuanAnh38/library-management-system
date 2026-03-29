@@ -1,5 +1,8 @@
 from django.urls import path
-
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 # Import 6 file view riêng biệt từ thư mục core/views/ mà chúng ta vừa tạo
 from core.views import (
     auth_views,
@@ -9,6 +12,7 @@ from core.views import (
     staff_views,
     api_views
 )
+from core.views.api_views import RegisterView
 
 urlpatterns = [
     # ==========================================
@@ -82,4 +86,13 @@ urlpatterns = [
     path('api/history/load-more/', api_views.api_load_more_history, name='api_load_more_history'),
     path('api/wishlist/load-more/', api_views.api_load_more_wishlist, name='api_load_more_wishlist'),
     path('api/notifications/unread-count/', api_views.api_unread_notification_count, name='api_unread_notification_count'),
+
+    # 1. API Đăng ký tài khoản
+    path('api/register/', RegisterView.as_view(), name='api_register'),
+    
+    # 2. API Đăng nhập (Lấy thẻ Access & Refresh)
+    path('api/login/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    
+    # 3. API Xin cấp lại thẻ Access mới (khi thẻ cũ hết hạn)
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]

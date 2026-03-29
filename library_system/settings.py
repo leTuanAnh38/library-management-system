@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/5.1/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
-
+from datetime import timedelta
 from pathlib import Path
 import os
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -38,8 +38,16 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
+    'rest_framework_simplejwt',
     'core',
 ]
+# 2. Bật chế độ xác thực bằng JWT cho toàn dự án
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -257,3 +265,11 @@ LANGUAGE_CODE = 'vi'
 # Đảm bảo cài đặt i18n đang được bật
 USE_I18N = True
 USE_TZ = True
+
+# 3. Cấu hình thời gian sống của Token (Nên để ở cuối file)
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60), # Access token sống 60 phút
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),    # Refresh token sống 7 ngày
+    'AUTH_HEADER_TYPES': ('Bearer',),               # Chuẩn header: Authorization: Bearer <token>
+}

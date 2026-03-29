@@ -1315,3 +1315,31 @@ body.auth-page {
     .dropdown-menu-end {
         margin-top: 10px !important;
     }
+
+    /* =========================================
+   ĐỔI NỀN THANH MENU SANG MÀU TRẮNG
+   ========================================= */
+/* 1. Ép nền màu cam thành màu trắng và thêm viền dưới cho có chiều sâu */
+.nav-bar .bg-primary {
+    background-color: #ffffff !important;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+/* 2. Đổi toàn bộ chữ (Danh mục, Trang chủ...) từ trắng sang xám đậm */
+.nav-bar .text-white,
+.nav-bar .nav-link {
+    color: #333333 !important;
+    font-weight: 600;
+}
+
+/* 3. Tạo điểm nhấn màu cam cho cái icon Menu (3 gạch) */
+.nav-bar .navbar-toggler i {
+    color: #ffc107 !important; 
+}
+
+/* 4. Đảm bảo khi di chuột vào chữ vẫn nổi hiệu ứng màu vàng cam */
+.nav-bar .nav-link:hover, 
+.nav-bar .nav-link.active,
+.nav-bar .text-white:hover {
+    color: #ffc107 !important;
+}

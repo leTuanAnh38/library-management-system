@@ -80,7 +80,7 @@
                                     {% else %}
                                         {% if book.price and book.price > 0 %}
                                             <button type="button" class="btn btn-warning w-100 fw-bold rounded-pill text-dark shadow-sm py-2" data-bs-toggle="modal" data-bs-target="#paymentModal{{ book.id }}">
-                                                <i class="fas fa-shopping-cart me-1"></i> MƯỢN VIP
+                                                <i class="fas fa-shopping-cart me-1"></i> MƯỢN SÁCH
                                             </button>
                                         {% else %}
                                             <a href="{% url 'borrow_book' book.id %}" class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm" onclick="return confirm('Bạn ơi, bạn có chắc chắn muốn mượn cuốn sách [{{ book.title }}] này không?')">
