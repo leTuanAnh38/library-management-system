@@ -67,6 +67,15 @@ urlpatterns = [
     
     path('staff/users/', staff_views.staff_user_management, name='staff_user_management'),
     path('staff/users/<int:user_id>/', staff_views.staff_user_detail, name='staff_user_detail'),
+    # --- QUẢN LÝ DANH MỤC (CATEGORY) ---
+    path('staff/categories/', staff_views.staff_category_list, name='staff_category_list'),
+    path('staff/categories/add/', staff_views.staff_category_form, name='staff_category_add'),
+    path('staff/categories/edit/<int:pk>/', staff_views.staff_category_form, name='staff_category_edit'),
+
+    # --- QUẢN LÝ NHÀ XUẤT BẢN (PUBLISHER) ---
+    path('staff/publishers/', staff_views.staff_publisher_list, name='staff_publisher_list'),
+    path('staff/publishers/add/', staff_views.staff_publisher_form, name='staff_publisher_add'),
+    path('staff/publishers/edit/<int:pk>/', staff_views.staff_publisher_form, name='staff_publisher_edit'),
 
     # ==========================================
     # 6. NHÓM API (XỬ LÝ NGẦM AJAX & LOAD MORE)

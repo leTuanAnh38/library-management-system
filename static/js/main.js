@@ -285,7 +285,7 @@ $(document).ready(function() {
                             
                             // Duyệt qua từng cuốn sách API trả về và vẽ giao diện HTML
                             response.data.forEach(function(book) {
-                                var priceTag = book.price > 0 ? `<span class="badge bg-danger ms-2" style="font-size: 0.7rem;">VIP</span>` : '';
+                                var priceTag = book.price > 0 ? `<span class="badge bg-danger ms-2" style="font-size: 0.7rem;">Có trả phí</span>` : '';
                                 
                                 html += `
                                     <a href="${book.url}" class="d-flex align-items-center p-2 border-bottom text-decoration-none hover-bg-light transition-hover" style="color: inherit;">
