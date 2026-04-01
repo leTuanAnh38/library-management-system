@@ -6,6 +6,8 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.db.models import Q
 from django.db import transaction as db_transaction
+from ..models import Category, Publisher
+from ..forms import CategoryForm, PublisherForm
 
 # Chú ý import lại các model và form từ thư mục gốc của app core
 from core.models import Book, BorrowTransaction, Penalty, User, Notification
@@ -70,7 +72,47 @@ def delete_book(request, book_id):
     messages.success(request, "Đã xóa sách khỏi hệ thống!")
     return redirect('staff_dashboard')
 
+# --- QUẢN LÝ DANH MỤC ---
+def staff_category_list(request):
+    categories = Category.objects.all().order_by('name')
+    # Sửa từ 'staff/category_list.html' thành 'core/staff/category_list.html'
+    return render(request, 'core/staff/category_list.html', {'categories': categories})
 
+def staff_category_form(request, pk=None):
+    instance = get_object_or_404(Category, pk=pk) if pk else None
+    if request.method == 'POST':
+        form = CategoryForm(request.POST, instance=instance)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Cập nhật danh mục thành công!")
+            return redirect('staff_category_list')
+    else:
+        form = CategoryForm(instance=instance)
+    
+    title = "Chỉnh sửa danh mục" if pk else "Thêm danh mục mới"
+    # Sửa từ 'staff/category_form.html' thành 'core/staff/category_form.html'
+    return render(request, 'core/staff/category_form.html', {'form': form, 'title': title})
+
+# --- QUẢN LÝ NHÀ XUẤT BẢN ---
+def staff_publisher_list(request):
+    publishers = Publisher.objects.all().order_by('name')
+    # Sửa từ 'staff/publisher_list.html' thành 'core/staff/publisher_list.html'
+    return render(request, 'core/staff/publisher_list.html', {'publishers': publishers})
+
+def staff_publisher_form(request, pk=None):
+    instance = get_object_or_404(Publisher, pk=pk) if pk else None
+    if request.method == 'POST':
+        form = PublisherForm(request.POST, instance=instance)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Cập nhật nhà xuất bản thành công!")
+            return redirect('staff_publisher_list')
+    else:
+        form = PublisherForm(instance=instance)
+    
+    title = "Chỉnh sửa nhà xuất bản" if pk else "Thêm nhà xuất bản mới"
+    # Sửa từ 'staff/category_form.html' thành 'core/staff/category_form.html'
+    return render(request, 'core/staff/category_form.html', {'form': form, 'title': title})
 # ==========================================
 # 2. QUẢN LÝ NGHIỆP VỤ MƯỢN TRẢ SÁCH
 # ==========================================

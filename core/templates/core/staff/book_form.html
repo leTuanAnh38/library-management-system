@@ -2,6 +2,15 @@
 
 {% block title %}{{ title }} - Quản lý thư viện{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Ép độ rộng ô nhập liệu của 3 trường vị trí giống như ảnh mẫu */
+    .location-field input {
+        max-width: 50% !important;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container py-5 mt-5">
     <div class="row justify-content-center">
@@ -19,15 +28,38 @@
                         {% csrf_token %}
                         
                         {% for field in form %}
-                        <div class="{% if field.name == 'description' or field.name == 'cover_image' %}col-12{% else %}col-md-6{% endif %}">
-                            <label class="form-label fw-bold small text-uppercase text-muted">
-                                {{ field.label }}
-                            </label>
-                            {{ field }}
-                            {% if field.errors %}
-                                <div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>
+                            {# 1. Xử lý 3 trường vị trí theo phong cách Admin #}
+                            {% if field.name == 'floor' or field.name == 'shelf' or field.name == 'area' %}
+                                <div class="col-12 location-field">
+                                    <div class="row align-items-center">
+                                        <label class="col-sm-3 form-label fw-bold small text-uppercase text-muted mb-sm-0">
+                                            {{ field.label }} {% if field.field.required %}<span class="text-danger">*</span>{% endif %}
+                                        </label>
+                                        <div class="col-sm-9">
+                                            {{ field }}
+                                            {% if field.errors %}
+                                                <div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                            {# 2. Ẩn trường location cũ nếu có trong form #}
+                            {% elif field.name == 'location' %}
+                                <div style="display: none;">{{ field }}</div>
+
+                            {# 3. Các trường còn lại hiển thị bình thường #}
+                            {% else %}
+                                <div class="{% if field.name == 'description' or field.name == 'cover_image' %}col-12{% else %}col-md-6{% endif %}">
+                                    <label class="form-label fw-bold small text-uppercase text-muted">
+                                        {{ field.label }}
+                                    </label>
+                                    {{ field }}
+                                    {% if field.errors %}
+                                        <div class="text-danger small mt-1">{{ field.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
                             {% endif %}
-                        </div>
                         {% endfor %}
 
                         <div class="col-12 mt-5 pt-3 border-top">
