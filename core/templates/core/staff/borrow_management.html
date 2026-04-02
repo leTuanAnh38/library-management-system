@@ -72,16 +72,24 @@
                                     <td class="text-center">
                                         {% if trans.status == 'BORROWED' %}
                                             <span class="badge bg-primary rounded-pill px-3 shadow-sm mb-1">Đang mượn</span>
-                                            
+                                        {% elif trans.status == 'OVERDUE' %}
+                                            <span class="badge bg-dark text-white rounded-pill px-3 shadow-sm mb-1">Quá hạn</span>
                                         {% elif trans.status == 'PENDING' %}
-                                            {% if not trans.is_paid %}
-                                                <span class="badge bg-danger text-white rounded-pill px-3 shadow-sm mb-1">
-                                                    <i class="fas fa-spinner fa-spin me-1"></i>Chờ duyệt phí
+                                            
+                                            {% if trans.reason == 'YÊU CẦU TRẢ' %}
+                                                <span class="badge bg-warning text-dark rounded-pill px-3 shadow-sm mb-1">
+                                                    <i class="fas fa-undo me-1"></i>Chờ xác nhận trả
                                                 </span>
                                             {% else %}
-                                                <span class="badge bg-warning text-dark rounded-pill px-3 shadow-sm mb-1">
-                                                    <i class="fas fa-clock me-1"></i>Chờ xác nhận trả
-                                                </span>
+                                                {% if trans.book.price > 0 and not trans.is_paid %}
+                                                    <span class="badge bg-danger text-white rounded-pill px-3 shadow-sm mb-1">
+                                                        <i class="fas fa-spinner fa-spin me-1"></i>Chờ duyệt phí
+                                                    </span>
+                                                {% else %}
+                                                    <span class="badge bg-info text-white rounded-pill px-3 shadow-sm mb-1">
+                                                        <i class="fas fa-hourglass-half me-1"></i>Chờ duyệt mượn
+                                                    </span>
+                                                {% endif %}
                                             {% endif %}
                                             
                                         {% else %}
@@ -102,25 +110,27 @@
                                     </td>
                                     
                                     <td class="text-end">
-                                        {% if trans.status == 'PENDING' and not trans.is_paid %}
-                                            <a href="{% url 'staff_approve_borrow' trans.id %}" 
-                                               class="btn btn-sm btn-warning rounded-pill px-3 shadow-sm fw-bold text-dark"
-                                               onclick="return confirm('Xác nhận ĐÃ THU TIỀN và GIAO SÁCH VIP cho sinh viên này?');">
-                                                <i class="fas fa-hand-holding-usd me-1"></i>Duyệt VIP
-                                            </a>
+                                        {% if trans.status == 'PENDING' %}
                                             
-                                        {% elif trans.status == 'PENDING' %}
+                                            {% if trans.reason == 'YÊU CẦU TRẢ' %}
+                                                <a href="{% url 'staff_confirm_return' trans.id %}" 
+                                                   class="btn btn-sm btn-success rounded-pill px-3 shadow-sm fw-bold"
+                                                   onclick="return confirm('Xác nhận sinh viên đã mang sách ra quầy trả?')">
+                                                    <i class="fas fa-check-circle me-1"></i>Xác nhận thu hồi
+                                                </a>
+                                            {% else %}
+                                                <a href="{% url 'staff_approve_borrow' trans.id %}" 
+                                                   class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm fw-bold"
+                                                   onclick="return confirm('Xác nhận duyệt và giao sách cho sinh viên này?')">
+                                                    <i class="fas fa-user-check me-1"></i>Duyệt giao sách
+                                                </a>
+                                            {% endif %}
+
+                                        {% elif trans.status == 'BORROWED' or trans.status == 'OVERDUE' %}
                                             <a href="{% url 'staff_confirm_return' trans.id %}" 
-                                               class="btn btn-sm btn-success rounded-pill px-3 shadow-sm fw-bold"
-                                               onclick="return confirm('Xác nhận sinh viên đã mang sách ra quầy trả?')">
-                                                <i class="fas fa-check-circle me-1"></i>Xác nhận trả
-                                            </a>
-                                            
-                                        {% elif trans.status == 'BORROWED' %}
-                                            <a href="{% url 'staff_confirm_return' trans.id %}" 
-                                               class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm"
+                                               class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm"
                                                onclick="return confirm('Sinh viên chưa gửi yêu cầu trả trên web. Bạn vẫn muốn thu hồi sách trực tiếp chứ?')">
-                                                Thu hồi sách
+                                                Thu hồi trực tiếp
                                             </a>
                                             
                                         {% else %}

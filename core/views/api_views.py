@@ -1,5 +1,5 @@
 # file: core/views/api_views.py
-
+from django.db.models import Case, When, Value, IntegerField
 import json
 from django.http import JsonResponse
 from django.urls import reverse
@@ -280,7 +280,19 @@ def api_load_more_notifications(request):
 @login_required
 def api_load_more_history(request):
     page = int(request.GET.get('page', 1))
-    history_list = BorrowTransaction.objects.filter(user=request.user).order_by('-created_at')
+    
+    # ---> ĐÃ SỬA: Thêm logic sắp xếp y như trong borrow_views.py <---
+    history_list = BorrowTransaction.objects.filter(user=request.user).annotate(
+        status_priority=Case(
+            When(status='OVERDUE', then=Value(1)),   # Quá hạn lên top 1
+            When(status='BORROWED', then=Value(2)),  # Đang mượn top 2
+            When(status='PENDING', then=Value(3)),   # Chờ duyệt top 3
+            When(status='RETURNED', then=Value(4)),  # Đã trả xuống cuối
+            default=Value(5),
+            output_field=IntegerField(),
+        )
+    ).order_by('status_priority', '-created_at')
+    
     paginator = Paginator(history_list, 8)
     
     try:
