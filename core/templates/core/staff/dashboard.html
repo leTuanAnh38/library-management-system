@@ -14,6 +14,49 @@
 
         <div class="col-lg-9">
             
+            {% if overdue_transactions %}
+            <div class="card border-danger shadow-sm mb-4 animate__animated animate__fadeIn">
+                <div class="card-header bg-danger text-white fw-bold d-flex justify-content-between align-items-center py-3">
+                    <span><i class="fas fa-exclamation-triangle me-2"></i>CẢNH BÁO: SINH VIÊN MƯỢN SÁCH QUÁ HẠN</span>
+                    <span class="badge bg-light text-danger rounded-pill fs-6">{{ overdue_transactions.count }} đơn trễ</span>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-danger">
+                                <tr>
+                                    <th class="ps-4 py-3">Sinh viên</th>
+                                    <th class="py-3">Mã SV</th>
+                                    <th class="py-3">Tên sách mượn</th>
+                                    <th class="py-3">Hạn trả</th>
+                                    <th class="py-3">Trạng thái</th>
+                                    <th class="text-center pe-4 py-3">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in overdue_transactions %}
+                                <tr>
+                                    <td class="ps-4 py-3 fw-bold">{{ item.user.get_full_name|default:item.user.username }}</td>
+                                    <td>{{ item.user.msv }}</td>
+                                    <td><span class="text-dark fw-medium">{{ item.book.title }}</span></td>
+                                    <td>
+                                        <span class="text-danger fw-bold">{{ item.due_date|date:"d/m/Y" }}</span>
+                                    </td>
+                                    <td><span class="badge bg-danger rounded-pill px-3 py-2">Quá hạn</span></td>
+                                    <td class="text-center pe-4">
+                                        <a href="{% url 'staff_user_detail' item.user.id %}" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold shadow-sm">
+                                            Xem hồ sơ
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+
             <div id="staff-chart-area" class="mb-4"></div>
 
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">

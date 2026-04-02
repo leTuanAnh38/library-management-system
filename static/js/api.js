@@ -554,7 +554,7 @@ $(document).ready(function() {
 
                                 // Xử lý cột hành động
                                 var actionHtml = '';
-                                if (item.status === 'BORROWED') {
+                                if (item.status === 'BORROWED' || item.status === 'OVERDUE') {
                                     actionHtml = `<a href="${item.return_url}" class="btn btn-warning btn-sm rounded-pill px-4 fw-bold shadow-sm text-white transition-hover" onclick="return confirm('Khanh chắc chắn muốn trả cuốn sách [${item.book_title}] này chứ?')">Trả sách</a>`;
                                 } else if (item.status === 'PENDING') {
                                     actionHtml = `<button class="btn btn-secondary btn-sm rounded-pill px-3 fw-bold shadow-sm" disabled style="opacity: 0.7;"><i class="fas fa-clock me-1"></i>Chờ xác nhận...</button>`;

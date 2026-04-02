@@ -1,4 +1,5 @@
 # file: core/views/staff_views.py
+from django.db.models import Case, When, Value, IntegerField
 from datetime import timedelta
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
@@ -34,7 +35,18 @@ def staff_dashboard(request):
         )
 
     books = books.order_by('-created_at')
-    return render(request, 'core/staff/dashboard.html', {'books': books})
+    
+    # ---> THÊM ĐOẠN NÀY: Lấy danh sách sinh viên mượn sách quá hạn <---
+    overdue_transactions = BorrowTransaction.objects.filter(
+        status='OVERDUE'
+    ).select_related('user', 'book').order_by('due_date') # Sắp xếp theo hạn trả (ai trễ lâu nhất lên đầu)
+
+    # Truyền thêm overdue_transactions vào return
+    return render(request, 'core/staff/dashboard.html', {
+        'books': books,
+        'overdue_transactions': overdue_transactions
+    })
+
 
 @user_passes_test(is_staff)
 def add_book(request):
@@ -120,7 +132,18 @@ def staff_publisher_form(request, pk=None):
 @user_passes_test(is_staff, login_url='login')
 def staff_borrow_management(request):
     query = request.GET.get('q', '').strip()
-    transactions = BorrowTransaction.objects.all().select_related('user', 'book')
+    
+    # ---> ĐÃ SỬA: Sắp xếp mức độ ưu tiên cho Thủ thư <---
+    transactions = BorrowTransaction.objects.select_related('user', 'book').annotate(
+        status_priority=Case(
+            When(status='PENDING', then=Value(1)),   # Chờ duyệt (nóng nhất)
+            When(status='OVERDUE', then=Value(2)),   # Quá hạn (nóng thứ hai)
+            When(status='BORROWED', then=Value(3)),  # Đang mượn (bình thường)
+            When(status='RETURNED', then=Value(4)),  # Đã trả (đã xong)
+            default=Value(5),
+            output_field=IntegerField(),
+        )
+    )
     
     if query:
         transactions = transactions.filter(
@@ -130,7 +153,9 @@ def staff_borrow_management(request):
             Q(user__last_name__icontains=query)      
         ).distinct()
         
-    transactions = transactions.order_by('-created_at')
+    # Sắp xếp theo ưu tiên trạng thái trước, sau đó mới đến ngày tạo
+    transactions = transactions.order_by('status_priority', '-created_at')
+    
     return render(request, 'core/staff/borrow_management.html', {
         'transactions': transactions,
         'query': query
@@ -138,24 +163,35 @@ def staff_borrow_management(request):
 
 @user_passes_test(is_staff, login_url='login')
 def staff_approve_borrow(request, transaction_id):
-    borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, status='PENDING', is_paid=False)
+    # ---> ĐÃ SỬA: Bỏ điều kiện is_paid=False để Thủ thư có thể tìm và duyệt được cả sách Free
+    borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, status='PENDING')
     
     try:
         with db_transaction.atomic():
             borrow_record.status = 'BORROWED'
-            borrow_record.is_paid = True
+            borrow_record.is_paid = True  # Đảm bảo đơn nào duyệt xong cũng là hợp lệ
             borrow_record.borrow_date = timezone.now().date()
             borrow_record.due_date = timezone.now().date() + timedelta(days=14)
             borrow_record.save()
             
+            # ---> ĐÃ SỬA: Phân loại sách để hiển thị tin nhắn phù hợp
+            is_premium = borrow_record.book.price and borrow_record.book.price > 0
+            
+            if is_premium:
+                msg_noti = f"Thủ thư đã duyệt tiền và giao cuốn sách có phí '{borrow_record.book.title}' cho bạn. Hạn trả là {borrow_record.due_date.strftime('%d/%m/%Y')}."
+                msg_success = f"Đã xác nhận thu tiền và giao sách có phí cho sinh viên {borrow_record.user.msv}."
+            else:
+                msg_noti = f"Thủ thư đã duyệt và giao cuốn sách '{borrow_record.book.title}' cho bạn. Hạn trả là {borrow_record.due_date.strftime('%d/%m/%Y')}."
+                msg_success = f"Đã xác nhận duyệt giao sách cho sinh viên {borrow_record.user.msv}."
+
             Notification.objects.create(
                 user=borrow_record.user,
-                message=f"Thủ thư đã duyệt tiền và giao cuốn VIP '{borrow_record.book.title}' cho bạn. Hạn trả là {borrow_record.due_date.strftime('%d/%m/%Y')}.",
+                message=msg_noti,
                 type='SYSTEM',
                 status='UNREAD'
             )
             
-        messages.success(request, f"Đã xác nhận thu tiền và giao sách VIP cho sinh viên {borrow_record.user.msv}.")
+        messages.success(request, msg_success)
     except Exception as e:
         messages.error(request, f"Lỗi hệ thống: {str(e)}")
         

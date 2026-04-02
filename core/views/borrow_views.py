@@ -8,6 +8,9 @@ from django.contrib import messages
 from django.db import transaction as db_transaction
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
+# ---> THÊM DÒNG NÀY ĐỂ SỬ DỤNG HÀM CASE, WHEN CỦA DJANGO ORM <---
+from django.db.models import Case, When, Value, IntegerField
+
 # Import models từ app core
 from core.models import Book, BorrowTransaction, Notification
 
@@ -49,8 +52,8 @@ def borrow_book(request, book_id):
 
     han_tra = timezone.now().date() + timedelta(days=14)
     
-    # Phân loại trạng thái: Sách VIP -> PENDING (Chờ duyệt/Đóng tiền). Sách Free -> BORROWED (Mượn luôn)
-    status = 'PENDING' if is_premium else 'BORROWED'
+    # ---> ĐÃ SỬA: Mặc định tất cả các yêu cầu mượn đều là PENDING (Chờ duyệt)
+    status = 'PENDING' 
     is_paid = False if is_premium else True
 
     try:
@@ -64,12 +67,12 @@ def borrow_book(request, book_id):
                 is_paid=is_paid                
             )
 
-            # Cảnh báo/Thông báo tương ứng
+            # ---> ĐÃ SỬA: Cập nhật thông báo cho sinh viên biết là phải chờ duyệt
             if is_premium:
                 payment_display = dict(BorrowTransaction.PAYMENT_CHOICES).get(payment_method, payment_method)
-                msg = f"Đã ghi nhận yêu cầu mượn '{book.title}'. Vui lòng thanh toán {book.price:,.0f} VNĐ qua hình thức [{payment_display}] để Thủ thư duyệt!"
+                msg = f"Đã gửi yêu cầu mượn sách có phí '{book.title}'. Vui lòng thanh toán {book.price:,.0f} VNĐ qua hình thức [{payment_display}] để Thủ thư duyệt!"
             else:
-                msg = f"Mượn thành công! Hạn trả cuốn '{book.title}' là ngày {han_tra.strftime('%d/%m/%Y')}."
+                msg = f"Đã gửi yêu cầu mượn cuốn '{book.title}'. Vui lòng chờ Thủ thư duyệt hoặc đến quầy để nhận sách."
 
             # Tạo thông báo hệ thống
             Notification.objects.create(
@@ -87,14 +90,23 @@ def borrow_book(request, book_id):
         messages.error(request, f"Đã có lỗi xảy ra trong quá trình mượn sách: {str(e)}")
     
     return redirect(request.META.get('HTTP_REFERER', 'book_list'))
-
 # ==========================================
 # 2. LỊCH SỬ GIAO DỊCH
 # ==========================================
 
 @login_required(login_url='login')
 def borrow_history(request):
-    history_list = BorrowTransaction.objects.filter(user=request.user).order_by('-created_at')
+    # ---> ĐÃ SỬA LẠI ĐOẠN QUERY NÀY ĐỂ SẮP XẾP ƯU TIÊN TRẠNG THÁI <---
+    history_list = BorrowTransaction.objects.filter(user=request.user).annotate(
+        status_priority=Case(
+            When(status='OVERDUE', then=Value(1)),   # Quá hạn lên top 1
+            When(status='BORROWED', then=Value(2)),  # Đang mượn top 2
+            When(status='PENDING', then=Value(3)),   # Chờ duyệt top 3
+            When(status='RETURNED', then=Value(4)),  # Đã trả xuống cuối
+            default=Value(5),
+            output_field=IntegerField(),
+        )
+    ).order_by('status_priority', '-created_at')
     
     # Phân trang: Mỗi lần tải 8 giao dịch
     paginator = Paginator(history_list, 8) 
@@ -113,12 +125,14 @@ def borrow_history(request):
 
 @login_required(login_url='login')
 def return_book(request, transaction_id):
-    # Chỉ lấy những giao dịch đang mượn (BORROWED)
-    borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, user=request.user, status='BORROWED')
+    # Chỉ lấy những giao dịch đang mượn (BORROWED) hoặc QUÁ HẠN (OVERDUE)
+    borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, user=request.user, status__in=['BORROWED', 'OVERDUE'])
     
     try:
         # Chuyển trạng thái sang Chờ xác nhận
         borrow_record.status = 'PENDING'
+        # ---> THÊM DÒNG NÀY: Gắn mác để phân biệt với đơn chờ mượn
+        borrow_record.reason = 'YÊU CẦU TRẢ' 
         borrow_record.save()
         
         messages.success(request, f"Yêu cầu trả cuốn '{borrow_record.book.title}' đã được gửi. Vui lòng mang sách đến quầy để Thủ thư xác nhận.")
