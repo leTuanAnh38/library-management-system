@@ -45,7 +45,11 @@
                         <a href="#" class="dropdown-toggle text-dark fs-6 text-decoration-none fw-bold" 
                               data-bs-toggle="dropdown" data-bs-display="static">
                             <div class="position-relative d-inline-block me-2">
-                                <i class="fa fa-user-circle fa-lg text-primary"></i>
+                                {% if user.avatar %}
+                                    <img src="{{ user.avatar.url }}" class="rounded-circle border border-primary object-fit-cover" style="width: 30px; height: 30px;" alt="Avatar">
+                                {% else %}
+                                    <i class="fa fa-user-circle fa-lg text-primary"></i>
+                                {% endif %}
                                 <span id="unread-count-header" 
                                       class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" 
                                       style="display: none; width: 10px; height: 10px;">
@@ -187,7 +191,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/owl.carousel.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/wow/1.1.2/wow.min.js"></script>
-    <script src="{% static 'js/main.js' %}?v=10018"></script>
+    <script src="{% static 'js/main.js' %}?v=10021"></script>
     <script src="{% static 'js/api.js' %}?v=1001"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     

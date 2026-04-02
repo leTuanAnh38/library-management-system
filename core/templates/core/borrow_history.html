@@ -37,7 +37,7 @@
                             <tr> 
                                 <td class="ps-4">
                                     <div class="d-flex align-items-center">
-                                        <img src="{{ item.book.cover_image }}" alt="" style="width: 45px; height: 60px; object-fit: cover;" class="rounded me-3 border shadow-sm">
+                                        <img src="{{ item.book.get_cover }}" alt="" style="width: 45px; height: 60px; object-fit: cover;" class="rounded me-3 border shadow-sm">
                                         <div>
                                             <div class="fw-bold text-dark">{{ item.book.title }}</div>
                                             <small class="text-muted italic">Tác giả: {{ item.book.author }}</small>

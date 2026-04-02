@@ -37,7 +37,7 @@
 
                             <div class="text-center p-3 bg-light rounded" style="height: 200px; overflow: hidden;">
                                 <a href="{% url 'book_detail' book.id %}">
-                                    <img src="{{ book.cover_image }}" class="h-100 rounded" style="object-fit: contain;" alt="{{ book.title }}">
+                                    <img src="{{ book.get_cover }}" class="h-100 rounded" style="object-fit: contain;" alt="{{ book.title }}">
                                 </a>
                             </div>
 

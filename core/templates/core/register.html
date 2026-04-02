@@ -43,7 +43,9 @@
                             {% elif field.name == 'first_name' %}Họ và tên đệm
                             {% elif field.name == 'last_name' %}Tên của bạn
                             {% elif field.name == 'phone' or field.name == 'phone_number' %}Số điện thoại
-                            {% elif 'password' in field.name and 'confirm' in field.name %}Xác nhận mật khẩu
+                            
+                            {% elif 'password' in field.name and '2' in field.name %}Nhập lại mật khẩu
+                            {% elif 'password' in field.name and 'confirm' in field.name %}Nhập lại mật khẩu
                             {% elif 'password' in field.name %}Mật khẩu
                             {% else %}{{ field.label }}{% endif %}
                         </label>
@@ -57,9 +59,10 @@
                                 {% elif 'password' in field.name %}<i class="fas fa-lock"></i>
                                 {% else %}<i class="fas fa-pen"></i>{% endif %}
                             </span>
+                            
                             <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" class="form-control border-start-0 ps-0" 
-                                   placeholder="Nhập {% if field.name == 'username' %}tên đăng nhập{% elif field.name == 'email' %}địa chỉ email{% elif field.name == 'first_name' %}họ và tên đệm{% elif field.name == 'last_name' %}tên của bạn{% elif field.name == 'phone' or field.name == 'phone_number' %}số điện thoại{% elif 'password' in field.name %}mật khẩu{% else %}{{ field.label|lower }}{% endif %}">
-                        </div>
+                                   placeholder="Nhập {% if field.name == 'username' %}tên đăng nhập{% elif field.name == 'email' %}địa chỉ email{% elif field.name == 'first_name' %}họ và tên đệm{% elif field.name == 'last_name' %}tên của bạn{% elif field.name == 'phone' or field.name == 'phone_number' %}số điện thoại{% elif 'password' in field.name and '2' in field.name %}lại mật khẩu{% elif 'password' in field.name and 'confirm' in field.name %}lại mật khẩu{% elif 'password' in field.name %}mật khẩu{% else %}{{ field.label|lower }}{% endif %}">
+                            </div>
                         
                         {% if field.errors %}
                             <small class="text-danger fw-bold d-block mt-2"><i class="fas fa-times-circle me-1"></i>{{ field.errors|striptags }}</small>
