@@ -1343,3 +1343,23 @@ body.auth-page {
 .nav-bar .text-white:hover {
     color: #ffc107 !important;
 }
+/* Hiệu ứng khu vực Kéo thả Upload */
+.drag-drop-zone {
+    border: 2px dashed #dee2e6;
+    transition: all 0.3s ease-in-out;
+    background-color: #fff;
+}
+.drag-drop-zone.drag-over {
+    border-color: #198754 !important; /* Màu xanh success */
+    background-color: rgba(25, 135, 84, 0.05) !important;
+    transform: scale(1.02); /* Phóng to nhẹ một chút cho ngầu */
+}
+/* Khung kéo thả cho ảnh tròn (Avatar) */
+.drag-drop-zone.rounded-circle {
+    border-radius: 50% !important;
+    padding: 5px; /* Tạo khoảng cách nhỏ giữa viền và ảnh */
+}
+    /* Đảm bảo ảnh không nhận sự kiện chuột để không làm gián đoạn việc kéo thả */
+    .drag-drop-zone img {
+        pointer-events: none;
+    }

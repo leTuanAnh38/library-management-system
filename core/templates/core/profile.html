@@ -3,6 +3,10 @@
 
 {% block title %}Hồ sơ cá nhân - Alovu{% endblock %}
 
+{% block extra_css %}
+
+{% endblock %}
+
 {% block content %}
 <link href="{% static 'css/style.css' %}?v=1.1" rel="stylesheet">
 
@@ -73,7 +77,6 @@
                                         <i class="fas fa-medal fs-4"></i>
                                     </div>
                                 </div>
-                                
                                 <div class="mt-2">
                                     <div class="d-flex justify-content-between mb-1 small">
                                         <span class="fw-bold text-dark"><i class="fas fa-star text-warning me-1"></i>{{ user.points }} điểm</span>
@@ -81,19 +84,14 @@
                                             <span class="text-muted small">Lên hạng tại: {{ user.rank_info.next }} điểm</span>
                                         {% endif %}
                                     </div>
-
                                     <div class="progress" style="height: 8px; border-radius: 10px; background-color: #e9ecef;">
                                         {% if user.rank_info.next and user.rank_info.next > 0 %}
                                             {% widthratio user.points user.rank_info.next 100 as width_percent %}
-                                            <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" 
-                                                 role="progressbar" 
-                                                 style="width: {{ width_percent }}%">
-                                            </div>
+                                            <div class="progress-bar bg-warning progress-bar-striped progress-bar-animated" role="progressbar" style="width: {{ width_percent }}%"></div>
                                         {% else %}
                                             <div class="progress-bar bg-warning" role="progressbar" style="width: 100%"></div>
                                         {% endif %}
                                     </div>
-
                                     {% if not user.rank_info.next or user.rank_info.next == 0 %}
                                         <small class="badge bg-warning text-dark mt-2 py-1 px-3 rounded-pill fw-bold">🚀 Đã đạt cấp độ tối đa!</small>
                                     {% endif %}
@@ -134,27 +132,17 @@
                             <h5 class="fw-bold mb-4 text-primary">
                                 <i class="fas fa-star text-warning me-2"></i>Sách bạn đã đánh giá
                             </h5>
-                            
                             <div class="row g-3">
                                 {% for review in user_reviews %}
                                 <div class="col-md-6 col-lg-4">
                                     <a href="{% url 'book_detail' review.book.id %}" class="text-decoration-none">
                                         <div class="card border-0 bg-light shadow-sm h-100 transition-hover" style="border-radius: 12px;">
                                             <div class="card-body d-flex align-items-center p-3">
-                                                <img src="{{ review.book.get_cover }}" alt="{{ review.book.title }}" 
-                                                     style="width: 50px; height: 75px; object-fit: cover;" class="rounded me-3 shadow-sm">
+                                                <img src="{{ review.book.get_cover }}" alt="{{ review.book.title }}" style="width: 50px; height: 75px; object-fit: cover;" class="rounded me-3 shadow-sm">
                                                 <div>
-                                                    <h6 class="text-dark fw-bold mb-1 text-truncate" style="max-width: 160px;" title="{{ review.book.title }}">
-                                                        {{ review.book.title }}
-                                                    </h6>
+                                                    <h6 class="text-dark fw-bold mb-1 text-truncate" style="max-width: 160px;" title="{{ review.book.title }}">{{ review.book.title }}</h6>
                                                     <div class="text-warning small mb-1">
-                                                        {% for i in "12345" %}
-                                                            {% if forloop.counter <= review.rating %}
-                                                                <i class="fas fa-star"></i>
-                                                            {% else %}
-                                                                <i class="far fa-star"></i>
-                                                            {% endif %}
-                                                        {% endfor %}
+                                                        {% for i in "12345" %}{% if forloop.counter <= review.rating %}<i class="fas fa-star"></i>{% else %}<i class="far fa-star"></i>{% endif %}{% endfor %}
                                                     </div>
                                                     <small class="text-muted fst-italic">{{ review.created_at|date:"d/m/Y" }}</small>
                                                 </div>
@@ -163,12 +151,8 @@
                                     </a>
                                 </div>
                                 {% empty %}
-                                <div class="col-12">
-                                    <div class="p-4 bg-light rounded-4 text-center border border-dashed">
-                                        <i class="fas fa-comment-slash fa-2x text-muted mb-2"></i>
-                                        <p class="text-muted small italic mb-0">Bạn chưa để lại đánh giá cho cuốn sách nào.</p>
-                                        <a href="{% url 'book_list' %}" class="btn btn-sm btn-outline-primary mt-3 rounded-pill">Khám phá sách ngay</a>
-                                    </div>
+                                <div class="col-12 text-center py-4">
+                                    <p class="text-muted small italic">Bạn chưa để lại đánh giá cho cuốn sách nào.</p>
                                 </div>
                                 {% endfor %}
                             </div>
@@ -178,44 +162,47 @@
                     <form id="profile-edit-mode" method="POST" enctype="multipart/form-data" class="row g-3 d-none">
                         {% csrf_token %}
                         <div class="col-md-4 text-center border-end">
-                            <div class="position-relative d-inline-block">
-                                <img id="avatar-preview" src="{{ user.avatar_url }}" class="rounded-circle img-thumbnail mb-3 shadow-sm" style="width: 160px; height: 160px; object-fit: cover;">
+                            <div id="profile-drag-zone" class="position-relative d-inline-block rounded-circle drag-drop-zone">
+                                <img id="avatar-preview" src="{{ user.avatar_url }}" 
+                                     class="rounded-circle img-thumbnail shadow-sm" 
+                                     style="width: 160px; height: 160px; object-fit: cover;">
                                 <div class="position-absolute bottom-0 end-0">
-                                    <label for="avatar-upload" class="btn btn-primary btn-sm rounded-circle shadow">
+                                    <label for="avatar-upload" class="btn btn-primary btn-sm rounded-circle shadow" style="cursor: pointer;">
                                         <i class="fas fa-camera"></i>
                                     </label>
                                 </div>
                             </div>
                             <input type="file" id="avatar-upload" name="avatar" class="d-none" accept="image/*">
+                            <p class="text-muted small mt-2">Kéo thả ảnh vào đây để thay đổi</p>
                         </div>
 
                         <div class="col-md-8 ps-md-5">
                             <div class="row g-3">
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">Họ và tên đệm</label>
+                                    <label class="form-label fw-bold small text-uppercase text-muted">Họ và tên đệm</label>
                                     <input type="text" name="first_name" class="form-control rounded-3" value="{{ user.first_name|default:'' }}">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">Tên</label>
+                                    <label class="form-label fw-bold small text-uppercase text-muted">Tên</label>
                                     <input type="text" name="last_name" class="form-control rounded-3" value="{{ user.last_name|default:'' }}">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">Mã sinh viên (MSV)</label>
+                                    <label class="form-label fw-bold small text-uppercase text-muted">Mã sinh viên (MSV)</label>
                                     <input type="text" name="msv" class="form-control rounded-3" value="{{ user.msv|default:'' }}">
                                 </div>
                                 <div class="col-md-6">
-                                    <label class="form-label fw-bold">Lớp học</label>
+                                    <label class="form-label fw-bold small text-uppercase text-muted">Lớp học</label>
                                     <input type="text" name="lop" class="form-control rounded-3" value="{{ user.lop|default:'' }}">
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label fw-bold">Địa chỉ</label>
+                                    <label class="form-label fw-bold small text-uppercase text-muted">Địa chỉ</label>
                                     <textarea name="dia_chi" class="form-control rounded-3" rows="3">{{ user.dia_chi|default:'' }}</textarea>
                                 </div>
                             </div>
                             <div class="mt-4 d-flex gap-2">
-                                <button type="submit" id="btn-save-profile" class="btn btn-primary px-5 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center">
+                                <button type="submit" id="btn-save-profile" class="btn btn-primary px-5 rounded-pill fw-bold shadow-sm d-flex align-items-center">
                                     <span class="btn-text">Lưu thay đổi</span>
-                                    <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                                    <span class="spinner-border spinner-border-sm ms-2 d-none" role="status"></span>
                                 </button>
                                 <button type="button" id="btn-cancel-edit" class="btn btn-light px-4 rounded-pill fw-bold">Hủy bỏ</button>
                             </div>
@@ -230,41 +217,7 @@
 <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 rounded-4 shadow">
-            <div class="modal-header border-0 pb-0">
-                <h5 class="fw-bold mb-0">Chọn phương thức thanh toán</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body p-4">
-                <p class="text-muted small mb-4">Số tiền: <strong class="text-danger">{{ user.total_fine }} VNĐ</strong></p>
-                <form action="{% url 'pay_all_penalties' %}" method="POST"> 
-                    {% csrf_token %}
-                    <div class="d-grid gap-3">
-                        <label class="d-flex align-items-center p-3 border rounded-3 cursor-pointer hover-bg-light">
-                            <input type="radio" name="payment_method" value="COUNTER" checked class="form-check-input me-3" id="methodCounter">
-                            <div>
-                                <strong class="d-block">Thanh toán tại quầy</strong>
-                                <small class="text-muted italic">Liên hệ thủ thư để đóng tiền mặt</small>
-                            </div>
-                        </label>
-                        <label class="d-flex align-items-center p-3 border rounded-3 cursor-pointer hover-bg-light">
-                            <input type="radio" name="payment_method" value="TRANSFER" class="form-check-input me-3" id="methodTransfer">
-                            <div>
-                                <strong class="d-block">Chuyển khoản (VietQR)</strong>
-                                <small class="text-muted italic">Quét mã QR để xử lý nhanh</small>
-                            </div>
-                        </label>
-                    </div>
-
-                    <div id="qr-section" class="d-none mt-4 p-3 bg-light rounded-3 text-center border border-primary border-opacity-25 animate__animated animate__fadeIn">
-                        <img src="{% static 'img/qr.png' %}" class="img-fluid rounded shadow-sm mb-2" style="max-width: 220px;">
-                        <p class="small text-muted mb-0">Nội dung: <strong>{{ user.username }} - Thanh toan</strong></p>
-                    </div>
-
-                    <button type="submit" class="btn btn-primary w-100 rounded-pill mt-4 fw-bold shadow-sm">Xác nhận</button>
-                </form>
-            </div>
-        </div>
     </div>
 </div>
-
 {% endblock %}

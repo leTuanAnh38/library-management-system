@@ -28,19 +28,23 @@
                         {% csrf_token %}
                         
                         <div class="col-12 mb-4 pb-4 border-bottom d-flex align-items-start gap-4">
-                            <div class="position-relative d-inline-block">
+                            <div id="drag-drop-area" class="position-relative d-inline-block p-2 rounded-4 drag-drop-zone">
                                 <img id="avatar-preview" 
                                      src="{% if form.instance.cover_file %}{{ form.instance.cover_file.url }}{% elif form.instance.cover_image %}{{ form.instance.cover_image }}{% else %}https://placehold.co/150x220?text=Bia+Sach{% endif %}" 
-                                     class="rounded-3 img-thumbnail shadow-sm" 
-                                     style="width: 150px; height: 220px; object-fit: cover;" 
+                                     class="rounded-3 shadow-sm" 
+                                     style="width: 150px; height: 220px; object-fit: cover; pointer-events: none;" 
                                      alt="Bìa sách">
+                                <div class="position-absolute bottom-0 end-0">
+                                    <label for="cover-file-upload" class="btn btn-success btn-sm rounded-circle shadow transition-hover" style="transform: translate(25%, 25%); cursor: pointer;">
+                                        <i class="fas fa-camera"></i>
+                                    </label>
+                                </div>
                             </div>
-                            
                             <div class="pt-2 flex-grow-1">
                                 <h6 class="fw-bold text-uppercase text-dark mb-3">Hình ảnh Bìa Sách</h6>
                                 
                                 <div class="mb-3">
-                                    <label class="form-label small fw-bold text-success mb-1"><i class="fas fa-upload me-1"></i>Tùy chọn 1: Tải ảnh từ máy tính (Ưu tiên)</label>
+                                    <label class="form-label small fw-bold text-success mb-1"><i class="fas fa-upload me-1"></i>Tùy chọn 1: Tải ảnh từ máy tính (Kéo thả hoặc Bấm chọn)</label>
                                     <input type="file" id="cover-file-upload" name="cover_file" class="form-control form-control-sm" accept="image/*">
                                     {% if form.cover_file.errors %}
                                         <div class="text-danger small mt-1 fw-bold">{{ form.cover_file.errors|join:", " }}</div>
@@ -59,46 +63,6 @@
                             </div>
                         </div>
 
-                        <script>
-                            document.addEventListener('DOMContentLoaded', function() {
-                                const fileInput = document.getElementById('cover-file-upload');
-                                const urlInput = document.getElementById('cover-url-input');
-                                const preview = document.getElementById('avatar-preview');
-
-                                // Khi chọn file từ máy
-                                if (fileInput) {
-                                    fileInput.addEventListener('change', function(e) {
-                                        const file = e.target.files[0];
-                                        if (file) {
-                                            const reader = new FileReader();
-                                            reader.onload = function(event) {
-                                                preview.src = event.target.result;
-                                            }
-                                            reader.readAsDataURL(file);
-                                        } else {
-                                            // Nếu user hủy chọn file, khôi phục lại ảnh từ link nếu có
-                                            if (urlInput && urlInput.value) {
-                                                preview.src = urlInput.value;
-                                            } else {
-                                                preview.src = 'https://placehold.co/150x220?text=Bia+Sach';
-                                            }
-                                        }
-                                    });
-                                }
-
-                                // Khi dán link mạng
-                                if (urlInput) {
-                                    urlInput.addEventListener('input', function() {
-                                        // Ưu tiên: Nếu chưa chọn file thì mới cho xem trước bằng link
-                                        if (!fileInput.value && this.value) {
-                                            preview.src = this.value;
-                                        } else if (!fileInput.value && !this.value) {
-                                            preview.src = 'https://placehold.co/150x220?text=Bia+Sach';
-                                        }
-                                    });
-                                }
-                            });
-                        </script>
                         {% for field in form %}
                             
                             {# Bỏ qua trường cover_image và cover_file vì đã hiển thị ở trên #}

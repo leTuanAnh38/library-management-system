@@ -109,10 +109,10 @@
    
 })(jQuery);
 /* ==========================================
-   QUẢN LÝ HỒ SƠ (PROFILE PAGE)
+   QUẢN LÝ HỒ SƠ (PROFILE PAGE - FULL: PREVIEW, LOADING, DRAG & DROP)
    ========================================== */
 document.addEventListener('DOMContentLoaded', function() {
-    // 1. Chuyển đổi giữa chế độ Xem và Sửa
+    // 1. CHUYỂN ĐỔI GIỮA CHẾ ĐỘ XEM VÀ SỬA
     const btnEditToggle = document.getElementById('btn-edit-toggle');
     const btnCancelEdit = document.getElementById('btn-cancel-edit');
     const viewMode = document.getElementById('profile-view-mode');
@@ -126,7 +126,7 @@ document.addEventListener('DOMContentLoaded', function() {
         btnCancelEdit.addEventListener('click', function() {
             editMode.classList.add('d-none');
             viewMode.classList.remove('d-none');
-            // Reset lại ảnh preview nếu hủy bỏ
+            // Reset lại ảnh preview về ảnh cũ nếu người dùng hủy bỏ
             const viewImg = document.querySelector('#profile-view-mode img');
             const previewImg = document.getElementById('avatar-preview');
             if (viewImg && previewImg) {
@@ -135,11 +135,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 2. Logic Xem trước Avatar
+    // 2. LOGIC XEM TRƯỚC (PREVIEW) AVATAR
     const avatarInput = document.getElementById('avatar-upload');
     const avatarPreview = document.getElementById('avatar-preview');
     const profileForm = document.getElementById('profile-edit-mode');
     const btnSave = document.getElementById('btn-save-profile');
+    const profileDragZone = document.getElementById('profile-drag-zone');
 
     if (avatarInput && avatarPreview) {
         avatarInput.addEventListener('change', function(e) {
@@ -163,7 +164,40 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 3. Logic Loading khi Submit form
+    // 3. TÍNH NĂNG KÉO THẢ (DRAG & DROP) CHO AVATAR
+    if (profileDragZone && avatarInput) {
+        // Ngăn chặn hành vi mặc định của trình duyệt
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            profileDragZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        // Hiệu ứng đổi màu viền khi kéo ảnh lướt qua
+        ['dragenter', 'dragover'].forEach(eventName => {
+            profileDragZone.addEventListener(eventName, () => profileDragZone.classList.add('drag-over'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            profileDragZone.addEventListener(eventName, () => profileDragZone.classList.remove('drag-over'), false);
+        });
+
+        // Xử lý khi thả file vào vùng chỉ định
+        profileDragZone.addEventListener('drop', function(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                // Gán file đã thả vào thẻ input file
+                avatarInput.files = files;
+                // Phát lệnh 'change' để kích hoạt logic Xem trước (Mục 2)
+                avatarInput.dispatchEvent(new Event('change'));
+            }
+        }, false);
+    }
+
+    // 4. HIỆU ỨNG LOADING KHI BẤM LƯU
     if (profileForm && btnSave) {
         profileForm.addEventListener('submit', function() {
             btnSave.disabled = true;
@@ -175,16 +209,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
-
 /* ==========================================
-   XỬ LÝ ẢNH BÌA SÁCH (BOOK FORM)
+   XỬ LÝ ẢNH BÌA SÁCH (BOOK FORM - FULL: UPLOAD, LINK, DRAG & DROP)
    ========================================== */
 document.addEventListener('DOMContentLoaded', function() {
     const coverFileInput = document.getElementById('cover-file-upload');
     const coverUrlInput = document.getElementById('cover-url-input');
     const bookCoverPreview = document.getElementById('avatar-preview');
+    const dropZone = document.getElementById('drag-drop-area');
 
-    // 1. Khi chọn file từ máy tính
+    // 1. LOGIC XEM TRƯỚC (PREVIEW) KHI CHỌN FILE
     if (coverFileInput && bookCoverPreview) {
         coverFileInput.addEventListener('change', function(e) {
             const file = e.target.files[0];
@@ -202,7 +236,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 reader.readAsDataURL(file);
             } else {
-                // Nếu người dùng nhấn "Hủy" chọn file, khôi phục lại ảnh từ link nếu có
+                // Nếu người dùng nhấn "Hủy", khôi phục lại ảnh từ link nếu có
                 if (coverUrlInput && coverUrlInput.value) {
                     bookCoverPreview.src = coverUrlInput.value;
                 } else {
@@ -212,10 +246,10 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 2. Khi dán link mạng
+    // 2. LOGIC XEM TRƯỚC KHI DÁN LINK MẠNG (URL)
     if (coverUrlInput && bookCoverPreview) {
         coverUrlInput.addEventListener('input', function() {
-            // Chỉ cập nhật từ link nếu người dùng CHƯA chọn file từ máy tính
+            // Chỉ cập nhật từ link nếu người dùng CHƯA chọn file vật lý từ máy
             if (!coverFileInput || !coverFileInput.value) {
                 if (this.value) {
                     bookCoverPreview.src = this.value;
@@ -224,5 +258,39 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+    }
+
+    // 3. TÍNH NĂNG KÉO THẢ (DRAG & DROP)
+    if (dropZone && coverFileInput) {
+        // Ngăn chặn trình duyệt mở file mặc định
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, e => {
+                e.preventDefault();
+                e.stopPropagation();
+            }, false);
+        });
+
+        // Hiệu ứng khi kéo ảnh lướt qua vùng drop
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.add('drag-over'), false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => dropZone.classList.remove('drag-over'), false);
+        });
+
+        // Xử lý khi thả file vào
+        dropZone.addEventListener('drop', function(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            if (files.length > 0) {
+                // Gán file vừa thả vào thẻ input file
+                coverFileInput.files = files;
+                
+                // Kích hoạt sự kiện 'change' để chạy logic Xem trước (Mục 1)
+                coverFileInput.dispatchEvent(new Event('change'));
+            }
+        }, false);
     }
 });
