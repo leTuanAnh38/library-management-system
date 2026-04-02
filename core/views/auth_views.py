@@ -15,7 +15,7 @@ from core.forms import CustomUserCreationForm
 
 def user_logout(request):
     logout(request)
-    messages.success(request, 'Bạn đã đăng xuất thành công!')
+   # messages.success(request, 'Bạn đã đăng xuất thành công!')
     return redirect('home')
 
 def register(request):
@@ -50,7 +50,7 @@ def user_login(request):
             
             if user is not None:
                 login(request, user) 
-                messages.success(request, f'Chào mừng {username} đã quay lại!')
+                #messages.success(request, f'Chào mừng {username} đã quay lại!')
                 
                 # PHÂN LUỒNG SAU ĐĂNG NHẬP
                 if user.is_superuser or getattr(user, 'role', '') == 'ADMIN':
