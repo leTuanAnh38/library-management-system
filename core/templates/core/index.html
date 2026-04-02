@@ -52,7 +52,7 @@
 
                             <div class="text-center p-3 bg-light rounded" style="height: 200px; overflow: hidden;">
                                 <a href="{% url 'book_detail' book.id %}">
-                                    <img src="{{ book.cover_image }}" class="h-100 rounded" style="object-fit: contain;">
+                                    <img src="{{ book.get_cover }}" class="h-100 rounded" style="object-fit: contain;">
                                 </a>
                             </div>
                             <div class="p-3 text-center d-flex flex-column flex-grow-1">

@@ -37,7 +37,7 @@ class BookForm(forms.ModelForm):
         model = Book
         # 1. THÊM 3 trường mới (floor, shelf, area) vào danh sách fields
         fields = [
-            'title', 'category', 'publisher', 'author', 'cover_image', 
+            'title', 'category', 'publisher', 'author', 'cover_image', 'cover_file',
             'price', 'initial_quantity', 'quantity', 'published_year', 
             'floor', 'shelf', 'area', 'location', 'description', 'status'
         ]

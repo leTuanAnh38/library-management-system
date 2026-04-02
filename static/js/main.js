@@ -108,4 +108,121 @@
 
    
 })(jQuery);
+/* ==========================================
+   QUẢN LÝ HỒ SƠ (PROFILE PAGE)
+   ========================================== */
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Chuyển đổi giữa chế độ Xem và Sửa
+    const btnEditToggle = document.getElementById('btn-edit-toggle');
+    const btnCancelEdit = document.getElementById('btn-cancel-edit');
+    const viewMode = document.getElementById('profile-view-mode');
+    const editMode = document.getElementById('profile-edit-mode');
 
+    if (btnEditToggle && btnCancelEdit && viewMode && editMode) {
+        btnEditToggle.addEventListener('click', function() {
+            viewMode.classList.add('d-none');
+            editMode.classList.remove('d-none');
+        });
+        btnCancelEdit.addEventListener('click', function() {
+            editMode.classList.add('d-none');
+            viewMode.classList.remove('d-none');
+            // Reset lại ảnh preview nếu hủy bỏ
+            const viewImg = document.querySelector('#profile-view-mode img');
+            const previewImg = document.getElementById('avatar-preview');
+            if (viewImg && previewImg) {
+                previewImg.src = viewImg.src;
+            }
+        });
+    }
+
+    // 2. Logic Xem trước Avatar
+    const avatarInput = document.getElementById('avatar-upload');
+    const avatarPreview = document.getElementById('avatar-preview');
+    const profileForm = document.getElementById('profile-edit-mode');
+    const btnSave = document.getElementById('btn-save-profile');
+
+    if (avatarInput && avatarPreview) {
+        avatarInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            
+            if (file) {
+                // Ràng buộc dung lượng tối đa 2MB
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Ảnh hơi nặng! Vui lòng chọn ảnh dưới 2MB nhé.');
+                    this.value = ''; 
+                    return;
+                }
+
+                // Dùng FileReader để đọc ảnh và gán vào thẻ img
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    avatarPreview.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+
+    // 3. Logic Loading khi Submit form
+    if (profileForm && btnSave) {
+        profileForm.addEventListener('submit', function() {
+            btnSave.disabled = true;
+            const btnText = btnSave.querySelector('.btn-text');
+            const spinner = btnSave.querySelector('.spinner-border');
+            
+            if (btnText) btnText.textContent = 'Đang tải lên...';
+            if (spinner) spinner.classList.remove('d-none');
+        });
+    }
+});
+
+/* ==========================================
+   XỬ LÝ ẢNH BÌA SÁCH (BOOK FORM)
+   ========================================== */
+document.addEventListener('DOMContentLoaded', function() {
+    const coverFileInput = document.getElementById('cover-file-upload');
+    const coverUrlInput = document.getElementById('cover-url-input');
+    const bookCoverPreview = document.getElementById('avatar-preview');
+
+    // 1. Khi chọn file từ máy tính
+    if (coverFileInput && bookCoverPreview) {
+        coverFileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                // Kiểm tra dung lượng (Tối đa 2MB)
+                if (file.size > 2 * 1024 * 1024) {
+                    alert('Ảnh hơi nặng! Vui lòng chọn ảnh dưới 2MB nhé.');
+                    this.value = ''; 
+                    return;
+                }
+
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    bookCoverPreview.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+            } else {
+                // Nếu người dùng nhấn "Hủy" chọn file, khôi phục lại ảnh từ link nếu có
+                if (coverUrlInput && coverUrlInput.value) {
+                    bookCoverPreview.src = coverUrlInput.value;
+                } else {
+                    bookCoverPreview.src = 'https://placehold.co/150x220?text=Bia+Sach';
+                }
+            }
+        });
+    }
+
+    // 2. Khi dán link mạng
+    if (coverUrlInput && bookCoverPreview) {
+        coverUrlInput.addEventListener('input', function() {
+            // Chỉ cập nhật từ link nếu người dùng CHƯA chọn file từ máy tính
+            if (!coverFileInput || !coverFileInput.value) {
+                if (this.value) {
+                    bookCoverPreview.src = this.value;
+                } else {
+                    bookCoverPreview.src = 'https://placehold.co/150x220?text=Bia+Sach';
+                }
+            }
+        });
+    }
+});

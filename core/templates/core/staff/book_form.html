@@ -17,19 +17,94 @@
         <div class="col-lg-10">
             <div class="card shadow-sm border-0 rounded-4">
                 <div class="card-body p-4 p-md-5">
-                    <div class="d-flex align-items-center mb-4">
+                    <div class="d-flex align-items-center mb-5">
                         <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success me-3">
                             <i class="fas fa-book fa-2x"></i>
                         </div>
                         <h2 class="fw-bold m-0 text-dark">{{ title }}</h2>
                     </div>
 
-                    <form method="POST" class="row g-4">
+                    <form id="profile-edit-mode" method="POST" enctype="multipart/form-data" class="row g-4">
                         {% csrf_token %}
                         
+                        <div class="col-12 mb-4 pb-4 border-bottom d-flex align-items-start gap-4">
+                            <div class="position-relative d-inline-block">
+                                <img id="avatar-preview" 
+                                     src="{% if form.instance.cover_file %}{{ form.instance.cover_file.url }}{% elif form.instance.cover_image %}{{ form.instance.cover_image }}{% else %}https://placehold.co/150x220?text=Bia+Sach{% endif %}" 
+                                     class="rounded-3 img-thumbnail shadow-sm" 
+                                     style="width: 150px; height: 220px; object-fit: cover;" 
+                                     alt="Bìa sách">
+                            </div>
+                            
+                            <div class="pt-2 flex-grow-1">
+                                <h6 class="fw-bold text-uppercase text-dark mb-3">Hình ảnh Bìa Sách</h6>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label small fw-bold text-success mb-1"><i class="fas fa-upload me-1"></i>Tùy chọn 1: Tải ảnh từ máy tính (Ưu tiên)</label>
+                                    <input type="file" id="cover-file-upload" name="cover_file" class="form-control form-control-sm" accept="image/*">
+                                    {% if form.cover_file.errors %}
+                                        <div class="text-danger small mt-1 fw-bold">{{ form.cover_file.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="text-muted small fw-bold mb-2">HOẶC</div>
+
+                                <div>
+                                    <label class="form-label small fw-bold text-primary mb-1"><i class="fas fa-link me-1"></i>Tùy chọn 2: Dán link ảnh trực tiếp (URL)</label>
+                                    <input type="text" id="cover-url-input" name="cover_image" class="form-control form-control-sm" placeholder="https://..." value="{{ form.instance.cover_image|default:'' }}">
+                                    {% if form.cover_image.errors %}
+                                        <div class="text-danger small mt-1 fw-bold">{{ form.cover_image.errors|join:", " }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <script>
+                            document.addEventListener('DOMContentLoaded', function() {
+                                const fileInput = document.getElementById('cover-file-upload');
+                                const urlInput = document.getElementById('cover-url-input');
+                                const preview = document.getElementById('avatar-preview');
+
+                                // Khi chọn file từ máy
+                                if (fileInput) {
+                                    fileInput.addEventListener('change', function(e) {
+                                        const file = e.target.files[0];
+                                        if (file) {
+                                            const reader = new FileReader();
+                                            reader.onload = function(event) {
+                                                preview.src = event.target.result;
+                                            }
+                                            reader.readAsDataURL(file);
+                                        } else {
+                                            // Nếu user hủy chọn file, khôi phục lại ảnh từ link nếu có
+                                            if (urlInput && urlInput.value) {
+                                                preview.src = urlInput.value;
+                                            } else {
+                                                preview.src = 'https://placehold.co/150x220?text=Bia+Sach';
+                                            }
+                                        }
+                                    });
+                                }
+
+                                // Khi dán link mạng
+                                if (urlInput) {
+                                    urlInput.addEventListener('input', function() {
+                                        // Ưu tiên: Nếu chưa chọn file thì mới cho xem trước bằng link
+                                        if (!fileInput.value && this.value) {
+                                            preview.src = this.value;
+                                        } else if (!fileInput.value && !this.value) {
+                                            preview.src = 'https://placehold.co/150x220?text=Bia+Sach';
+                                        }
+                                    });
+                                }
+                            });
+                        </script>
                         {% for field in form %}
-                            {# 1. Xử lý 3 trường vị trí theo phong cách Admin #}
-                            {% if field.name == 'floor' or field.name == 'shelf' or field.name == 'area' %}
+                            
+                            {# Bỏ qua trường cover_image và cover_file vì đã hiển thị ở trên #}
+                            {% if field.name == 'cover_image' or field.name == 'cover_file' %}
+                                {# Xử lý 3 trường vị trí theo phong cách Admin #}
+                            {% elif field.name == 'floor' or field.name == 'shelf' or field.name == 'area' %}
                                 <div class="col-12 location-field">
                                     <div class="row align-items-center">
                                         <label class="col-sm-3 form-label fw-bold small text-uppercase text-muted mb-sm-0">
@@ -44,13 +119,13 @@
                                     </div>
                                 </div>
 
-                            {# 2. Ẩn trường location cũ nếu có trong form #}
+                            {# Ẩn trường location cũ nếu có trong form #}
                             {% elif field.name == 'location' %}
                                 <div style="display: none;">{{ field }}</div>
 
-                            {# 3. Các trường còn lại hiển thị bình thường #}
+                            {# Các trường còn lại hiển thị bình thường #}
                             {% else %}
-                                <div class="{% if field.name == 'description' or field.name == 'cover_image' %}col-12{% else %}col-md-6{% endif %}">
+                                <div class="{% if field.name == 'description' %}col-12{% else %}col-md-6{% endif %}">
                                     <label class="form-label fw-bold small text-uppercase text-muted">
                                         {{ field.label }}
                                     </label>
@@ -64,10 +139,11 @@
 
                         <div class="col-12 mt-5 pt-3 border-top">
                             <div class="d-flex gap-2">
-                                <button type="submit" class="btn btn-success rounded-pill px-5 fw-bold shadow-sm">
-                                    <i class="fas fa-save me-2"></i>Lưu sách
+                                <button type="submit" id="btn-save-profile" class="btn btn-success rounded-pill px-5 fw-bold shadow-sm d-flex align-items-center justify-content-center">
+                                    <span class="btn-text"><i class="fas fa-save me-2"></i> Lưu sách</span>
+                                    <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
                                 </button>
-                                <a href="{% url 'staff_dashboard' %}" class="btn btn-light rounded-pill px-4 border">
+                                <a href="{% url 'staff_dashboard' %}" class="btn btn-light rounded-pill px-4 border fw-bold">
                                     Hủy bỏ
                                 </a>
                             </div>

@@ -106,6 +106,7 @@ class Book(TimeStampedModel):
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='books')
     publisher = models.ForeignKey(Publisher, on_delete=models.SET_NULL, null=True, related_name='books')
     cover_image = models.CharField(max_length=255, null=True, blank=True)
+    cover_file = models.ImageField(upload_to='books/covers/', blank=True, null=True)
     author = models.CharField(max_length=150, null=True, blank=True)
     price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     initial_quantity = models.IntegerField(default=0)
@@ -123,6 +124,14 @@ class Book(TimeStampedModel):
 
     def __str__(self):
         return self.title
+    @property
+    def get_cover(self):
+        """Hàm này sẽ tự động kiểm tra: Nếu có file upload thì lấy url của file, nếu không có thì lấy link mạng"""
+        if self.cover_file:
+            return self.cover_file.url
+        if self.cover_image:
+            return self.cover_image
+        return "https://placehold.co/150x220?text=Chua+Co+Anh" # Ảnh mặc định nếu sách không có ảnh
 
 # 5. Bảng BOOK_IMAGES
 class BookImage(TimeStampedModel):
@@ -316,3 +325,4 @@ def notify_new_book(sender, instance, created, **kwargs):
             ) for u in users
         ]
         Notification.objects.bulk_create(notifications)
+

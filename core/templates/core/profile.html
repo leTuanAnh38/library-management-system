@@ -141,7 +141,7 @@
                                     <a href="{% url 'book_detail' review.book.id %}" class="text-decoration-none">
                                         <div class="card border-0 bg-light shadow-sm h-100 transition-hover" style="border-radius: 12px;">
                                             <div class="card-body d-flex align-items-center p-3">
-                                                <img src="{{ review.book.cover_image }}" alt="{{ review.book.title }}" 
+                                                <img src="{{ review.book.get_cover }}" alt="{{ review.book.title }}" 
                                                      style="width: 50px; height: 75px; object-fit: cover;" class="rounded me-3 shadow-sm">
                                                 <div>
                                                     <h6 class="text-dark fw-bold mb-1 text-truncate" style="max-width: 160px;" title="{{ review.book.title }}">
@@ -179,14 +179,14 @@
                         {% csrf_token %}
                         <div class="col-md-4 text-center border-end">
                             <div class="position-relative d-inline-block">
-                                <img src="{{ user.avatar_url }}" class="rounded-circle img-thumbnail mb-3 shadow-sm" style="width: 160px; height: 160px; object-fit: cover;">
+                                <img id="avatar-preview" src="{{ user.avatar_url }}" class="rounded-circle img-thumbnail mb-3 shadow-sm" style="width: 160px; height: 160px; object-fit: cover;">
                                 <div class="position-absolute bottom-0 end-0">
                                     <label for="avatar-upload" class="btn btn-primary btn-sm rounded-circle shadow">
                                         <i class="fas fa-camera"></i>
                                     </label>
                                 </div>
                             </div>
-                            <input type="file" id="avatar-upload" name="avatar" class="d-none">
+                            <input type="file" id="avatar-upload" name="avatar" class="d-none" accept="image/*">
                         </div>
 
                         <div class="col-md-8 ps-md-5">
@@ -213,7 +213,10 @@
                                 </div>
                             </div>
                             <div class="mt-4 d-flex gap-2">
-                                <button type="submit" class="btn btn-primary px-5 rounded-pill fw-bold shadow-sm">Lưu thay đổi</button>
+                                <button type="submit" id="btn-save-profile" class="btn btn-primary px-5 rounded-pill fw-bold shadow-sm d-flex align-items-center justify-content-center">
+                                    <span class="btn-text">Lưu thay đổi</span>
+                                    <span class="spinner-border spinner-border-sm ms-2 d-none" role="status" aria-hidden="true"></span>
+                                </button>
                                 <button type="button" id="btn-cancel-edit" class="btn btn-light px-4 rounded-pill fw-bold">Hủy bỏ</button>
                             </div>
                         </div>
