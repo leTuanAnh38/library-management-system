@@ -326,3 +326,20 @@ def notify_new_book(sender, instance, created, **kwargs):
         ]
         Notification.objects.bulk_create(notifications)
 
+# Chat Model - Lưu lịch sử chat
+class ChatMessage(TimeStampedModel):
+    ROLE_CHOICES = (
+        ('USER', 'User'),
+        ('BOT', 'Bot'),
+    )
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='chat_messages')
+    message = models.TextField()
+    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    
+    class Meta:
+        verbose_name = 'Chat Message'
+        verbose_name_plural = 'Chat Messages'
+        ordering = ['created_at']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.role}"

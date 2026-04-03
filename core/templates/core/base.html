@@ -197,5 +197,10 @@
     
     {% load static %}
     <script src="{% static 'js/axios_client.js' %}"></script>
+
+    {% if user.is_authenticated %}
+        <script src="{% static 'js/chatbox.js' %}"></script>
+    {% endif %}
+
 </body>
 </html>
