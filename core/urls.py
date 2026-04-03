@@ -13,6 +13,8 @@ from core.views import (
     api_views
 )
 from core.views.api_views import RegisterView
+from core.views.chat_views import chat_message_api, get_chat_history, get_chat_greeting
+
 
 urlpatterns = [
     # ==========================================
@@ -104,4 +106,9 @@ urlpatterns = [
     
     # 3. API Xin cấp lại thẻ Access mới (khi thẻ cũ hết hạn)
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    # 4. API Chat với Gemini
+    path('api/chat/', chat_message_api, name='chat_api'),
+    path('api/chat/history/', get_chat_history, name='chat_history'),
+    path('api/chat/greeting/', get_chat_greeting, name='chat_greeting'),
 ]
