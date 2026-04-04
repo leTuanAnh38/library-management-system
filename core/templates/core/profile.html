@@ -4,7 +4,6 @@
 {% block title %}Hồ sơ cá nhân - Alovu{% endblock %}
 
 {% block extra_css %}
-
 {% endblock %}
 
 {% block content %}
@@ -217,7 +216,40 @@
 <div class="modal fade" id="paymentModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 rounded-4 shadow">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="fw-bold mb-0">Chọn phương thức thanh toán</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
+            <div class="modal-body p-4">
+                <p class="text-muted small mb-4">Số tiền phạt: <strong class="text-danger">{{ user.total_fine }} VNĐ</strong></p>
+                <form action="{% url 'pay_all_penalties' %}" method="POST"> 
+                    {% csrf_token %}
+                    <div class="d-grid gap-3">
+                        <label class="d-flex align-items-center p-3 border rounded-3 cursor-pointer hover-bg-light">
+                            <input type="radio" name="payment_method" value="COUNTER" checked class="form-check-input me-3" id="methodCounter">
+                            <div>
+                                <strong class="d-block">Thanh toán tại quầy</strong>
+                                <small class="text-muted italic">Liên hệ thủ thư để đóng tiền mặt</small>
+                            </div>
+                        </label>
+                        <label class="d-flex align-items-center p-3 border rounded-3 cursor-pointer hover-bg-light">
+                            <input type="radio" name="payment_method" value="TRANSFER" class="form-check-input me-3" id="methodTransfer">
+                            <div>
+                                <strong class="d-block">Chuyển khoản (VietQR)</strong>
+                                <small class="text-muted italic">Quét mã QR để xử lý nhanh</small>
+                            </div>
+                        </label>
+                    </div>
+
+                    <div id="qr-section" class="d-none mt-4 p-3 bg-light rounded-3 text-center border border-primary border-opacity-25 animate__animated animate__fadeIn">
+                        <img src="{% static 'img/qr.png' %}" class="img-fluid rounded shadow-sm mb-2" style="max-width: 220px;">
+                        <p class="small text-muted mb-0">Nội dung: <strong>{{ user.username }} - Thanh toan</strong></p>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 rounded-pill mt-4 fw-bold shadow-sm">Xác nhận thanh toán</button>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

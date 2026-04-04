@@ -20,7 +20,9 @@
         <a href="{% url 'staff_penalty_management' %}" class="list-group-item list-group-item-action py-3 border-0 {% if request.resolver_match.url_name == 'staff_penalty_management' %}active bg-light text-primary fw-bold{% endif %}">
             <i class="fas fa-file-invoice-dollar text-warning me-3"></i>Thu tiền phạt
         </a>
-
+        <a href="{% url 'staff_review_management' %}" class="list-group-item list-group-item-action py-3 border-0 {% if request.resolver_match.url_name == 'staff_review_management' %}active fw-bold rounded-3 shadow-sm{% endif %}">
+            <i class="fas fa-star me-2 text-warning"></i>Quản lý đánh giá
+        </a>
         <a href="{% url 'staff_category_list' %}" class="list-group-item list-group-item-action py-3 border-0 {% if request.resolver_match.url_name == 'staff_category_list' or request.resolver_match.url_name == 'staff_category_add' or request.resolver_match.url_name == 'staff_category_edit' %}active bg-light text-primary fw-bold{% endif %}">
             <i class="fas fa-tags text-warning me-3"></i>Quản lý danh mục
         </a>
@@ -31,10 +33,6 @@
 
         <a href="{% url 'add_book' %}" class="list-group-item list-group-item-action py-3 border-0 border-top {% if request.resolver_match.url_name == 'add_book' %}active bg-light text-primary fw-bold{% endif %}">
             <i class="fas fa-plus-circle text-success me-3"></i>Thêm sách mới
-        </a>
-
-        <a href="{% url 'home' %}" class="list-group-item list-group-item-action py-3 border-0 border-top">
-            <i class="fas fa-eye text-secondary me-3"></i>Xem giao diện chính
         </a>
 
         {% if user.is_superuser %}

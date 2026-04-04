@@ -79,6 +79,8 @@ urlpatterns = [
     path('staff/publishers/add/', staff_views.staff_publisher_form, name='staff_publisher_add'),
     path('staff/publishers/edit/<int:pk>/', staff_views.staff_publisher_form, name='staff_publisher_edit'),
 
+    path('staff/reviews/', staff_views.staff_review_management, name='staff_review_management'),
+
     # ==========================================
     # 6. NHÓM API (XỬ LÝ NGẦM AJAX & LOAD MORE)
     # ==========================================

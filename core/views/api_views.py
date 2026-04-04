@@ -174,7 +174,6 @@ def api_add_review(request, book_id):
 # ==========================================
 # 4. API TẢI THÊM DỮ LIỆU (LOAD MORE / INFINITE SCROLL)
 # ==========================================
-
 def api_load_more_books(request):
     page = int(request.GET.get('page', 1))
     query = request.GET.get('q', '')
@@ -224,7 +223,14 @@ def api_load_more_books(request):
         elif b.price and b.price > 0: btn_status = 'VIP'
         else: btn_status = 'AVAILABLE'
 
-        image_url = b.cover_image.url if hasattr(b.cover_image, 'url') else b.cover_image
+        # ĐÃ SỬA: Lấy đường dẫn ảnh an toàn 100% (tự động nhận diện property hay method)
+        if hasattr(b, 'get_cover'):
+            image_url = b.get_cover() if callable(b.get_cover) else b.get_cover
+        elif b.cover_image and hasattr(b.cover_image, 'url'):
+            image_url = b.cover_image.url
+        else:
+            # Nếu sách không có ảnh, tự động trả về đường dẫn ảnh mặc định
+            image_url = '/static/img/default-book.png' 
 
         data.append({
             'id': b.id,

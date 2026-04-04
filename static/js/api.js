@@ -281,139 +281,195 @@ $(document).ready(function() {
             }
         });
     });
-
-
-       
+ 
     // Hàm dùng chung để vẽ HTML từng cuốn sách (tránh lặp code)
-    function renderBookHTML(book, is_premium) {
-        var priceRibbon = book.price > 0 ? `<div class="position-absolute bg-danger text-white px-3 py-1 fw-bold" style="top: 15px; right: -5px; border-radius: 20px 0 0 20px; z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">${book.price} VNĐ</div>` : '';
-        var stockHtml = book.quantity > 0 ? `<span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i>Có sẵn: ${book.quantity} cuốn</span>` : `<span class="text-danger small fw-bold"><i class="fas fa-times-circle me-1"></i>Hết sách</span>`;
+// Hàm dùng chung để vẽ HTML từng cuốn sách (tránh lặp code)
+function renderBookHTML(book, is_premium) {
+    var priceRibbon = book.price > 0 ? `<div class="position-absolute bg-danger text-white px-3 py-1 fw-bold" style="top: 15px; right: -5px; border-radius: 20px 0 0 20px; z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">${book.price} VNĐ</div>` : '';
+    var stockHtml = book.quantity > 0 ? `<span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i>Có sẵn: ${book.quantity} cuốn</span>` : `<span class="text-danger small fw-bold"><i class="fas fa-times-circle me-1"></i>Hết sách</span>`;
+    
+    var actionBtn = '';
+    // Lấy Token bảo mật của Django để form thanh toán có thể submit được
+    var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '';
+
+    if (book.btn_status === 'PENDING') {
+        actionBtn = `<button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled" style="opacity: 0.85;"><i class="fas fa-clock me-1"></i>CHỜ DUYỆT</button>`;
+    } else if (book.btn_status === 'BORROWED') {
+        actionBtn = `<button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 shadow-sm disabled">ĐANG MƯỢN</button>`;
+    } else if (book.btn_status === 'OUT_OF_STOCK') {
+        actionBtn = `<button class="btn btn-danger rounded-pill fw-bold w-100 py-2 shadow-sm disabled">HẾT SÁCH</button>`;
+    } else if (book.btn_status === 'VIP' || book.price > 0) {
         
-        var actionBtn = '';
-        if (book.btn_status === 'PENDING') {
-            actionBtn = `<button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled" style="opacity: 0.85;"><i class="fas fa-clock me-1"></i>CHỜ DUYỆT</button>`;
-        } else if (book.btn_status === 'BORROWED') {
-            actionBtn = `<button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 shadow-sm disabled">ĐANG MƯỢN</button>`;
-        } else if (book.btn_status === 'OUT_OF_STOCK') {
-            actionBtn = `<button class="btn btn-danger rounded-pill fw-bold w-100 py-2 shadow-sm disabled">HẾT SÁCH</button>`;
-        } else if (book.btn_status === 'VIP') {
-            actionBtn = `<a href="${book.url}" class="btn btn-warning w-100 fw-bold rounded-pill text-dark shadow-sm py-2"><i class="fas fa-crown me-1"></i> XEM SÁCH VIP</a>`;
-        } else {
-            actionBtn = `<a href="${book.borrow_url}" class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm" onclick="return confirm('Bạn chắc chắn muốn mượn sách [${book.title}] này không?')">MƯỢN SÁCH</a>`;
-        }
-
-        var heartClass = book.is_wished ? 'fas' : 'far';
-        var categoryHtml = (is_premium === true || is_premium === 'true') ? `<p class="small text-muted mb-2"><i class="fas fa-tags me-1"></i> Thể loại: ${book.category_name}</p>` : '';
-
-        return `
-            <div class="col-md-6 col-lg-4 d-flex align-items-stretch animate__animated animate__fadeInUp">
-                <div class="product-item bg-white border rounded shadow-sm w-100 d-flex flex-column p-2 transition-hover position-relative">
-                    ${priceRibbon}
-                    <div class="text-center p-3 bg-light rounded" style="height: 200px; overflow: hidden;">
-                        <a href="${book.url}"><img src="${book.cover_image}" class="h-100 rounded" style="object-fit: contain;"></a>
+        actionBtn = `<button type="button" class="btn btn-primary w-100 fw-bold rounded-pill text-white shadow-sm py-2" data-bs-toggle="modal" data-bs-target="#paymentModal${book.id}">MƯỢN SÁCH</button>`;
+        
+        var modalHtml = `
+        <div class="modal fade payment-modal" id="paymentModal${book.id}" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content" style="border-radius: 20px; border: none;">
+                    <div class="modal-header bg-warning border-0" style="border-radius: 20px 20px 0 0;">
+                        <h5 class="modal-title fw-bold text-dark"><i class="fas fa-money-check-alt me-2"></i> Xác nhận thanh toán</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
-                    <div class="p-3 text-center d-flex flex-column flex-grow-1">
-                        <h6 class="fw-bold text-dark text-truncate-2 mb-2"><a href="${book.url}" class="text-dark text-decoration-none">${book.title}</a></h6>
-                        <p class="small text-muted mb-1">Tác giả: <b>${book.author}</b></p>
-                        ${categoryHtml}
-                        <div class="mb-3 mt-1">${stockHtml}</div>
-                        <div class="mt-auto">${actionBtn}</div>
-                        <div class="text-center mt-2">
-                            <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted btn-toggle-wishlist" data-url="${book.wishlist_api_url}" data-book-id="${book.id}">
-                                <i class="${heartClass} fa-heart text-danger fs-5 heart-icon-${book.id}"></i> Yêu thích
-                            </button>
+                    <form method="POST" action="${book.borrow_url}">
+                        <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
+                        <div class="modal-body p-4 text-center">
+                            <h6 class="fw-bold mb-3">${book.title}</h6>
+                            <h3 class="text-danger fw-bold mb-4">${book.price} VNĐ</h3>
+                            <p class="text-start fw-bold mb-2">Chọn phương thức thanh toán:</p>
+                            <label class="w-100 text-start border p-3 rounded-3 mb-3 cursor-pointer payment-option selected-payment shadow-sm transition">
+                                <div class="form-check d-flex align-items-center m-0">
+                                    <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="CASH" data-book-id="${book.id}" required checked style="transform: scale(1.3);">
+                                    <div>
+                                        <div class="fw-bold text-dark"><i class="fas fa-money-bill-wave text-success me-2"></i> Thanh toán tại quầy</div>
+                                        <small class="text-muted">Đóng tiền mặt trực tiếp cho Thủ thư.</small>
+                                    </div>
+                                </div>
+                            </label>
+                            <label class="w-100 text-start border p-3 rounded-3 cursor-pointer payment-option shadow-sm transition">
+                                <div class="form-check d-flex align-items-center m-0">
+                                    <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="BANK" data-book-id="${book.id}" required style="transform: scale(1.3);">
+                                    <div>
+                                        <div class="fw-bold text-dark"><i class="fas fa-qrcode text-primary me-2"></i> Chuyển khoản (Mã QR)</div>
+                                        <small class="text-muted">Chuyển khoản trước, Thủ thư sẽ kiểm tra.</small>
+                                    </div>
+                                </div>
+                            </label>
+                            <div id="qrCodeSection${book.id}" class="qr-box mt-3" style="display: none;">
+                                <div class="p-3 bg-light border border-warning rounded-3 text-center shadow-sm">
+                                    <p class="fw-bold text-dark mb-2">Quét mã MoMo/Ngân hàng</p>
+                                    <img src="/static/img/qr.png" alt="Mã QR" class="img-fluid rounded border mb-2" style="max-width: 160px;">
+                                </div>
+                            </div>
                         </div>
-                    </div>
+                        <div class="modal-footer border-0 pb-4 pt-0 justify-content-center">
+                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                            <button type="submit" class="btn btn-warning rounded-pill px-5 fw-bold text-dark shadow-sm">Xác nhận mượn</button>
+                        </div>
+                    </form>
                 </div>
-            </div>`;
+            </div>
+        </div>`;
+        
+        // ---> ĐÃ SỬA CHỖ NÀY: Xóa Modal cũ để chống trùng lặp, sau đó nhét Modal mới vào thẻ <body>
+        $('#paymentModal' + book.id).remove();
+        $('body').append(modalHtml);
+
+    } else {
+        actionBtn = `<a href="${book.borrow_url}" class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm custom-confirm" data-message="Bạn ơi, bạn có chắc chắn muốn mượn sách [${book.title}] không?">MƯỢN SÁCH</a>`;
     }
 
-    // --- A. BẮT SỰ KIỆN KHI BẤM DANH MỤC Ở SIDEBAR MÀU CAM ---
-    $('.ajax-category-link').click(function(e) {
-        // Chỉ áp dụng AJAX nếu người dùng ĐANG Ở TRANG KHO SÁCH
-        if ($('#category-filter').length > 0) {
-            e.preventDefault(); // Ngăn trình duyệt chuyển trang
-            
-            var catId = $(this).data('category');
-            // Cập nhật giá trị vào thanh Select Lọc và tự động kích hoạt lọc
-            $('#category-filter').val(catId).trigger('change'); 
-            
-            // Đóng danh mục thả xuống (nếu đang xem trên điện thoại)
-            if ($('#allCat').hasClass('show')) {
-                $('#allCat').collapse('hide');
-            }
-        }
-        // Nếu ở Trang chủ, cứ để thẻ <a> hoạt động bình thường (nó sẽ link tới kho sách)
-    });
+    var heartClass = book.is_wished ? 'fas' : 'far';
+    var categoryHtml = (is_premium === true || is_premium === 'true') ? `<p class="small text-muted mb-2"><i class="fas fa-tags me-1"></i> Thể loại: ${book.category_name}</p>` : '';
 
-    // --- B. BẮT SỰ KIỆN KHI LỌC BẰNG THANH SELECT (SẮP XẾP & DANH MỤC) ---
-    $('#sort-filter, #category-filter').change(function() {
-        var category = $('#category-filter').val();
-        var sort = $('#sort-filter').val();
-        var query = $('input[name="q"]').val() || ''; 
-        var is_premium = $('#btn-load-more').data('is-premium') || 'false';
+    // ---> ĐÃ SỬA CHỖ NÀY: Trả về HTML cuốn sách MÀ KHÔNG KÈM Modal nữa (vì đã quăng ra body ở trên rồi)
+    return `
+        <div class="col-md-6 col-lg-4 d-flex align-items-stretch animate__animated animate__fadeInUp">
+            <div class="product-item bg-white border rounded shadow-sm w-100 d-flex flex-column p-2 transition-hover position-relative">
+                ${priceRibbon}
+                <div class="text-center p-3 bg-light rounded" style="height: 200px; overflow: hidden;">
+                    <a href="${book.url}"><img src="${book.cover_image}" class="h-100 rounded" style="object-fit: contain;"></a>
+                </div>
+                <div class="p-3 text-center d-flex flex-column flex-grow-1">
+                    <h6 class="fw-bold text-dark text-truncate-2 mb-2"><a href="${book.url}" class="text-dark text-decoration-none">${book.title}</a></h6>
+                    <p class="small text-muted mb-1">Tác giả: <b>${book.author}</b></p>
+                    ${categoryHtml}
+                    <div class="mb-3 mt-1">${stockHtml}</div>
+                    <div class="mt-auto">${actionBtn}</div>
+                    <div class="text-center mt-2">
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted btn-toggle-wishlist" data-url="${book.wishlist_api_url}" data-book-id="${book.id}">
+                            <i class="${heartClass} fa-heart text-danger fs-5 heart-icon-${book.id}"></i> Yêu thích
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+}
 
-        // Xóa sách cũ, hiện Loading quay quay
-        $('#book-list-container').html('<div class="col-12 text-center py-5"><i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i><p class="text-muted mt-2 fw-bold">Đang tìm sách cho bạn...</p></div>');
+// --- A. BẮT SỰ KIỆN KHI BẤM DANH MỤC Ở SIDEBAR MÀU CAM ---
+$('.ajax-category-link').click(function(e) {
+    if ($('#category-filter').length > 0) {
+        e.preventDefault(); 
+        var catId = $(this).data('category');
+        $('#category-filter').val(catId).trigger('change'); 
+        if ($('#allCat').hasClass('show')) $('#allCat').collapse('hide');
+    }
+});
 
-        $.ajax({
-            url: '/api/books/load-more/',
-            type: 'GET',
-            data: { 'page': 1, 'q': query, 'category': category, 'sort': sort, 'is_premium': is_premium },
-            success: function(response) {
-                if (response.status === 'success') {
-                    var html = '';
-                    if (response.data.length > 0) {
-                        response.data.forEach(function(book) { html += renderBookHTML(book, is_premium); });
-                    } else {
-                        html = `<div class="col-12 text-center py-5 animate__animated animate__fadeIn"><i class="fas fa-book-open fa-3x text-muted opacity-25 mb-3"></i><p class="text-muted">Không tìm thấy sách phù hợp.</p></div>`;
-                    }
-                    $('#book-list-container').html(html);
+// --- B. BẮT SỰ KIỆN KHI LỌC BẰNG THANH SELECT (SẮP XẾP & DANH MỤC) ---
+$('#sort-filter, #category-filter').change(function() {
+    var category = $('#category-filter').val();
+    var sort = $('#sort-filter').val();
+    var query = $('input[name="q"]').val() || ''; 
+    var is_premium = $('#btn-load-more').data('is-premium') || 'false';
 
-                    // Reset lại Nút Xem Thêm về trang 2 để bắt đầu cuộn tiếp
-                    if (response.has_next) {
-                        $('#btn-load-more').data('page', 2).data('category', category).data('sort', sort);
-                        $('#load-more-section').fadeIn();
-                    } else {
-                        $('#load-more-section').fadeOut();
-                    }
-                }
-            }
-        });
-    });
+    $('#book-list-container').html('<div class="col-12 text-center py-5"><i class="fas fa-spinner fa-spin fa-3x text-primary mb-3"></i><p class="text-muted mt-2 fw-bold">Đang tìm sách cho bạn...</p></div>');
 
-    // --- C. BẮT SỰ KIỆN NÚT LOAD MORE (DÙNG CHUNG HÀM RENDER) ---
-    $('#btn-load-more').click(function() {
-        var btn = $(this);
-        var page = btn.data('page');
-        var category = $('#category-filter').length ? $('#category-filter').val() : btn.data('category');
-        var sort = $('#sort-filter').length ? $('#sort-filter').val() : btn.data('sort');
-        var query = $('input[name="q"]').val() || btn.data('query');
-        var is_premium = btn.data('is-premium') || 'false'; 
-        
-        var originalText = btn.html();
-        btn.html('<i class="fas fa-spinner fa-spin me-2"></i>Đang tải...').prop('disabled', true);
-
-        $.ajax({
-            url: btn.data('url'),
-            type: 'GET',
-            data: { 'page': page, 'q': query, 'category': category, 'sort': sort, 'is_premium': is_premium },
-            success: function(response) {
-                if (response.status === 'success') {
-                    var html = '';
+    $.ajax({
+        url: '/api/books/load-more/',
+        type: 'GET',
+        data: { 'page': 1, 'q': query, 'category': category, 'sort': sort, 'is_premium': is_premium },
+        success: function(response) {
+            if (response.status === 'success') {
+                var html = '';
+                if (response.data.length > 0) {
                     response.data.forEach(function(book) { html += renderBookHTML(book, is_premium); });
-                    $('#book-list-container').append(html);
+                } else {
+                    html = `<div class="col-12 text-center py-5 animate__animated animate__fadeIn"><i class="fas fa-book-open fa-3x text-muted opacity-25 mb-3"></i><p class="text-muted">Không tìm thấy sách phù hợp.</p></div>`;
+                }
+                $('#book-list-container').html(html);
 
-                    if (response.has_next) {
-                        btn.data('page', page + 1);
-                        btn.html(originalText).prop('disabled', false);
-                    } else {
-                        $('#load-more-section').fadeOut();
-                    }
+                if (response.has_next) {
+                    $('#btn-load-more').data('page', 2).data('category', category).data('sort', sort);
+                    $('#load-more-section').fadeIn();
+                } else {
+                    $('#load-more-section').fadeOut();
                 }
             }
-        });
+        },
+        // Chống lỗi vòng quay vô tận nếu mất mạng/server sập
+        error: function(xhr) {
+            $('#book-list-container').html(`<div class="col-12 text-center py-5 text-danger"><i class="fas fa-exclamation-triangle fa-3x mb-3"></i><p class="fw-bold">Hệ thống đang bận. Vui lòng tải lại trang (F5).</p></div>`);
+        }
     });
+});
+
+// --- C. BẮT SỰ KIỆN NÚT LOAD MORE (XEM THÊM) ---
+$('#btn-load-more').click(function() {
+    var btn = $(this);
+    var page = btn.data('page');
+    var category = $('#category-filter').length ? $('#category-filter').val() : btn.data('category');
+    var sort = $('#sort-filter').length ? $('#sort-filter').val() : btn.data('sort');
+    var query = $('input[name="q"]').val() || btn.data('query');
+    var is_premium = btn.data('is-premium') || 'false'; 
+    
+    var originalText = btn.html();
+    btn.html('<i class="fas fa-spinner fa-spin me-2"></i>Đang tải...').prop('disabled', true);
+
+    $.ajax({
+        url: btn.data('url'),
+        type: 'GET',
+        data: { 'page': page, 'q': query, 'category': category, 'sort': sort, 'is_premium': is_premium },
+        success: function(response) {
+            if (response.status === 'success') {
+                var html = '';
+                response.data.forEach(function(book) { html += renderBookHTML(book, is_premium); });
+                $('#book-list-container').append(html);
+
+                if (response.has_next) {
+                    btn.data('page', page + 1);
+                    btn.html(originalText).prop('disabled', false);
+                } else {
+                    $('#load-more-section').fadeOut();
+                }
+            }
+        },
+        // Dừng vòng quay nếu lỗi xảy ra
+        error: function(xhr) {
+            btn.html(originalText).prop('disabled', false);
+            alert('Có lỗi xảy ra khi tải thêm sách. Hãy kiểm tra kết nối mạng!');
+        }
+    });
+});
 /* =================================================================
        6. CẬP NHẬT THÔNG BÁO TỰ ĐỘNG (REAL-TIME POLLING)
        ================================================================= */

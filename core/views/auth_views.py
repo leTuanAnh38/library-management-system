@@ -24,7 +24,7 @@ def register(request):
         if form.is_valid():
             form.save()
             messages.success(request, 'Đăng ký tài khoản thành công! Vui lòng đăng nhập.')
-            return redirect('home') 
+            return redirect('login') 
     else:
         form = CustomUserCreationForm()
     

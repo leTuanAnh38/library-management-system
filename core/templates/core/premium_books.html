@@ -19,7 +19,7 @@
             <div class="bg-white p-4 rounded-3 shadow-sm border mb-4">
                 
                 <div class="text-center mb-5">
-                    <h1 class="display-5 fw-bold text-warning"><i class="fas fa-crown me-2"></i> Kho Sách Có Trả Phí</h1>
+                    <h1 class="display-5 fw-bold text-warning"><i class="fas fa-crown me-2"></i> Kho Sách phiên bản giới hạn Trả Phí</h1>
                     <div class="mx-auto bg-warning" style="width: 100px; height: 3px;"></div>
                     <p class="text-muted mt-3">Bộ sưu tập các tài liệu chuyên ngành cao cấp. Yêu cầu thanh toán phí mượn để sử dụng.</p>
                 </div>
@@ -66,8 +66,8 @@
                                         </button>
                                         
                                     {% elif book.quantity > 0 %}
-                                        <button type="button" class="btn btn-warning w-100 fw-bold rounded-pill text-dark shadow-sm py-2" data-bs-toggle="modal" data-bs-target="#paymentModal{{ book.id }}">
-                                            <i class="fas fa-shopping-cart me-1"></i> MƯỢN SÁCH
+                                       <button type="button" class="btn btn-primary w-100 fw-bold rounded-pill text-white shadow-sm py-2" data-bs-toggle="modal" data-bs-target="#paymentModal{{ book.id }}">
+                                            MƯỢN SÁCH
                                         </button>
                                         
                                     {% else %}

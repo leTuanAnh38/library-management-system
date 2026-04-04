@@ -294,3 +294,38 @@ document.addEventListener('DOMContentLoaded', function() {
         }, false);
     }
 });
+
+/* ==========================================
+   XỬ LÝ CUSTOM CONFIRM MODAL (Thay thế Alert/Confirm)
+   ========================================== */
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmModalElement = document.getElementById('customConfirmModal');
+    if (!confirmModalElement) return;
+
+    // Khởi tạo Bootstrap Modal
+    const confirmModal = new bootstrap.Modal(confirmModalElement);
+    const confirmMessageEl = document.getElementById('customConfirmMessage');
+    const confirmBtnEl = document.getElementById('customConfirmBtn');
+
+    // Tìm tất cả các thẻ có class 'custom-confirm'
+    const confirmTriggers = document.querySelectorAll('.custom-confirm');
+
+    confirmTriggers.forEach(trigger => {
+        trigger.addEventListener('click', function(e) {
+            e.preventDefault(); // Chặn hành động chuyển trang hoặc submit mặc định
+            
+            // 1. Lấy câu thông báo từ data-message (nếu không có thì dùng câu mặc định)
+            const message = this.getAttribute('data-message') || 'Bạn có chắc chắn muốn thực hiện hành động này?';
+            
+            // 2. Lấy link thực tế của nút bấm đó
+            const targetUrl = this.getAttribute('href');
+
+            // 3. Gắn thông báo và link vào cái Modal màu trắng
+            confirmMessageEl.textContent = message;
+            confirmBtnEl.href = targetUrl;
+
+            // 4. Bật Modal lên
+            confirmModal.show();
+        });
+    });
+});
