@@ -1,0 +1,96 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Quản lý Đánh giá Sách - Alovu{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-5 mt-5">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="sticky-sidebar">
+                {% include 'core/includes/sidebar.html' %}
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4 animate__animated animate__fadeIn">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4 border-start border-4 border-warning ps-3">
+                        <h4 class="fw-bold m-0 text-dark">
+                            <i class="fas fa-star text-warning me-2"></i>THỐNG KÊ ĐÁNH GIÁ SÁCH
+                        </h4>
+                    </div>
+
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light text-dark">
+                                <tr>
+                                    <th class="ps-4 py-3">Thông tin sách</th>
+                                    <th class="py-3 text-center">Đánh giá trung bình</th>
+                                    <th class="py-3 text-center">Số lượt nhận xét</th>
+                                    <th class="py-3">Đánh giá mới nhất</th>
+                                    <th class="text-end pe-4 py-3">Hành động</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for book in books %}
+                                <tr>
+                                    <td class="ps-4 py-3">
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ book.get_cover }}" alt="{{ book.title }}" style="width: 45px; height: 60px; object-fit: cover;" class="rounded shadow-sm me-3 border">
+                                            <div>
+                                                <a href="{% url 'book_detail' book.id %}" class="fw-bold text-dark text-decoration-none hover-primary">{{ book.title }}</a>
+                                                <small class="text-muted d-block">Tác giả: {{ book.author }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        <div class="fs-5 fw-bold text-warning">
+                                            {{ book.avg_rating|floatformat:1 }} <i class="fas fa-star small"></i>
+                                        </div>
+                                    </td>
+
+                                    <td class="text-center">
+                                        <span class="badge bg-primary rounded-pill px-3 py-2 fs-6">
+                                            {{ book.review_count }} lượt
+                                        </span>
+                                    </td>
+
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="bg-light rounded-circle p-2 text-primary me-2">
+                                                <i class="fas fa-user-edit"></i>
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark small">{{ book.latest_reviewer|default:"Ẩn danh" }}</div>
+                                                <small class="text-muted fst-italic">{{ book.latest_review_date|date:"d/m/Y H:i" }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td class="text-end pe-4">
+                                        <a href="{% url 'book_detail' book.id %}#reviews" class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm fw-bold">
+                                            Xem chi tiết
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5">
+                                        <div class="text-muted">
+                                            <i class="far fa-star fa-3x mb-3 d-block opacity-50"></i>
+                                            Chưa có cuốn sách nào nhận được đánh giá từ độc giả.
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

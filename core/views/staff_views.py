@@ -7,12 +7,13 @@ from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
 from django.db.models import Q
 from django.db import transaction as db_transaction
-from ..models import Category, Publisher
+from ..models import Category, Publisher, Review
 from ..forms import CategoryForm, PublisherForm
 
 # Chú ý import lại các model và form từ thư mục gốc của app core
 from core.models import Book, BorrowTransaction, Penalty, User, Notification
 from core.forms import BookForm
+from django.db.models import Avg, Count, OuterRef, Subquery
 
 # Hàm kiểm tra quyền Staff
 def is_staff(user):
@@ -304,3 +305,18 @@ def staff_user_detail(request, user_id):
         'borrow_history': borrow_history,
         'penalties': penalties
     })
+
+@user_passes_test(is_staff, login_url='login')
+def staff_review_management(request):
+    # Lấy thông tin bài đánh giá gần nhất của mỗi cuốn sách
+    latest_review = Review.objects.filter(book=OuterRef('pk')).order_by('-created_at')
+
+    # Đã sửa 'review_set' thành 'reviews' theo đúng cấu trúc Database của bạn
+    books = Book.objects.annotate(
+        review_count=Count('reviews'), 
+        avg_rating=Avg('reviews__rating'), 
+        latest_reviewer=Subquery(latest_review.values('user__username')[:1]),
+        latest_review_date=Subquery(latest_review.values('created_at')[:1])
+    ).filter(review_count__gt=0).order_by('-avg_rating', '-review_count')
+
+    return render(request, 'core/staff/review_management.html', {'books': books})

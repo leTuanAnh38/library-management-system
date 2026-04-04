@@ -17,8 +17,9 @@ def check_overdue_job():
 def start():
     scheduler = BackgroundScheduler()
     # Đặt lịch chạy: 8h00 sáng mỗi ngày
-    # Nếu muốn test ngay, bạn có thể đổi thành: scheduler.add_job(check_overdue_job, 'interval', minutes=1)
     scheduler.add_job(check_overdue_job, 'cron', hour=8, minute=0)
+    # Nếu muốn test ngay, bạn có thể đổi thành: scheduler.add_job(check_overdue_job, 'interval', minutes=1)
+    
     
     scheduler.start()
     print("⏳ Hệ thống đặt lịch tự động đã khởi động (Chạy lúc 8h sáng mỗi ngày).")

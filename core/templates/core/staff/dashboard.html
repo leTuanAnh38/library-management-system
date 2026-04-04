@@ -140,10 +140,10 @@
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <a href="{% url 'delete_book' book.id %}" 
-                                               class="btn btn-outline-danger btn-sm" 
-                                               title="Xóa"
-                                               onclick="return confirm('Bạn chắc chắn muốn xóa sách này chứ?')">
-                                                <i class="fas fa-trash"></i>
+                                             class="btn btn-outline-danger btn-sm custom-confirm" 
+                                            title="Xóa"
+                                            data-message="Bạn có chắc chắn muốn xóa cuốn sách này khỏi kho không?">
+                                            <i class="fas fa-trash"></i>
                                             </a>
                                         </div>
                                     </td>

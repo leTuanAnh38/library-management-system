@@ -11,6 +11,12 @@ class CustomUserCreationForm(UserCreationForm):
     class Meta(UserCreationForm.Meta):
         model = User
         fields = ('username', 'email', 'phone', 'first_name', 'last_name')
+    # THÊM HÀM NÀY ĐỂ KIỂM TRA TRÙNG EMAIL
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email=email).exists():
+            raise forms.ValidationError("Email này đã được sử dụng. Vui lòng chọn Email khác!")
+        return email
 # --- 2. FORM QUẢN LÝ DANH MỤC (MỚI) ---
 class CategoryForm(forms.ModelForm):
     class Meta:

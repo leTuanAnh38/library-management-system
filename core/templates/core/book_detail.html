@@ -84,15 +84,15 @@
                 
                 {% elif book.quantity > 0 %}
                     {% if book.price and book.price > 0 %}
-                        <button type="button" class="btn btn-warning btn-lg px-5 rounded-pill fw-bold shadow-lg transition-hover w-100 w-md-auto text-dark"
+                        <button type="button" class="btn btn-primary btn-lg px-5 rounded-pill fw-bold shadow transition-hover w-100 w-md-auto text-white custom-confirm"
                                 data-bs-toggle="modal" data-bs-target="#paymentModal{{ book.id }}">
-                            <i class="fas fa-shopping-cart me-2"></i> Mượn Sách Ngay
+                            <i class="fas fa-hand-holding-heart me-2"></i> Mượn Sách Ngay
                         </button>
                     {% else %}
                         <a href="{% url 'borrow_book' book.id %}" 
-                           class="btn btn-primary btn-lg px-5 rounded-pill fw-bold shadow transition-hover w-100 w-md-auto text-white"
-                           onclick="return confirm('Bạn chắc chắn muốn mượn cuốn sách [{{ book.title }}] này chứ?')">
-                            <i class="fas fa-hand-holding-heart me-2"></i> Mượn sách ngay
+                        class="btn btn-primary btn-lg px-5 rounded-pill fw-bold shadow transition-hover w-100 w-md-auto text-white custom-confirm"
+                        data-message="Bạn chắc chắn muốn mượn cuốn sách [{{ book.title }}] này chứ?">
+                        <i class="fas fa-hand-holding-heart me-2"></i> Mượn sách ngay
                         </a>
                     {% endif %}
                 
@@ -178,11 +178,11 @@
                     <div class="col-md-3">
                         <div class="card border-0 shadow-sm rounded-4 h-100 product-card-mini transition-hover position-relative">
                             {% if rec_book.price and rec_book.price > 0 %}
-                                <span class="position-absolute badge bg-danger text-white shadow-sm" style="top: -5px; right: -5px; z-index: 2;">VIP</span>
+                                <span class="position-absolute badge bg-danger text-white shadow-sm" style="top: -5px; right: -5px; z-index: 2;">Có trả phí</span>
                             {% endif %}
                             <div class="p-2 text-center bg-light rounded-top-4">
                                 <a href="{% url 'book_detail' rec_book.id %}">
-                                    <img src="{{ rec_book.cover_image }}" class="rounded shadow-sm" 
+                                    <img src="{{ rec_book.get_cover }}" class="rounded shadow-sm" 
                                          style="height: 120px; object-fit: contain; width: 100%;" alt="{{ rec_book.title }}">
                                 </a>
                             </div>

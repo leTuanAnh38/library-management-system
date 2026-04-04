@@ -29,7 +29,7 @@ def global_counts(request):
         'categories': categories
     }
 
-# --- KHANH THÊM HÀM NÀY VÀO ĐỂ HẾT LỖI 500 ---
+
 def notifications_count(request):
     """Đếm số lượng thông báo chưa đọc cho toàn bộ website"""
     if request.user.is_authenticated:
