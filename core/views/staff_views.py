@@ -5,11 +5,11 @@ from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import user_passes_test
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Sum
 from django.db import transaction as db_transaction
 from ..models import Category, Publisher, Review
 from ..forms import CategoryForm, PublisherForm
-
+from django.core.paginator import Paginator
 # Chú ý import lại các model và form từ thư mục gốc của app core
 from core.models import Book, BorrowTransaction, Penalty, User, Notification
 from core.forms import BookForm
@@ -22,10 +22,26 @@ def is_staff(user):
 # ==========================================
 # 1. QUẢN LÝ KHO SÁCH (CRUD)
 # ==========================================
-
 @user_passes_test(is_staff, login_url='login')
 def staff_dashboard(request):
-    query = request.GET.get('search_staff')
+    # Chỉ giữ lại phần thống kê cho Dashboard
+    overdue_transactions = BorrowTransaction.objects.filter(
+        status='OVERDUE'
+    ).select_related('user', 'book').order_by('due_date') 
+
+    total_library_books = Book.objects.aggregate(total=Sum('initial_quantity'))['total'] or 0
+    current_available_books = Book.objects.aggregate(total=Sum('quantity'))['total'] or 0
+
+    return render(request, 'core/staff/dashboard.html', {
+        'overdue_transactions': overdue_transactions,
+        'total_library_books': total_library_books,
+        'current_available_books': current_available_books
+    })
+
+# THÊM HÀM MỚI NÀY VÀO DƯỚI HÀM TRÊN
+@user_passes_test(is_staff, login_url='login')
+def staff_book_list(request):
+    query = request.GET.get('search_staff', '')
     books = Book.objects.all() 
 
     if query:
@@ -37,17 +53,14 @@ def staff_dashboard(request):
 
     books = books.order_by('-created_at')
     
-    # ---> THÊM ĐOẠN NÀY: Lấy danh sách sinh viên mượn sách quá hạn <---
-    overdue_transactions = BorrowTransaction.objects.filter(
-        status='OVERDUE'
-    ).select_related('user', 'book').order_by('due_date') # Sắp xếp theo hạn trả (ai trễ lâu nhất lên đầu)
+    # THÊM PHẦN NÀY: Phân trang (10 cuốn / 1 lần tải)
+    paginator = Paginator(books, 10) 
+    page_obj = paginator.get_page(1) # Lần đầu tiên chỉ lấy trang 1
 
-    # Truyền thêm overdue_transactions vào return
-    return render(request, 'core/staff/dashboard.html', {
-        'books': books,
-        'overdue_transactions': overdue_transactions
+    return render(request, 'core/staff/book_list.html', {
+        'books': page_obj, # Truyền page_obj thay cho toàn bộ books
+        'query': query
     })
-
 
 @user_passes_test(is_staff)
 def add_book(request):
@@ -126,15 +139,13 @@ def staff_publisher_form(request, pk=None):
     title = "Chỉnh sửa nhà xuất bản" if pk else "Thêm nhà xuất bản mới"
     # Sửa từ 'staff/category_form.html' thành 'core/staff/category_form.html'
     return render(request, 'core/staff/category_form.html', {'form': form, 'title': title})
-# ==========================================
-# 2. QUẢN LÝ NGHIỆP VỤ MƯỢN TRẢ SÁCH
-# ==========================================
 
+# Quản lý mượn trả sách
 @user_passes_test(is_staff, login_url='login')
 def staff_borrow_management(request):
     query = request.GET.get('q', '').strip()
     
-    # ---> ĐÃ SỬA: Sắp xếp mức độ ưu tiên cho Thủ thư <---
+    # Sắp xếp mức độ ưu tiên cho Thủ thư
     transactions = BorrowTransaction.objects.select_related('user', 'book').annotate(
         status_priority=Case(
             When(status='PENDING', then=Value(1)),   # Chờ duyệt (nóng nhất)
@@ -157,8 +168,14 @@ def staff_borrow_management(request):
     # Sắp xếp theo ưu tiên trạng thái trước, sau đó mới đến ngày tạo
     transactions = transactions.order_by('status_priority', '-created_at')
     
+    # ==========================================
+    # ---> THÊM PHẦN PHÂN TRANG VÀO ĐÂY <---
+    # ==========================================
+    paginator = Paginator(transactions, 10)
+    page_obj = paginator.get_page(1) # Lần đầu chỉ render trang 1
+    
     return render(request, 'core/staff/borrow_management.html', {
-        'transactions': transactions,
+        'transactions': page_obj, # TRUYỀN PAGE_OBJ VÀO ĐÂY
         'query': query
     })
 

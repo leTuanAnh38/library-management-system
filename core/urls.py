@@ -5,6 +5,7 @@ from rest_framework_simplejwt.views import (
 )
 # Import 6 file view riêng biệt từ thư mục core/views/ mà chúng ta vừa tạo
 from core.views import (
+    api_staff,
     auth_views,
     book_views,
     borrow_views,
@@ -56,6 +57,7 @@ urlpatterns = [
     # 5. NHÓM NGHIỆP VỤ THỦ THƯ (STAFF DASHBOARD)
     # ==========================================
     path('staff/', staff_views.staff_dashboard, name='staff_dashboard'),
+    path('staff/books/', staff_views.staff_book_list, name='staff_book_list'),
     path('staff/book/add/', staff_views.add_book, name='add_book'),
     path('staff/book/edit/<int:book_id>/', staff_views.edit_book, name='edit_book'),
     path('staff/book/delete/<int:book_id>/', staff_views.delete_book, name='delete_book'),
@@ -113,4 +115,7 @@ urlpatterns = [
     path('api/chat/', chat_message_api, name='chat_api'),
     path('api/chat/history/', get_chat_history, name='chat_history'),
     path('api/chat/greeting/', get_chat_greeting, name='chat_greeting'),
+
+    path('api/staff/books/load-more/', api_staff.api_staff_load_more_books, name='api_staff_load_more_books'),
+    path('api/staff/borrows/load-more/', api_staff.api_staff_load_more_borrows, name='api_staff_load_more_borrows'),
 ]

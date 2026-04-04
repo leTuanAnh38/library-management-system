@@ -7,7 +7,9 @@
 <div class="container-fluid px-lg-5 py-5 mt-5">
     <div class="row g-4">
         <div class="col-lg-3">
-            {% include 'core/includes/sidebar.html' %}
+            <div class="sticky-sidebar">  
+                {% include 'core/includes/sidebar.html' %}
+            </div>
         </div>
         
         <div class="col-lg-9">
@@ -28,7 +30,7 @@
                     {% if query %}
                         <div class="mt-2">
                             <small class="text-muted">
-                                Tìm thấy <strong>{{ transactions.count }}</strong> kết quả cho: <mark class="px-2 rounded-1">{{ query }}</mark>
+                                Tìm thấy <strong>{{ transactions.paginator.count }}</strong> kết quả cho: <mark class="px-2 rounded-1">{{ query }}</mark>
                             </small>
                         </div>
                     {% endif %}
@@ -39,7 +41,7 @@
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4 border-start border-4 border-warning ps-3">
                         <h4 class="fw-bold m-0 text-dark">📋 QUẢN LÝ MƯỢN / TRẢ SÁCH</h4>
-                        <span class="badge bg-light text-dark border px-3 rounded-pill">Tổng: {{ transactions.count }} giao dịch</span>
+                        <span class="badge bg-light text-dark border px-3 rounded-pill">Tổng: {{ transactions.paginator.count }} giao dịch</span>
                     </div>
 
                     <div class="table-responsive">
@@ -53,9 +55,10 @@
                                     <th class="border-0 text-end">Thao tác</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            
+                            <tbody id="staff-borrow-container">
                                 {% for trans in transactions %}
-                                <tr>
+                                <tr class="animate__animated animate__fadeIn">
                                     <td class="py-3">
                                         <div class="fw-bold text-dark">{{ trans.user.get_full_name|default:trans.user.username }}</div>
                                         <small class="text-muted">MSV: {{ trans.user.msv }}</small>
@@ -148,6 +151,19 @@
                             </tbody>
                         </table>
                     </div>
+                    
+                    <div id="staff-borrow-scroll-trigger" 
+                         data-url="{% url 'api_staff_load_more_borrows' %}" 
+                         data-page="2" 
+                         data-query="{{ query|default:'' }}" 
+                         data-has-next="{% if transactions.has_next %}true{% else %}false{% endif %}">
+                    </div>
+
+                    <div id="staff-borrow-loading-spinner" class="text-center py-4" style="display: none;">
+                         <i class="fas fa-spinner fa-spin fa-2x text-warning"></i>
+                         <p class="text-muted mt-2 fw-bold small">Đang tải thêm giao dịch...</p>
+                    </div>
+
                 </div>
             </div>
         </div>

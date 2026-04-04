@@ -17,7 +17,6 @@ from core.models import Book, BorrowTransaction, Notification
 # ==========================================
 # 1. NGHIỆP VỤ MƯỢN SÁCH
 # ==========================================
-
 @login_required(login_url='login')
 def borrow_book(request, book_id):
     user = request.user
@@ -32,9 +31,35 @@ def borrow_book(request, book_id):
         messages.warning(request, "Vui lòng cập nhật MSSV và Lớp trong hồ sơ cá nhân trước khi thực hiện mượn sách!")
         return redirect('profile')
 
+    # ==========================================================
+    # ---> TRẠM KIỂM SOÁT 1: KIỂM TRA GIỚI HẠN TỐI ĐA 4 CUỐN <---
+    # ==========================================================
+    active_borrows_count = BorrowTransaction.objects.filter(
+        user=user,
+        status__in=['PENDING', 'BORROWED', 'OVERDUE']
+    ).count()
+
+    if active_borrows_count >= 4:
+        messages.error(request, f"Bạn đang mượn hoặc chờ duyệt {active_borrows_count} cuốn sách rồi. Mỗi người chỉ được mượn tối đa 4 cuốn cùng lúc!")
+        return redirect(request.META.get('HTTP_REFERER', 'book_list'))
+
     # 3. Lấy thông tin sách
     book = get_object_or_404(Book, id=book_id)
+
+    # ==========================================================
+    # ---> TRẠM KIỂM SOÁT 2: KIỂM TRA XEM ĐÃ MƯỢN CUỐN NÀY CHƯA <---
+    # ==========================================================
+    already_borrowed = BorrowTransaction.objects.filter(
+        user=user, 
+        book=book, 
+        status__in=['PENDING', 'BORROWED', 'OVERDUE']
+    ).exists()
+
+    if already_borrowed:
+        messages.warning(request, f"Bạn đang mượn hoặc đã gửi yêu cầu mượn cuốn '{book.title}' này rồi!")
+        return redirect(request.META.get('HTTP_REFERER', 'book_list'))
     
+    # 4. KIỂM TRA SỐ LƯỢNG TRONG KHO
     if book.quantity <= 0:
         messages.error(request, f"Sách '{book.title}' đã hết trong kho!")
         return redirect(request.META.get('HTTP_REFERER', 'book_list'))
@@ -52,7 +77,7 @@ def borrow_book(request, book_id):
 
     han_tra = timezone.now().date() + timedelta(days=14)
     
-    # ---> ĐÃ SỬA: Mặc định tất cả các yêu cầu mượn đều là PENDING (Chờ duyệt)
+    # Mặc định tất cả các yêu cầu mượn đều là PENDING (Chờ duyệt)
     status = 'PENDING' 
     is_paid = False if is_premium else True
 
@@ -67,7 +92,7 @@ def borrow_book(request, book_id):
                 is_paid=is_paid                
             )
 
-            # ---> ĐÃ SỬA: Cập nhật thông báo cho sinh viên biết là phải chờ duyệt
+            # Cập nhật thông báo cho sinh viên biết là phải chờ duyệt
             if is_premium:
                 payment_display = dict(BorrowTransaction.PAYMENT_CHOICES).get(payment_method, payment_method)
                 msg = f"Đã gửi yêu cầu mượn sách có phí '{book.title}'. Vui lòng thanh toán {book.price:,.0f} VNĐ qua hình thức [{payment_display}] để Thủ thư duyệt!"

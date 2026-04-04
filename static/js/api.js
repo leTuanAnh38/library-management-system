@@ -696,3 +696,5 @@ $('#btn-load-more').click(function() {
             }
         }
     });
+
+ 

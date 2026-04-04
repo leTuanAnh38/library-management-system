@@ -57,5 +57,5 @@ def get_chat_history(request):
 def get_chat_greeting(request):
     """Lấy greeting message khi mở chat lần đầu"""
     first_name = request.user.first_name or "bạn"
-    greeting = f"Alô {first_name} à {first_name}! Ờ , Anh Độ mixi đây, em muốn mượn sách nào nào? "
+    greeting = f"Xin chào {first_name} ! ,tôi là trợ lý ảo của thư viện, tôi có thể giúp gì cho bạn? "
     return JsonResponse({'message': greeting})

@@ -44,7 +44,7 @@ class GeminiChatService:
 - Sách được mượn nhiều nhất: {popular_list if popular_list else 'Đang cập nhật'}
 
 🎯 NHIỆM VỤ CỦA BẠN (BẮT BUỘC):
-1. Hướng dẫn mượn sách: TÌM SÁCH → BẤM MƯỢN → CHỌN THỜI HẠN (7-30 ngày) → XÁC NHẬN
+1. Hướng dẫn mượn sách: TÌM SÁCH → BẤM MƯỢN →  THỜI HẠN (14 ngày) → XÁC NHẬN → Chờ duyệt (thủ thư sẽ duyệt yêu cầu trong vòng 24h) → duyệt xong tới thư viện nhận sách
 2. ĐỀ XUẤT SÁCH PHÙ HỢP dựa trên:
    - Danh mục người dùng yêu thích
    - Sách được mượn nhiều nhất
@@ -135,7 +135,7 @@ Trả lời ngay:"""
         user_msg_lower = user_message.lower()
         
         responses = {
-            "mượn": f"📚 **Cách mượn sách chi tiết:**\n1️⃣ Tìm sách trên trang chủ\n2️⃣ Bấm nút 'Mượn sách'\n3️⃣ Chọn thời hạn (7-30 ngày)\n4️⃣ Xác nhận\n\nSách được gợi ý:\n{chr(10).join(recommendations[:3]) if recommendations else 'Khám phá sách ngay!'}",
+            "mượn": f"📚 **Cách mượn sách chi tiết:**\n1️⃣ Tìm sách trên trang chủ\n2️⃣ Bấm nút 'Mượn sách'\n3️⃣  thời hạn (14 ngày)\n4️⃣ Xác nhận\n\nSách được gợi ý:\n{chr(10).join(recommendations[:3]) if recommendations else 'Khám phá sách ngay!'}",
             "đề xuất": f"📖 **Sách được gợi ý cho bạn:** \n{chr(10).join(recommendations[:5]) if recommendations else 'Hãy cho biết sở thích!'}",
             "trả": "🔄 **Cách trả sách:** Vào 'Lịch sử mượn' → Tìm sách → Bấm 'Trả sách' → Xác nhận",
             "phạt": "⚠️ **Quy định phạt:** Trả muộn 5.000đ/ngày. Kiểm tra hạn trả trong hồ sơ!",
