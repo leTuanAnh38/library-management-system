@@ -279,4 +279,4 @@ SIMPLE_JWT = {
 }
 
 # Thêm vào cuối file
-GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'AIzaSyAAolvS9fHoG_3f0DcLvd-AdN6Tb5WxXFA')
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY', 'your-api-key-here')
