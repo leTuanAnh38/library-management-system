@@ -37,3 +37,16 @@ def notifications_count(request):
         count = Notification.objects.filter(user=request.user, status='UNREAD').count()
         return {'unread_notifications_count': count}
     return {'unread_notifications_count': 0}
+
+
+def show_borrow_info(request):
+    """Provide a one-time borrow/payment informational message stored in session.
+    The view should set `request.session['show_borrow_info_msg'] = '...message...'` before redirecting.
+    This processor pops the value so the message is shown only once.
+    """
+    msg = ''
+    try:
+        msg = request.session.pop('show_borrow_info_msg') if 'show_borrow_info_msg' in request.session else ''
+    except Exception:
+        msg = ''
+    return {'show_borrow_info_msg': msg}

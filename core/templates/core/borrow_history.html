@@ -77,9 +77,9 @@
                                 </td>
                                 <td class="text-center">
                                     {% if item.status == 'BORROWED' or item.status == 'OVERDUE' %}
-                                        <a href="{% url 'return_book' item.id %}" 
-                                           class="btn btn-warning btn-sm rounded-pill px-4 fw-bold shadow-sm text-white transition-hover"
-                                           onclick="return confirm('Khanh chắc chắn muốn trả cuốn sách [{{ item.book.title }}] này chứ?')">
+                                        <a href="{% url 'return_book' item.id %}"
+                                           class="btn btn-warning btn-sm rounded-pill px-4 fw-bold shadow-sm text-white transition-hover custom-confirm"
+                                           data-message="Bạn chắc chắn muốn trả cuốn sách [{{ item.book.title }}] này chứ?">
                                             Trả sách
                                         </a>
                                     {% elif item.status == 'PENDING' %}

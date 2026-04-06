@@ -17,7 +17,7 @@
                 <img src="{% static 'img/banner2.png' %}" alt="10.000 cuốn sách PDF Miễn Phí" class="w-100" style="max-height: 450px; object-fit: cover;">
             </div>
              <div class="slider-item">
-                <img src="{% static 'img/banner3.png' %}" alt="10.000 cuốn sách PDF Miễn Phí" class="w-100" style="max-height: 450px; object-fit: cover;">
+                <img src="{% static 'img/banner3.png' %}" alt="Thư viện số" class="w-100" style="max-height: 450px; object-fit: cover;">
             </div>
         </div>
     </div>
@@ -42,26 +42,30 @@
                     {% for book in books %}
                     {% if not book.price or book.price == 0 %}
                     <div class="col-md-6 col-lg-4 d-flex align-items-stretch">
-                        <div class="product-item bg-white border rounded shadow-sm w-100 d-flex flex-column p-2 transition-hover position-relative">
-                            <div class="text-center p-3 bg-light rounded" style="height: 200px; overflow: hidden;">
-                                <a href="{% url 'book_detail' book.id %}">
-                                    <img src="{{ book.get_cover }}" class="h-100 rounded" style="object-fit: contain;">
+                        <div class="bg-white border rounded-4 shadow-sm w-100 d-flex flex-column overflow-hidden position-relative transition-hover">
+                            
+                            <div class="text-center bg-light border-bottom" style="height: 240px;">
+                                <a href="{% url 'book_detail' book.id %}" class="d-block h-100">
+                                    <img src="{{ book.get_cover }}" class="h-100 w-100" style="object-fit: cover; object-position: top;">
                                 </a>
                             </div>
-                            <div class="p-3 text-center d-flex flex-column flex-grow-1">
-                                <h6 class="fw-bold text-dark text-truncate-2 mb-2">
+
+                            <div class="p-4 text-center d-flex flex-column flex-grow-1">
+                                <h5 class="fw-bold text-dark text-truncate-2 mb-3">
                                     <a href="{% url 'book_detail' book.id %}" class="text-dark text-decoration-none">{{ book.title }}</a>
-                                </h6>
-                                <p class="small text-muted mb-2">Tác giả: <b>{{ book.author|default:"Chưa rõ" }}</b></p>
-                                <div class="mb-3 mt-1">
-                                    {% if book.quantity > 0 %}
-                                        <span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i>Có sẵn: {{ book.quantity }} cuốn</span>
-                                    {% else %}
-                                        <span class="text-danger small fw-bold"><i class="fas fa-times-circle me-1"></i>Đang mượn</span>
-                                    {% endif %}
-                                </div>
+                                </h5>
                                 
-                                <div class="mt-auto">
+                                <p class="small text-muted mb-2">Tác giả: <strong class="text-dark">{{ book.author|default:"Chưa rõ" }}</strong></p>
+                                <p class="small text-muted mb-2">Số lượng còn lại: <strong class="text-dark">{{ book.quantity }}</strong></p>
+                                <p class="small text-muted mb-4">Trạng thái: 
+                                    {% if book.quantity > 0 %}
+                                        <strong class="text-success">Có sẵn</strong>
+                                    {% else %}
+                                        <strong class="text-danger">Hết sách</strong>
+                                    {% endif %}
+                                </p>
+                                
+                                <div class="mt-auto w-100">
                                     {% if book.id in pending_book_ids %}
                                         <button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled" style="opacity: 0.85;">
                                             <i class="fas fa-clock me-1"></i>CHỜ XÁC NHẬN
@@ -76,19 +80,18 @@
                                         </button>
                                     {% else %}
                                         <a href="{% url 'borrow_book' book.id %}" 
-                                           class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm custom-confirm" 
+                                           class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm ajax-borrow-btn" 
                                            data-message="Bạn ơi, bạn có chắc chắn muốn mượn cuốn sách [{{ book.title }}] này không?">
                                             MƯỢN SÁCH
                                         </a>
                                     {% endif %}
                                 </div>
                                 
-                                <div class="text-center mt-2">
-                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted btn-toggle-wishlist" 
-                                      data-url="{% url 'api_toggle_wishlist' book.id %}" 
-                                         data-book-id="{{ book.id }}">
-                                            <i class="{% if book.id in wishlist_book_ids %}fas{% else %}far{% endif %} fa-heart text-danger fs-5 heart-icon-{{ book.id }}"></i>
-                                                Yêu thích
+                                <div class="text-center mt-3 pt-2">
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none btn-toggle-wishlist" 
+                                          data-url="{% url 'api_toggle_wishlist' book.id %}" 
+                                          data-book-id="{{ book.id }}">
+                                        <i class="{% if book.id in wishlist_book_ids %}fas text-danger{% else %}far text-muted{% endif %} fa-heart fs-5 heart-icon-{{ book.id }}"></i>
                                     </button>
                                 </div>
                             </div>
@@ -112,32 +115,35 @@
                     {% for book in books %}
                     {% if book.price and book.price > 0 %}
                     <div class="col-md-6 col-lg-4 d-flex align-items-stretch">
-                        <div class="product-item bg-white border rounded shadow-sm w-100 d-flex flex-column p-2 transition-hover position-relative border-danger border-opacity-25">
+                        <div class="bg-white border rounded-4 shadow-sm w-100 d-flex flex-column overflow-hidden position-relative transition-hover border-danger border-opacity-25">
                             
                             <div class="position-absolute bg-danger text-white px-3 py-1 fw-bold" 
-                                 style="top: 15px; right: -5px; border-radius: 20px 0 0 20px; z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-                                {{ book.price }} VNĐ
+                                 style="top: 15px; left: 0; border-radius: 0 20px 20px 0; z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+                                {{ book.price|floatformat:0 }} VNĐ
                             </div>
 
-                            <div class="text-center p-3 bg-light rounded" style="height: 200px; overflow: hidden;">
-                                <a href="{% url 'book_detail' book.id %}">
-                                    <img src="{{ book.get_cover }}" class="h-100 rounded" style="object-fit: contain;">
+                            <div class="text-center bg-light border-bottom" style="height: 240px;">
+                                <a href="{% url 'book_detail' book.id %}" class="d-block h-100">
+                                    <img src="{{ book.get_cover }}" class="h-100 w-100" style="object-fit: cover; object-position: top;">
                                 </a>
                             </div>
-                            <div class="p-3 text-center d-flex flex-column flex-grow-1">
-                                <h6 class="fw-bold text-dark text-truncate-2 mb-2">
+
+                            <div class="p-4 text-center d-flex flex-column flex-grow-1">
+                                <h5 class="fw-bold text-dark text-truncate-2 mb-3">
                                     <a href="{% url 'book_detail' book.id %}" class="text-dark text-decoration-none">{{ book.title }}</a>
-                                </h6>
-                                <p class="small text-muted mb-2">Tác giả: <b>{{ book.author|default:"Chưa rõ" }}</b></p>
-                                <div class="mb-3 mt-1">
-                                    {% if book.quantity > 0 %}
-                                        <span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i>Có sẵn: {{ book.quantity }} cuốn</span>
-                                    {% else %}
-                                        <span class="text-danger small fw-bold"><i class="fas fa-times-circle me-1"></i>Đang mượn</span>
-                                    {% endif %}
-                                </div>
+                                </h5>
                                 
-                                <div class="mt-auto">
+                                <p class="small text-muted mb-2">Tác giả: <strong class="text-dark">{{ book.author|default:"Chưa rõ" }}</strong></p>
+                                <p class="small text-muted mb-2">Số lượng còn lại: <strong class="text-dark">{{ book.quantity }}</strong></p>
+                                <p class="small text-muted mb-4">Trạng thái: 
+                                    {% if book.quantity > 0 %}
+                                        <strong class="text-success">Có sẵn</strong>
+                                    {% else %}
+                                        <strong class="text-danger">Hết sách</strong>
+                                    {% endif %}
+                                </p>
+                                
+                                <div class="mt-auto w-100">
                                     {% if book.id in pending_book_ids %}
                                         <button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled" style="opacity: 0.85;">
                                             <i class="fas fa-clock me-1"></i>CHỜ XÁC NHẬN
@@ -157,12 +163,11 @@
                                     {% endif %}
                                 </div>
                                 
-                                <div class="text-center mt-2">
-                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted btn-toggle-wishlist" 
+                                <div class="text-center mt-3 pt-2">
+                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none btn-toggle-wishlist" 
                                       data-url="{% url 'api_toggle_wishlist' book.id %}" 
-                                         data-book-id="{{ book.id }}">
-                                            <i class="{% if book.id in wishlist_book_ids %}fas{% else %}far{% endif %} fa-heart text-danger fs-5 heart-icon-{{ book.id }}"></i>
-                                                Yêu thích
+                                      data-book-id="{{ book.id }}">
+                                        <i class="{% if book.id in wishlist_book_ids %}fas text-danger{% else %}far text-muted{% endif %} fa-heart fs-5 heart-icon-{{ book.id }}"></i>
                                     </button>
                                 </div>
                             </div>
@@ -179,7 +184,7 @@
                                         {% csrf_token %}
                                         <div class="modal-body p-4 text-center">
                                             <h6 class="fw-bold mb-3">{{ book.title }}</h6>
-                                            <h3 class="text-danger fw-bold mb-4">{{ book.price }} VNĐ</h3>
+                                            <h3 class="text-danger fw-bold mb-4">{{ book.price|floatformat:0 }} VNĐ</h3>
                                             
                                             <p class="text-start fw-bold mb-2">Chọn phương thức thanh toán:</p>
                                             
@@ -188,7 +193,7 @@
                                                     <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="CASH" data-book-id="{{ book.id }}" required checked style="transform: scale(1.3);">
                                                     <div>
                                                         <div class="fw-bold text-dark"><i class="fas fa-money-bill-wave text-success me-2"></i> Thanh toán tại quầy</div>
-                                                        <small class="text-muted">Đóng tiền mặt trực tiếp cho Thủ thư khi đến nhận sách.</small>
+                                                        <small class="text-muted">Đóng tiền mặt trực tiếp cho Thủ thư.</small>
                                                     </div>
                                                 </div>
                                             </label>
@@ -198,7 +203,7 @@
                                                     <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="BANK" data-book-id="{{ book.id }}" required style="transform: scale(1.3);">
                                                     <div>
                                                         <div class="fw-bold text-dark"><i class="fas fa-qrcode text-primary me-2"></i> Chuyển khoản (Mã QR)</div>
-                                                        <small class="text-muted">Chuyển khoản trước, Thủ thư sẽ kiểm tra và duyệt trên hệ thống.</small>
+                                                        <small class="text-muted">Chuyển khoản trước, Thủ thư sẽ kiểm tra.</small>
                                                     </div>
                                                 </div>
                                             </label>
@@ -207,15 +212,7 @@
                                                 <div class="p-3 bg-light border border-warning rounded-3 text-center shadow-sm">
                                                     <p class="fw-bold text-dark mb-2">Quét mã MoMo/Ngân hàng</p>
                                                     <img src="{% static 'img/qr.png' %}" alt="Mã QR Thanh Toán" class="img-fluid rounded border mb-2" style="max-width: 160px;">
-                                                    <div class="small text-dark mt-2 bg-white p-2 rounded border border-dashed">
-                                                        Nội dung chuyển khoản:<br>
-                                                        <strong class="text-danger fs-6">Sách {{ book.id }} - {{ request.user.msv }}</strong>
-                                                    </div>
                                                 </div>
-                                            </div>
-
-                                            <div class="alert alert-info mt-4 small text-start mb-0" style="border-radius: 10px;">
-                                                <i class="fas fa-info-circle me-1"></i> Sau khi đăng ký, trạng thái đơn sẽ là <b>"Chờ xác nhận"</b> cho đến khi Thủ thư nhận được tiền phí.
                                             </div>
                                         </div>
                                         <div class="modal-footer border-0 pb-4 pt-0 justify-content-center">
@@ -247,7 +244,7 @@
                             <div class="col-sm-4 col-6">
                                 <div class="bg-light rounded p-2 text-center border h-100 d-flex flex-column transition-hover position-relative">
                                     {% if book.price and book.price > 0 %}
-                                        <span class="position-absolute badge bg-danger text-white" style="top: -5px; right: -5px; z-index: 2;">Có trả phí</span>
+                                        <span class="position-absolute badge bg-danger text-white" style="top: -5px; right: -5px; z-index: 2;">VIP</span>
                                     {% endif %}
                                     <a href="{% url 'book_detail' book.id %}">
                                         <img src="{{ book.get_cover }}" class="img-fluid rounded mb-2" style="height: 120px; object-fit: contain;">
@@ -271,7 +268,7 @@
                             <div class="col-sm-4 col-6">
                                 <div class="bg-light rounded p-2 text-center border h-100 d-flex flex-column transition-hover position-relative">
                                     {% if book.price and book.price > 0 %}
-                                        <span class="position-absolute badge bg-danger text-white" style="top: -5px; right: -5px; z-index: 2;">Có trả phí</span>
+                                        <span class="position-absolute badge bg-danger text-white" style="top: -5px; right: -5px; z-index: 2;">VIP</span>
                                     {% endif %}
                                     <a href="{% url 'book_detail' book.id %}">
                                         <img src="{{ book.get_cover }}" class="img-fluid rounded mb-2" style="height: 120px; object-fit: contain;">
@@ -295,7 +292,7 @@
                     <div class="col-md-4">
                         <div class="bg-light rounded p-3 text-center border h-100 d-flex flex-column transition-hover position-relative">
                             {% if book.price and book.price > 0 %}
-                                <span class="position-absolute badge bg-danger text-white" style="top: -5px; right: -5px; z-index: 2;">có trả phí</span>
+                                <span class="position-absolute badge bg-danger text-white" style="top: -5px; right: -5px; z-index: 2;">VIP</span>
                             {% endif %}
                             <a href="{% url 'book_detail' book.id %}">
                                 <img src="{{ book.get_cover }}" class="img-fluid rounded mb-2" style="height: 160px; object-fit: contain;">

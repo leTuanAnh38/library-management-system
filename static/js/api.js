@@ -1,4 +1,64 @@
+
+// Global helper to read CSRF cookie (used by AJAX calls)
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Read CSRF token from meta tag, cookie, or any hidden input on page
+function getCSRFToken() {
+    var meta = document.querySelector('meta[name="csrf-token"]');
+    if (meta && meta.getAttribute('content')) return meta.getAttribute('content');
+    var cookie = getCookie('csrftoken');
+    if (cookie) return cookie;
+    var input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+    if (input) return input.value;
+    return '';
+}
+
+// Ensure jQuery AJAX sends CSRF token for unsafe HTTP methods (use dynamic getter)
+if (typeof $ !== 'undefined' && $.ajaxSetup) {
+    $.ajaxSetup({
+        beforeSend: function(xhr, settings) {
+            if (!/^(GET|HEAD|OPTIONS|TRACE)$/i.test(settings.type)) {
+                var token = getCSRFToken();
+                if (token) xhr.setRequestHeader('X-CSRFToken', token);
+            }
+        }
+    });
+}
+
 $(document).ready(function() {
+
+    // Ensure main has minimum height to keep footer at bottom and avoid layout jumps
+    function adjustMainMinHeight() {
+        try {
+            var header = document.querySelector('header');
+            var footer = document.querySelector('footer.full-footer');
+            var main = document.querySelector('main');
+            if (!main) return;
+            var hh = header ? header.offsetHeight : 0;
+            var fh = footer ? footer.offsetHeight : 0;
+            // set min-height so that header + main + footer >= 100vh
+            main.style.minHeight = 'calc(100vh - ' + (hh + fh) + 'px)';
+        } catch (e) {
+            // silent
+        }
+    }
+
+    // Run on load and resize
+    adjustMainMinHeight();
+    window.addEventListener('resize', function() { adjustMainMinHeight(); });
 
     /* =================================================================
        1. XỬ LÝ ẨN/HIỆN MÃ QR THANH TOÁN (EVENT DELEGATION)
@@ -29,20 +89,7 @@ $(document).ready(function() {
     /* =================================================================
        2. XỬ LÝ AJAX THẢ TIM (WISHLIST) KHÔNG LOAD LẠI TRANG
        ================================================================= */
-    function getCookie(name) {
-        let cookieValue = null;
-        if (document.cookie && document.cookie !== '') {
-            const cookies = document.cookie.split(';');
-            for (let i = 0; i < cookies.length; i++) {
-                const cookie = cookies[i].trim();
-                if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                    break;
-                }
-            }
-        }
-        return cookieValue;
-    }
+    // getCookie moved to global scope above so all handlers can use it
 
     // Dùng $(document).on('click') để không bao giờ bị liệt nút
     $(document).on('click', '.btn-toggle-wishlist', function(e) {
@@ -282,27 +329,35 @@ $(document).ready(function() {
         });
     });
  
-    // Hàm dùng chung để vẽ HTML từng cuốn sách (tránh lặp code)
-// Hàm dùng chung để vẽ HTML từng cuốn sách (tránh lặp code)
+// Hàm dùng chung để vẽ HTML từng cuốn sách (Đã đồng bộ giao diện Minimalist tràn viền)
 function renderBookHTML(book, is_premium) {
-    var priceRibbon = book.price > 0 ? `<div class="position-absolute bg-danger text-white px-3 py-1 fw-bold" style="top: 15px; right: -5px; border-radius: 20px 0 0 20px; z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">${book.price} VNĐ</div>` : '';
-    var stockHtml = book.quantity > 0 ? `<span class="text-success small fw-bold"><i class="fas fa-check-circle me-1"></i>Có sẵn: ${book.quantity} cuốn</span>` : `<span class="text-danger small fw-bold"><i class="fas fa-times-circle me-1"></i>Hết sách</span>`;
+    // 1. Nhãn giá tiền (Sách VIP)
+    var priceRibbon = (book.price && book.price > 0) 
+        ? `<div class="position-absolute bg-danger text-white px-3 py-1 fw-bold" style="top: 15px; left: 0; border-radius: 0 20px 20px 0; z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">${book.price} VNĐ</div>` 
+        : '';
     
+    // 2. Trạng thái số lượng
+    var stockHtml = book.quantity > 0 
+        ? `<strong class="text-success">Có sẵn</strong>` 
+        : `<strong class="text-danger">Hết sách</strong>`;
+    
+    // 3. Nút mượn sách & Form Modal
     var actionBtn = '';
-    // Lấy Token bảo mật của Django để form thanh toán có thể submit được
-    var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]') ? document.querySelector('[name=csrfmiddlewaretoken]').value : '';
+    var modalHtml = '';
+    var csrfToken = getCSRFToken();
 
     if (book.btn_status === 'PENDING') {
-        actionBtn = `<button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled" style="opacity: 0.85;"><i class="fas fa-clock me-1"></i>CHỜ DUYỆT</button>`;
+        actionBtn = `<button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled" style="opacity: 0.85;"><i class="fas fa-clock me-1"></i>CHỜ XÁC NHẬN</button>`;
     } else if (book.btn_status === 'BORROWED') {
         actionBtn = `<button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 shadow-sm disabled">ĐANG MƯỢN</button>`;
-    } else if (book.btn_status === 'OUT_OF_STOCK') {
+    } else if (book.btn_status === 'OUT_OF_STOCK' || book.quantity <= 0) {
         actionBtn = `<button class="btn btn-danger rounded-pill fw-bold w-100 py-2 shadow-sm disabled">HẾT SÁCH</button>`;
     } else if (book.btn_status === 'VIP' || book.price > 0) {
-        
+        // Nút mở Modal cho sách VIP
         actionBtn = `<button type="button" class="btn btn-primary w-100 fw-bold rounded-pill text-white shadow-sm py-2" data-bs-toggle="modal" data-bs-target="#paymentModal${book.id}">MƯỢN SÁCH</button>`;
         
-        var modalHtml = `
+        // Vẽ Modal thanh toán (Giữ nguyên cấu trúc xịn xò)
+        modalHtml = `
         <div class="modal fade payment-modal" id="paymentModal${book.id}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content" style="border-radius: 20px; border: none;">
@@ -316,6 +371,7 @@ function renderBookHTML(book, is_premium) {
                             <h6 class="fw-bold mb-3">${book.title}</h6>
                             <h3 class="text-danger fw-bold mb-4">${book.price} VNĐ</h3>
                             <p class="text-start fw-bold mb-2">Chọn phương thức thanh toán:</p>
+                            
                             <label class="w-100 text-start border p-3 rounded-3 mb-3 cursor-pointer payment-option selected-payment shadow-sm transition">
                                 <div class="form-check d-flex align-items-center m-0">
                                     <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="CASH" data-book-id="${book.id}" required checked style="transform: scale(1.3);">
@@ -325,19 +381,25 @@ function renderBookHTML(book, is_premium) {
                                     </div>
                                 </div>
                             </label>
+                            
                             <label class="w-100 text-start border p-3 rounded-3 cursor-pointer payment-option shadow-sm transition">
                                 <div class="form-check d-flex align-items-center m-0">
                                     <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="BANK" data-book-id="${book.id}" required style="transform: scale(1.3);">
                                     <div>
                                         <div class="fw-bold text-dark"><i class="fas fa-qrcode text-primary me-2"></i> Chuyển khoản (Mã QR)</div>
-                                        <small class="text-muted">Chuyển khoản trước, Thủ thư sẽ kiểm tra.</small>
+                                        <small class="text-muted">Chuyển khoản trước, Thủ thư sẽ kiểm tra và duyệt.</small>
                                     </div>
                                 </div>
                             </label>
+                            
                             <div id="qrCodeSection${book.id}" class="qr-box mt-3" style="display: none;">
                                 <div class="p-3 bg-light border border-warning rounded-3 text-center shadow-sm">
                                     <p class="fw-bold text-dark mb-2">Quét mã MoMo/Ngân hàng</p>
                                     <img src="/static/img/qr.png" alt="Mã QR" class="img-fluid rounded border mb-2" style="max-width: 160px;">
+                                    <div class="small text-dark mt-2 bg-white p-2 rounded border border-dashed">
+                                        Nội dung chuyển khoản:<br>
+                                        <strong class="text-danger fs-6">Sách ${book.id} - MSSV_CUA_BAN</strong>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -350,41 +412,49 @@ function renderBookHTML(book, is_premium) {
             </div>
         </div>`;
         
-        // ---> ĐÃ SỬA CHỖ NÀY: Xóa Modal cũ để chống trùng lặp, sau đó nhét Modal mới vào thẻ <body>
+        // Quăng modal ra body
         $('#paymentModal' + book.id).remove();
         $('body').append(modalHtml);
-
     } else {
-        actionBtn = `<a href="${book.borrow_url}" class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm custom-confirm" data-message="Bạn ơi, bạn có chắc chắn muốn mượn sách [${book.title}] không?">MƯỢN SÁCH</a>`;
+        // Nút mượn cho sách thường (AJAX ngầm)
+        actionBtn = `<a href="${book.borrow_url}" class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm ajax-borrow-btn" data-message="Bạn ơi, bạn có chắc chắn muốn mượn sách [${book.title}] không?">MƯỢN SÁCH</a>`;
     }
 
-    var heartClass = book.is_wished ? 'fas' : 'far';
-    var categoryHtml = (is_premium === true || is_premium === 'true') ? `<p class="small text-muted mb-2"><i class="fas fa-tags me-1"></i> Thể loại: ${book.category_name}</p>` : '';
-
-    // ---> ĐÃ SỬA CHỖ NÀY: Trả về HTML cuốn sách MÀ KHÔNG KÈM Modal nữa (vì đã quăng ra body ở trên rồi)
+    // 4. Icon Tim
+    var heartClass = book.is_wished ? 'fas text-danger' : 'far text-muted';
+    
+    // 5. Ráp toàn bộ giao diện (Cấu trúc mới tràn lề, căn giữa)
     return `
         <div class="col-md-6 col-lg-4 d-flex align-items-stretch animate__animated animate__fadeInUp">
-            <div class="product-item bg-white border rounded shadow-sm w-100 d-flex flex-column p-2 transition-hover position-relative">
+            <div class="bg-white border rounded-4 shadow-sm w-100 d-flex flex-column overflow-hidden position-relative transition-hover">
                 ${priceRibbon}
-                <div class="text-center p-3 bg-light rounded" style="height: 200px; overflow: hidden;">
-                    <a href="${book.url}"><img src="${book.cover_image}" class="h-100 rounded" style="object-fit: contain;"></a>
+                
+                <div class="text-center bg-light border-bottom" style="height: 240px;">
+                    <a href="${book.url}" class="d-block h-100">
+                        <img src="${book.cover_image}" class="h-100 w-100" style="object-fit: cover; object-position: top;">
+                    </a>
                 </div>
-                <div class="p-3 text-center d-flex flex-column flex-grow-1">
-                    <h6 class="fw-bold text-dark text-truncate-2 mb-2"><a href="${book.url}" class="text-dark text-decoration-none">${book.title}</a></h6>
-                    <p class="small text-muted mb-1">Tác giả: <b>${book.author}</b></p>
-                    ${categoryHtml}
-                    <div class="mb-3 mt-1">${stockHtml}</div>
-                    <div class="mt-auto">${actionBtn}</div>
-                    <div class="text-center mt-2">
-                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted btn-toggle-wishlist" data-url="${book.wishlist_api_url}" data-book-id="${book.id}">
-                            <i class="${heartClass} fa-heart text-danger fs-5 heart-icon-${book.id}"></i> Yêu thích
+                
+                <div class="p-4 text-center d-flex flex-column flex-grow-1">
+                    <h5 class="fw-bold text-dark text-truncate-2 mb-3">
+                        <a href="${book.url}" class="text-dark text-decoration-none">${book.title}</a>
+                    </h5>
+                    
+                    <p class="small text-muted mb-2">Tác giả: <strong class="text-dark">${book.author}</strong></p>
+                    <p class="small text-muted mb-2">Số lượng còn lại: <strong class="text-dark">${book.quantity}</strong></p>
+                    <p class="small text-muted mb-4">Trạng thái: ${stockHtml}</p>
+                    
+                    <div class="mt-auto w-100">${actionBtn}</div>
+                    
+                    <div class="text-center mt-3 pt-2">
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none btn-toggle-wishlist" data-url="${book.wishlist_api_url}" data-book-id="${book.id}">
+                            <i class="${heartClass} fa-heart fs-5 heart-icon-${book.id}"></i>
                         </button>
                     </div>
                 </div>
             </div>
         </div>`;
 }
-
 // --- A. BẮT SỰ KIỆN KHI BẤM DANH MỤC Ở SIDEBAR MÀU CAM ---
 $('.ajax-category-link').click(function(e) {
     if ($('#category-filter').length > 0) {
@@ -418,13 +488,24 @@ $('#sort-filter, #category-filter').change(function() {
                 }
                 $('#book-list-container').html(html);
 
-                if (response.has_next) {
-                    $('#btn-load-more').data('page', 2).data('category', category).data('sort', sort);
-                    $('#load-more-section').fadeIn();
-                } else {
+                // adjust layout after replacing content to avoid footer jump
+                if (typeof adjustMainMinHeight === 'function') adjustMainMinHeight();
+
+                    if (response.has_next) {
+                        $('#btn-load-more').data('page', 2).data('category', category).data('sort', sort);
+                        // ensure button is enabled and shows default text
+                        $('#btn-load-more').html('<i class="fas fa-arrow-down me-2"></i>Xem thêm sách').prop('disabled', false);
+                        $('#load-more-section').fadeIn();
+                    } else {
+                        $('#load-more-section').fadeOut();
+                    }
+            }
+                else {
+                    // unexpected response: reset UI
+                    $('#book-list-container').html('<div class="col-12 text-center py-5 text-danger"><i class="fas fa-exclamation-triangle fa-3x mb-3"></i><p class="fw-bold">Không thể tải dữ liệu.</p></div>');
+                    $('#btn-load-more').html('<i class="fas fa-arrow-down me-2"></i>Xem thêm sách').prop('disabled', false);
                     $('#load-more-section').fadeOut();
                 }
-            }
         },
         // Chống lỗi vòng quay vô tận nếu mất mạng/server sập
         error: function(xhr) {
@@ -453,7 +534,16 @@ $('#btn-load-more').click(function() {
             if (response.status === 'success') {
                 var html = '';
                 response.data.forEach(function(book) { html += renderBookHTML(book, is_premium); });
+                // If no items returned, hide load more and restore button
+                if (!response.data || response.data.length === 0) {
+                    $('#load-more-section').fadeOut();
+                    btn.html(originalText).prop('disabled', false);
+                    return;
+                }
                 $('#book-list-container').append(html);
+
+                // adjust layout after appending content
+                if (typeof adjustMainMinHeight === 'function') adjustMainMinHeight();
 
                 if (response.has_next) {
                     btn.data('page', page + 1);
@@ -461,7 +551,15 @@ $('#btn-load-more').click(function() {
                 } else {
                     $('#load-more-section').fadeOut();
                 }
+            } else {
+                // unexpected response, restore button
+                btn.html(originalText).prop('disabled', false);
+                $('#load-more-section').fadeOut();
             }
+        },
+        complete: function() {
+            // ensure button is not left disabled in any case
+            if (btn.prop('disabled')) btn.prop('disabled', false).html(originalText);
         },
         // Dừng vòng quay nếu lỗi xảy ra
         error: function(xhr) {
@@ -562,6 +660,9 @@ $('#btn-load-more').click(function() {
                                 trigger.data('has-next', false); // Hết thông báo thì khóa luôn
                             }
                             $('#loading-spinner').hide();
+
+                            // adjust main height after notifications append
+                            if (typeof adjustMainMinHeight === 'function') adjustMainMinHeight();
                         }
                     }
                 });
@@ -611,7 +712,7 @@ $('#btn-load-more').click(function() {
                                 // Xử lý cột hành động
                                 var actionHtml = '';
                                 if (item.status === 'BORROWED' || item.status === 'OVERDUE') {
-                                    actionHtml = `<a href="${item.return_url}" class="btn btn-warning btn-sm rounded-pill px-4 fw-bold shadow-sm text-white transition-hover" onclick="return confirm('Khanh chắc chắn muốn trả cuốn sách [${item.book_title}] này chứ?')">Trả sách</a>`;
+                                    actionHtml = `<a href="${item.return_url}" class="btn btn-warning btn-sm rounded-pill px-4 fw-bold shadow-sm text-white transition-hover custom-confirm" data-message="Bạn chắc chắn muốn trả cuốn sách [${item.book_title}] này chứ?">Trả sách</a>`;
                                 } else if (item.status === 'PENDING') {
                                     actionHtml = `<button class="btn btn-secondary btn-sm rounded-pill px-3 fw-bold shadow-sm" disabled style="opacity: 0.7;"><i class="fas fa-clock me-1"></i>Chờ xác nhận...</button>`;
                                 } else {
@@ -648,6 +749,9 @@ $('#btn-load-more').click(function() {
                                 trigger.data('has-next', false);
                             }
                             $('#history-loading-spinner').hide();
+
+                            // adjust main height after history append
+                            if (typeof adjustMainMinHeight === 'function') adjustMainMinHeight();
                         }
                     }
                 });
@@ -690,6 +794,9 @@ $('#btn-load-more').click(function() {
                                 trigger.data('has-next', false);
                             }
                             $('#wishlist-loading-spinner').hide();
+
+                            // adjust main height after wishlist append
+                            if (typeof adjustMainMinHeight === 'function') adjustMainMinHeight();
                         }
                     }
                 });
@@ -697,4 +804,200 @@ $('#btn-load-more').click(function() {
         }
     });
 
- 
+ /* =================================================================
+   TÍNH NĂNG MƯỢN SÁCH BẰNG AJAX (KHÔNG LOAD TRANG, KHÔNG LỖI KÉP)
+   ================================================================= */
+// Hàm dọn dẹp sạch sẽ Modal cũ
+function forceCloseModals() {
+    $('.modal').modal('hide'); 
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open').css('padding-right', '');
+}
+
+// Hàm hiển thị Form báo Thành công/Thất bại xịn xò
+function showSingleNotify(type, message) {
+    forceCloseModals(); 
+    var icon = type === 'success' ? '<i class="fas fa-check-circle text-success" style="font-size: 3.5rem;"></i>' : '<i class="fas fa-exclamation-triangle text-warning" style="font-size: 3.5rem;"></i>';
+    var html = `
+    <div class="modal fade" id="ajaxNotifyModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg text-center p-4" style="border-radius: 20px;">
+                <div class="mb-3 animate__animated animate__zoomIn">${icon}</div>
+                <h6 class="fw-bold text-dark mb-4">${message}</h6>
+                <button type="button" class="btn btn-primary rounded-pill fw-bold px-4 w-100" data-bs-dismiss="modal">Đã hiểu</button>
+            </div>
+        </div>
+    </div>`;
+    $('#ajaxNotifyModal').remove();
+    $('body').append(html);
+    new bootstrap.Modal(document.getElementById('ajaxNotifyModal')).show();
+}
+
+/* =================================================================
+   HÀM BỔ TRỢ (PHẢI CÓ ĐỂ CHẠY AJAX)
+   ================================================================= */
+
+// 1. Hàm dọn dẹp Modal để tránh lỗi đen màn hình (Zombie backdrop)
+function forceCloseModals() {
+    $('.modal').modal('hide'); 
+    $('.modal-backdrop').remove();
+    $('body').removeClass('modal-open').css('padding-right', '');
+}
+
+// 2. Hàm hiển thị thông báo trắng nhỏ giữa màn hình (Dạng Modal)
+function showSingleNotify(type, message) {
+    forceCloseModals(); 
+
+    var icon = type === 'success' 
+        ? '<i class="fas fa-check-circle text-success" style="font-size: 3.5rem;"></i>' 
+        : '<i class="fas fa-exclamation-triangle text-warning" style="font-size: 3.5rem;"></i>';
+    
+    var html = `
+    <div class="modal fade" id="ajaxNotifyModal" tabindex="-1" data-bs-backdrop="static" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg text-center p-4" style="border-radius: 20px;">
+                <div class="mb-3 animate__animated animate__zoomIn">${icon}</div>
+                <h6 class="fw-bold text-dark mb-4" style="line-height: 1.5;">${message}</h6>
+                <button type="button" class="btn btn-primary rounded-pill fw-bold px-4 w-100" data-bs-dismiss="modal">Đã hiểu</button>
+            </div>
+        </div>
+    </div>`;
+    
+    $('#ajaxNotifyModal').remove();
+    $('body').append(html);
+    var notifyModal = new bootstrap.Modal(document.getElementById('ajaxNotifyModal'));
+    notifyModal.show();
+}
+
+
+
+
+/* =================================================================
+   XỬ LÝ AJAX MƯỢN SÁCH (PHẦN BẠN GỬI)
+   ================================================================= */
+
+// 1. DÀNH CHO SÁCH MIỄN PHÍ
+$(document).on('click', '.ajax-borrow-btn', function(e) {
+    e.preventDefault();
+    e.stopImmediatePropagation(); 
+
+    var btn = $(this);
+    var url = btn.attr('href');
+    var message = btn.data('message') || "Bạn muốn gửi yêu cầu mượn cuốn sách này?";
+
+    var confirmHtml = `
+    <div class="modal fade" id="ajaxConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content border-0 shadow-lg text-center p-4" style="border-radius: 20px;">
+                <div class="mb-3"><i class="fas fa-question-circle text-primary fs-1"></i></div>
+                <h6 class="fw-bold text-dark mb-4">${message}</h6>
+                <div class="d-flex justify-content-center gap-2">
+                    <button type="button" class="btn btn-light rounded-pill px-3" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary rounded-pill px-3 fw-bold text-white" id="confirm-do-borrow">Mượn ngay</button>
+                </div>
+            </div>
+        </div>
+    </div>`;
+
+    $('#ajaxConfirmModal').remove();
+    $('body').append(confirmHtml);
+    var confirmModal = new bootstrap.Modal(document.getElementById('ajaxConfirmModal'));
+    confirmModal.show();
+
+    $('#confirm-do-borrow').on('click', function() {
+        $(this).html('<i class="fas fa-spinner fa-spin"></i>').prop('disabled', true);
+        
+        $.ajax({
+            url: url,
+            type: 'GET',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            success: function(response) {
+                confirmModal.hide();
+                setTimeout(function() {
+                    if (response.status === 'success') {
+                        btn.replaceWith('<button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 disabled"><i class="fas fa-clock me-1"></i>CHỜ DUYỆT</button>');
+                        if (typeof checkNewNotifications === "function") checkNewNotifications();
+                        showSingleNotify('success', response.message);
+                    } else if (response.redirect) {
+                        showSingleNotify('warning', response.message);
+                        setTimeout(function() { window.location.href = response.redirect; }, 2000);
+                    } else {
+                        showSingleNotify('warning', response.message);
+                    }
+                }, 400);
+            },
+            error: function() {
+                confirmModal.hide();
+                setTimeout(function() { showSingleNotify('warning', 'Lỗi kết nối server!'); }, 400);
+            }
+        });
+    });
+});
+
+// 2. DÀNH CHO SÁCH VIP
+$(document).on('submit', '.payment-modal form', function(e) {
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    
+    var form = $(this);
+    var btn = form.find('button[type="submit"]');
+    var originalText = btn.html();
+
+    btn.html('<i class="fas fa-spinner fa-spin"></i> Đang xử lý...').prop('disabled', true);
+
+    $.ajax({
+        url: form.attr('action'),
+        type: 'POST',
+        data: form.serialize(),
+        headers: { 'X-Requested-With': 'XMLHttpRequest', 'X-CSRFToken': getCSRFToken() },
+        success: function(response) {
+            var modalEl = form.closest('.modal')[0];
+            var bsModal = bootstrap.Modal.getInstance(modalEl);
+            if(bsModal) bsModal.hide(); 
+            
+            setTimeout(function() {
+                if (response.status === 'success') {
+                    var modalId = $(modalEl).attr('id');
+                    $('button[data-bs-target="#' + modalId + '"]').replaceWith('<button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled"><i class="fas fa-clock me-1"></i>CHỜ DUYỆT</button>');
+                    
+                    if (typeof checkNewNotifications === "function") checkNewNotifications();
+                    showSingleNotify('success', response.message);
+                } else if (response.redirect) {
+                    showSingleNotify('warning', response.message);
+                    setTimeout(function() { window.location.href = response.redirect; }, 2000);
+                } else {
+                    showSingleNotify('warning', response.message);
+                    btn.html(originalText).prop('disabled', false);
+                }
+            }, 400);
+        },
+        error: function() {
+            showSingleNotify('warning', 'Lỗi kết nối máy chủ!');
+            btn.html(originalText).prop('disabled', false);
+        }
+    });
+});
+
+// Convert server-side Django messages (alerts) into modal notifications
+// This runs on DOM ready and uses existing showSingleNotify()
+$(function() {
+    try {
+        // Only look for Django flash messages (marked with `django-flash`).
+        // This prevents converting page-static alerts (info boxes) into a modal.
+        var alertEl = $('.django-flash').first();
+        if (alertEl.length) {
+            // extract text without child buttons/icons
+            var msg = alertEl.clone().children().remove().end().text().trim();
+            var type = alertEl.hasClass('alert-success') ? 'success' : 'warning';
+            alertEl.remove();
+            if (typeof showSingleNotify === 'function') {
+                showSingleNotify(type, msg);
+            } else {
+                // fallback to browser alert if notify not available
+                if (type === 'success') alert(msg); else alert(msg);
+            }
+        }
+    } catch (e) {
+        // silent
+    }
+});
