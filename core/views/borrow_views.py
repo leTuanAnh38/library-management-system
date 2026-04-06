@@ -1,5 +1,5 @@
 # file: core/views/borrow_views.py
-
+from django.http import JsonResponse
 from datetime import timedelta
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
@@ -21,34 +21,40 @@ from core.models import Book, BorrowTransaction, Notification
 def borrow_book(request, book_id):
     user = request.user
     
-    # 1. KIỂM TRA PHÍ PHẠT
+    # 1. NHẬN DIỆN AJAX: Kiểm tra xem yêu cầu có phải gửi ngầm không
+    is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+    
+    # Hàm hỗ trợ: AJAX thì trả JSON, bình thường thì Redirect kèm thông báo Django
+    def respond(status, message, redirect_url=None):
+        if is_ajax:
+            return JsonResponse({'status': status, 'message': message, 'redirect': redirect_url})
+        else:
+            if status == 'error': messages.error(request, message)
+            elif status == 'warning': messages.warning(request, message)
+            else: messages.success(request, message)
+            return redirect(redirect_url or request.META.get('HTTP_REFERER', 'book_list'))
+
+    # 2. KIỂM TRA PHÍ PHẠT
     if user.total_fine > 0:
-        messages.error(request, f"Bạn hiện đang có khoản phí phạt chưa thanh toán ({user.total_fine} VNĐ). Vui lòng hoàn tất nghĩa vụ để tiếp tục mượn sách!")
-        return redirect('profile')
+        return respond('error', f"Bạn đang nợ ({user.total_fine} VNĐ) tiền phạt. Vui lòng thanh toán trước!", 'profile')
 
-    # 2. KIỂM TRA HỒ SƠ
+    # 3. KIỂM TRA HỒ SƠ
     if not getattr(user, 'msv', None) or not getattr(user, 'lop', None):
-        messages.warning(request, "Vui lòng cập nhật MSSV và Lớp trong hồ sơ cá nhân trước khi thực hiện mượn sách!")
-        return redirect('profile')
+        return respond('warning', "Vui lòng cập nhật MSSV và Lớp trong hồ sơ trước khi mượn sách!", 'profile')
 
-    # ==========================================================
-    # ---> TRẠM KIỂM SOÁT 1: KIỂM TRA GIỚI HẠN TỐI ĐA 4 CUỐN <---
-    # ==========================================================
+    # 4. KIỂM TRA GIỚI HẠN 4 CUỐN
     active_borrows_count = BorrowTransaction.objects.filter(
         user=user,
         status__in=['PENDING', 'BORROWED', 'OVERDUE']
     ).count()
 
     if active_borrows_count >= 4:
-        messages.error(request, f"Bạn đang mượn hoặc chờ duyệt {active_borrows_count} cuốn sách rồi. Mỗi người chỉ được mượn tối đa 4 cuốn cùng lúc!")
-        return redirect(request.META.get('HTTP_REFERER', 'book_list'))
+        return respond('error', f"Bạn đang mượn hoặc chờ duyệt {active_borrows_count} cuốn rồi. Tối đa chỉ được 4 cuốn!")
 
-    # 3. Lấy thông tin sách
+    # 5. LẤY THÔNG TIN SÁCH
     book = get_object_or_404(Book, id=book_id)
 
-    # ==========================================================
-    # ---> TRẠM KIỂM SOÁT 2: KIỂM TRA XEM ĐÃ MƯỢN CUỐN NÀY CHƯA <---
-    # ==========================================================
+    # 6. KIỂM TRA MƯỢN TRÙNG
     already_borrowed = BorrowTransaction.objects.filter(
         user=user, 
         book=book, 
@@ -56,65 +62,54 @@ def borrow_book(request, book_id):
     ).exists()
 
     if already_borrowed:
-        messages.warning(request, f"Bạn đang mượn hoặc đã gửi yêu cầu mượn cuốn '{book.title}' này rồi!")
-        return redirect(request.META.get('HTTP_REFERER', 'book_list'))
+        return respond('warning', f"Bạn đang mượn hoặc đã gửi yêu cầu mượn cuốn '{book.title}' rồi!")
     
-    # 4. KIỂM TRA SỐ LƯỢNG TRONG KHO
+    # 7. KIỂM TRA KHO
     if book.quantity <= 0:
-        messages.error(request, f"Sách '{book.title}' đã hết trong kho!")
-        return redirect(request.META.get('HTTP_REFERER', 'book_list'))
+        return respond('error', f"Sách '{book.title}' đã hết trong kho!")
         
-    # XỬ LÝ SÁCH VIP (CÓ PHÍ) VÀ PHƯƠNG THỨC THANH TOÁN
+    # XỬ LÝ SÁCH VIP VÀ THANH TOÁN
     is_premium = book.price and book.price > 0
-
     if request.method == 'POST':
         payment_method = request.POST.get('payment_method', 'FREE')
     else:
         if is_premium:
-            messages.warning(request, "Vui lòng chọn phương thức thanh toán tại trang Danh mục để mượn sách VIP!")
-            return redirect('premium_books')
+            return respond('warning', "Vui lòng chọn phương thức thanh toán để mượn sách VIP!", 'premium_books')
         payment_method = 'FREE'
 
     han_tra = timezone.now().date() + timedelta(days=14)
-    
-    # Mặc định tất cả các yêu cầu mượn đều là PENDING (Chờ duyệt)
     status = 'PENDING' 
     is_paid = False if is_premium else True
 
+    # 8. TIẾN HÀNH TẠO GIAO DỊCH
     try:
         with db_transaction.atomic():
-            transaction = BorrowTransaction.objects.create(
-                user=user,
-                book=book,
-                due_date=han_tra, 
-                status=status,
-                payment_method=payment_method, 
-                is_paid=is_paid                
+            BorrowTransaction.objects.create(
+                user=user, book=book, due_date=han_tra, 
+                status=status, payment_method=payment_method, is_paid=is_paid                
             )
 
-            # Cập nhật thông báo cho sinh viên biết là phải chờ duyệt
             if is_premium:
                 payment_display = dict(BorrowTransaction.PAYMENT_CHOICES).get(payment_method, payment_method)
-                msg = f"Đã gửi yêu cầu mượn sách có phí '{book.title}'. Vui lòng thanh toán {book.price:,.0f} VNĐ qua hình thức [{payment_display}] để Thủ thư duyệt!"
+                msg = f"Yêu cầu thành công! Vui lòng thanh toán {book.price:,.0f} VNĐ qua [{payment_display}] để được duyệt."
             else:
-                msg = f"Đã gửi yêu cầu mượn cuốn '{book.title}'. Vui lòng chờ Thủ thư duyệt hoặc đến quầy để nhận sách."
+                msg = f"Yêu cầu thành công! Vui lòng chờ Thủ thư duyệt hoặc đến quầy nhận sách."
 
-            # Tạo thông báo hệ thống
-            Notification.objects.create(
-                user=user,
-                message=msg,
-                type='SYSTEM',
-                status='UNREAD'
-            )
-
+            Notification.objects.create(user=user, message=msg, type='SYSTEM', status='UNREAD')
             book.quantity -= 1
             book.save()
 
-        messages.success(request, msg)
+        # If this is a normal (non-AJAX) request, set a one-time session message
+        # so templates can show the informational message once after redirect.
+        if not is_ajax:
+            try:
+                request.session['show_borrow_info_msg'] = msg
+            except Exception:
+                pass
+
+        return respond('success', msg)
     except Exception as e:
-        messages.error(request, f"Đã có lỗi xảy ra trong quá trình mượn sách: {str(e)}")
-    
-    return redirect(request.META.get('HTTP_REFERER', 'book_list'))
+        return respond('error', f"Lỗi hệ thống: {str(e)}")
 # ==========================================
 # 2. LỊCH SỬ GIAO DỊCH
 # ==========================================

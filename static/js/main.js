@@ -328,4 +328,23 @@ document.addEventListener('DOMContentLoaded', function() {
             confirmModal.show();
         });
     });
+        // 4. XỬ LÝ CUSTOM CONFIRM MODAL (DELEGATED)
+        document.addEventListener('click', function(e) {
+            const trigger = e.target.closest('.custom-confirm');
+            if (!trigger) return;
+
+            // Nếu nút này là nút mượn dạng AJAX hoặc đường dẫn chứa 'borrow', bỏ qua để handler AJAX xử lý
+            const href = trigger.getAttribute && trigger.getAttribute('href');
+            if (trigger.classList.contains('ajax-borrow-btn') || (href && href.includes('borrow'))) {
+                return;
+            }
+
+            e.preventDefault();
+            const message = trigger.getAttribute('data-message') || 'Bạn có chắc chắn muốn thực hiện hành động này?';
+            const targetUrl = href || '#';
+
+            confirmMessageEl.textContent = message;
+            confirmBtnEl.href = targetUrl;
+            confirmModal.show();
+        });
 });

@@ -84,13 +84,13 @@
                 
                 {% elif book.quantity > 0 %}
                     {% if book.price and book.price > 0 %}
-                        <button type="button" class="btn btn-primary btn-lg px-5 rounded-pill fw-bold shadow transition-hover w-100 w-md-auto text-white custom-confirm"
+                        <button type="button" class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm ajax-borrow-btn"
                                 data-bs-toggle="modal" data-bs-target="#paymentModal{{ book.id }}">
                             <i class="fas fa-hand-holding-heart me-2"></i> Mượn Sách Ngay
                         </button>
                     {% else %}
                         <a href="{% url 'borrow_book' book.id %}" 
-                        class="btn btn-primary btn-lg px-5 rounded-pill fw-bold shadow transition-hover w-100 w-md-auto text-white custom-confirm"
+                        class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm ajax-borrow-btn"
                         data-message="Bạn chắc chắn muốn mượn cuốn sách [{{ book.title }}] này chứ?">
                         <i class="fas fa-hand-holding-heart me-2"></i> Mượn sách ngay
                         </a>
@@ -150,9 +150,11 @@
                                     </div>
                                 </div>
 
+                                {% if show_borrow_info_msg %}
                                 <div class="alert alert-info mt-4 small text-start mb-0" style="border-radius: 10px;">
-                                    <i class="fas fa-info-circle me-1"></i> Sau khi đăng ký, trạng thái đơn sẽ là <b>"Chờ xác nhận"</b> cho đến khi Thủ thư nhận được tiền phí.
+                                    <i class="fas fa-info-circle me-1"></i> {{ show_borrow_info_msg|safe }}
                                 </div>
+                                {% endif %}
                             </div>
                             <div class="modal-footer border-0 pb-4 pt-0 justify-content-center">
                                 <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>

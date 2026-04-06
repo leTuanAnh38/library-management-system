@@ -117,6 +117,11 @@
 }
 /*** Topbar End ***/
 
+/* Always show vertical scrollbar to avoid layout shift when modals open/close */
+html {
+    overflow-y: scroll;
+}
+
 
 /*** Navbar ***/
 .nav-bar .categories-bars .categories-bars-item {
@@ -204,6 +209,19 @@
 
 .navbar .navbar-toggler {
     padding: 5px 15px;
+}
+
+/* Prevent footer jumping by ensuring main content always fills viewport
+   JS will set `main` min-height dynamically based on header/footer sizes. */
+main {
+    /* fallback */
+    min-height: calc(100vh - 220px);
+}
+
+/* Footer stability: avoid transitions that cause layout shifts */
+.full-footer {
+    position: relative;
+    z-index: 1;
 }
 
 #allCat {
@@ -1362,4 +1380,35 @@ body.auth-page {
     /* Đảm bảo ảnh không nhận sự kiện chuột để không làm gián đoạn việc kéo thả */
     .drag-drop-zone img {
         pointer-events: none;
+    }
+
+ .contact-icon-box {
+        width: 55px;
+        height: 55px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+        color: var(--bs-primary);
+        font-size: 1.25rem;
+        transition: all 0.3s ease;
+    }
+    .contact-info-item:hover .contact-icon-box {
+        background-color: var(--bs-primary);
+        color: #fff;
+        transform: translateY(-3px);
+        box-shadow: 0 5px 15px rgba(var(--bs-primary-rgb), 0.3);
+    }
+    .form-control-minimal {
+        border: 1px solid #eaeaea;
+        border-radius: 12px;
+        padding: 0.8rem 1.25rem;
+        background-color: #f8f9fa;
+        transition: all 0.3s;
+    }
+    .form-control-minimal:focus {
+        background-color: #fff;
+        border-color: var(--bs-primary);
+        box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.1);
     }
