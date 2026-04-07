@@ -37,7 +37,8 @@ def user_login(request):
         if user.is_superuser or getattr(user, 'role', '') == 'ADMIN':
             return redirect('/admin/')
         elif user.is_staff or getattr(user, 'role', '') == 'STAFF':
-            return redirect('staff_borrow_management')
+            # Sửa ở đây:
+            return redirect('staff_dashboard')
         return redirect('home')
 
     # 2. Xử lý khi nhấn nút Đăng nhập (POST)
@@ -50,13 +51,13 @@ def user_login(request):
             
             if user is not None:
                 login(request, user) 
-                #messages.success(request, f'Chào mừng {username} đã quay lại!')
                 
                 # PHÂN LUỒNG SAU ĐĂNG NHẬP
                 if user.is_superuser or getattr(user, 'role', '') == 'ADMIN':
                     return redirect('/admin/') # Admin vào trang quản trị hệ thống
                 elif user.is_staff or getattr(user, 'role', '') == 'STAFF':
-                    return redirect('staff_borrow_management') # Staff vào trang nghiệp vụ mượn trả
+                    # Sửa ở đây:
+                    return redirect('staff_dashboard') # Staff vào BẢNG ĐIỀU KHIỂN
                 else:
                     return redirect('home') # Người đọc vào trang chủ
             else:

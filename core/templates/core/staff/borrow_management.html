@@ -117,22 +117,22 @@
                                             
                                             {% if trans.reason == 'YÊU CẦU TRẢ' %}
                                                 <a href="{% url 'staff_confirm_return' trans.id %}" 
-                                                   class="btn btn-sm btn-success rounded-pill px-3 shadow-sm fw-bold"
-                                                   onclick="return confirm('Xác nhận sinh viên đã mang sách ra quầy trả?')">
+                                                   class="btn btn-sm btn-success rounded-pill px-3 shadow-sm fw-bold custom-confirm"
+                                                   data-message="Xác nhận sinh viên đã mang sách ra quầy trả?">
                                                     <i class="fas fa-check-circle me-1"></i>Xác nhận thu hồi
                                                 </a>
                                             {% else %}
                                                 <a href="{% url 'staff_approve_borrow' trans.id %}" 
-                                                   class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm fw-bold"
-                                                   onclick="return confirm('Xác nhận duyệt và giao sách cho sinh viên này?')">
+                                                   class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm fw-bold custom-confirm"
+                                                   data-message="Xác nhận duyệt và giao sách cho sinh viên này?">
                                                     <i class="fas fa-user-check me-1"></i>Duyệt giao sách
                                                 </a>
                                             {% endif %}
 
                                         {% elif trans.status == 'BORROWED' or trans.status == 'OVERDUE' %}
                                             <a href="{% url 'staff_confirm_return' trans.id %}" 
-                                               class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm"
-                                               onclick="return confirm('Sinh viên chưa gửi yêu cầu trả trên web. Bạn vẫn muốn thu hồi sách trực tiếp chứ?')">
+                                               class="btn btn-sm btn-outline-secondary rounded-pill px-3 shadow-sm custom-confirm"
+                                               data-message="Sinh viên chưa gửi yêu cầu trả trên web. Bạn vẫn muốn thu hồi sách trực tiếp chứ?">
                                                 Thu hồi trực tiếp
                                             </a>
                                             
@@ -152,18 +152,49 @@
                         </table>
                     </div>
                     
-                    <div id="staff-borrow-scroll-trigger" 
-                         data-url="{% url 'api_staff_load_more_borrows' %}" 
-                         data-page="2" 
-                         data-query="{{ query|default:'' }}" 
-                         data-has-next="{% if transactions.has_next %}true{% else %}false{% endif %}">
-                    </div>
+                    {% if transactions.has_other_pages %}
+                    <nav aria-label="Page navigation" class="mt-4 pb-3">
+                        <ul class="pagination justify-content-center shadow-sm mb-0" style="border-radius: 50px;">
+                            
+                            {% if transactions.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-start-pill px-3 text-warning fw-bold" href="?q={{ query|default:'' }}&page={{ transactions.previous_page_number }}">
+                                        <i class="fas fa-chevron-left me-1"></i> Trước
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link rounded-start-pill px-3 text-muted"><i class="fas fa-chevron-left me-1"></i> Trước</span>
+                                </li>
+                            {% endif %}
 
-                    <div id="staff-borrow-loading-spinner" class="text-center py-4" style="display: none;">
-                         <i class="fas fa-spinner fa-spin fa-2x text-warning"></i>
-                         <p class="text-muted mt-2 fw-bold small">Đang tải thêm giao dịch...</p>
-                    </div>
+                            {% for num in transactions.paginator.page_range %}
+                                {% if transactions.number == num %}
+                                    <li class="page-item active" aria-current="page">
+                                        <span class="page-link bg-warning border-warning text-dark px-3 fw-bold">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link px-3 text-dark" href="?q={{ query|default:'' }}&page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
 
+                            {% if transactions.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-end-pill px-3 text-warning fw-bold" href="?q={{ query|default:'' }}&page={{ transactions.next_page_number }}">
+                                        Sau <i class="fas fa-chevron-right ms-1"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link rounded-end-pill px-3 text-muted">Sau <i class="fas fa-chevron-right ms-1"></i></span>
+                                </li>
+                            {% endif %}
+                            
+                        </ul>
+                    </nav>
+                    {% endif %}
                 </div>
             </div>
         </div>
