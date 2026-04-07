@@ -24,21 +24,32 @@ def is_staff(user):
 # ==========================================
 @user_passes_test(is_staff, login_url='login')
 def staff_dashboard(request):
-    # Chỉ giữ lại phần thống kê cho Dashboard
+    # 1. Lấy đơn trễ hạn
     overdue_transactions = BorrowTransaction.objects.filter(
         status='OVERDUE'
     ).select_related('user', 'book').order_by('due_date') 
+
+    # 2. Lấy đơn CHỜ DUYỆT MƯỢN (Mới thêm)
+    pending_transactions = BorrowTransaction.objects.filter(
+        status='PENDING'
+    ).select_related('user', 'book').order_by('created_at')
+    
+    # 3. Lấy đơn ĐANG MƯỢN / CHỜ TRẢ (Mới thêm)
+    borrowed_transactions = BorrowTransaction.objects.filter(
+        status='BORROWED'
+    ).select_related('user', 'book').order_by('due_date')
 
     total_library_books = Book.objects.aggregate(total=Sum('initial_quantity'))['total'] or 0
     current_available_books = Book.objects.aggregate(total=Sum('quantity'))['total'] or 0
 
     return render(request, 'core/staff/dashboard.html', {
         'overdue_transactions': overdue_transactions,
+        'pending_transactions': pending_transactions,  # Truyền dữ liệu ra template
+        'borrowed_transactions': borrowed_transactions, # Truyền dữ liệu ra template
         'total_library_books': total_library_books,
         'current_available_books': current_available_books
     })
 
-# THÊM HÀM MỚI NÀY VÀO DƯỚI HÀM TRÊN
 @user_passes_test(is_staff, login_url='login')
 def staff_book_list(request):
     query = request.GET.get('search_staff', '')
@@ -53,15 +64,19 @@ def staff_book_list(request):
 
     books = books.order_by('-created_at')
     
-    # THÊM PHẦN NÀY: Phân trang (10 cuốn / 1 lần tải)
+    # 1. Bắt lấy tham số 'page' trên thanh địa chỉ URL (mặc định là 1 nếu không có)
+    page_number = request.GET.get('page', 1) 
+    
+    # 2. Phân trang (10 cuốn / 1 lần tải)
     paginator = Paginator(books, 10) 
-    page_obj = paginator.get_page(1) # Lần đầu tiên chỉ lấy trang 1
+    
+    # 3. Đưa biến page_number vào thay vì gán cứng số 1
+    page_obj = paginator.get_page(page_number) 
 
     return render(request, 'core/staff/book_list.html', {
-        'books': page_obj, # Truyền page_obj thay cho toàn bộ books
+        'books': page_obj, # HTML đang dùng for book in books, nên nó sẽ lặp qua page_obj này
         'query': query
     })
-
 @user_passes_test(is_staff)
 def add_book(request):
     if request.method == 'POST':
@@ -99,10 +114,30 @@ def delete_book(request, book_id):
     return redirect('staff_dashboard')
 
 # --- QUẢN LÝ DANH MỤC ---
+@user_passes_test(is_staff, login_url='login')
 def staff_category_list(request):
+    # 1. Bắt từ khóa tìm kiếm
+    query = request.GET.get('q', '').strip()
+    
+    # 2. Lấy danh sách danh mục (Sắp xếp theo tên như cũ)
     categories = Category.objects.all().order_by('name')
-    # Sửa từ 'staff/category_list.html' thành 'core/staff/category_list.html'
-    return render(request, 'core/staff/category_list.html', {'categories': categories})
+    
+    # 3. Xử lý bộ lọc tìm kiếm
+    if query:
+        categories = categories.filter(
+            Q(name__icontains=query) |
+            Q(description__icontains=query)
+        ).distinct()
+        
+    # 4. Xử lý phân trang (10 danh mục / trang)
+    page_number = request.GET.get('page', 1)
+    paginator = Paginator(categories, 10)
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'core/staff/category_list.html', {
+        'categories': page_obj,  # Truyền danh sách đã phân trang ra HTML
+        'query': query           # Truyền lại biến q để giữ text trên thanh tìm kiếm
+    })
 
 def staff_category_form(request, pk=None):
     instance = get_object_or_404(Category, pk=pk) if pk else None
@@ -120,10 +155,30 @@ def staff_category_form(request, pk=None):
     return render(request, 'core/staff/category_form.html', {'form': form, 'title': title})
 
 # --- QUẢN LÝ NHÀ XUẤT BẢN ---
+@user_passes_test(is_staff, login_url='login')
 def staff_publisher_list(request):
+    # 1. Bắt từ khóa tìm kiếm trên URL
+    query = request.GET.get('q', '').strip()
+    
+    # 2. Lấy toàn bộ danh sách NXB (Sắp xếp theo tên như code cũ của bạn)
     publishers = Publisher.objects.all().order_by('name')
-    # Sửa từ 'staff/publisher_list.html' thành 'core/staff/publisher_list.html'
-    return render(request, 'core/staff/publisher_list.html', {'publishers': publishers})
+    
+    # 3. Lọc dữ liệu nếu admin có gõ tìm kiếm
+    if query:
+        publishers = publishers.filter(
+            Q(name__icontains=query) |
+            Q(address__icontains=query)
+        ).distinct()
+        
+    # 4. Chia trang (10 nhà xuất bản / 1 trang)
+    page_number = request.GET.get('page', 1)
+    paginator = Paginator(publishers, 10)
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'core/staff/publisher_list.html', {
+        'publishers': page_obj, # Truyền biến đã phân trang ra giao diện
+        'query': query          # Truyền lại từ khóa để thanh search không bị mất chữ
+    })
 
 def staff_publisher_form(request, pk=None):
     instance = get_object_or_404(Publisher, pk=pk) if pk else None
@@ -169,13 +224,18 @@ def staff_borrow_management(request):
     transactions = transactions.order_by('status_priority', '-created_at')
     
     # ==========================================
-    # ---> THÊM PHẦN PHÂN TRANG VÀO ĐÂY <---
+    # ---> ĐÃ SỬA LẠI PHẦN PHÂN TRANG Ở ĐÂY <---
     # ==========================================
+    # 1. Bắt lấy tham số 'page' trên thanh địa chỉ URL (mặc định là 1 nếu không có)
+    page_number = request.GET.get('page', 1) 
+    
     paginator = Paginator(transactions, 10)
-    page_obj = paginator.get_page(1) # Lần đầu chỉ render trang 1
+    
+    # 2. Truyền biến page_number vào để nó lấy đúng trang người dùng bấm
+    page_obj = paginator.get_page(page_number) 
     
     return render(request, 'core/staff/borrow_management.html', {
-        'transactions': page_obj, # TRUYỀN PAGE_OBJ VÀO ĐÂY
+        'transactions': page_obj, # HTML đang dùng vòng lặp, nên sẽ lặp qua page_obj này
         'query': query
     })
 
@@ -274,9 +334,47 @@ def staff_confirm_return(request, transaction_id):
 
 @user_passes_test(is_staff, login_url='login')
 def staff_penalty_management(request):
-    penalties = Penalty.objects.exclude(status='PAID').order_by('-created_at')
-    return render(request, 'core/staff/penalty_management.html', {'penalties': penalties})
+    query = request.GET.get('q', '').strip()
+    
+    # 1. Lấy TẤT CẢ khoản phạt (không dùng exclude PAID nữa)
+    # Sắp xếp ưu tiên: Chờ duyệt (1) -> Chưa đóng (2) -> Đã đóng (3)
+    penalties = Penalty.objects.select_related('user').annotate(
+        status_priority=Case(
+            When(status='PROCESSING', then=Value(1)), # Khớp với status trong code của bạn
+            When(status='UNPAID', then=Value(2)),
+            When(status='PAID', then=Value(3)),
+            default=Value(4),
+            output_field=IntegerField(),
+        )
+    )
+    
+    # 2. Xử lý tìm kiếm theo thanh search
+    if query:
+        penalties = penalties.filter(
+            Q(user__msv__icontains=query) |
+            Q(user__first_name__icontains=query) |
+            Q(user__last_name__icontains=query) |
+            Q(user__username__icontains=query)
+        ).distinct()
 
+    penalties = penalties.order_by('status_priority', '-created_at')
+
+    # 3. Tính tổng số tiền cần thu (Chỉ cộng dồn những đơn UNPAID và PROCESSING)
+    unpaid_penalties = Penalty.objects.filter(status__in=['UNPAID', 'PROCESSING'])
+    total_pending_fines = unpaid_penalties.aggregate(total=Sum('amount'))['total'] or 0
+
+    # 4. Phân trang (10 giao dịch / trang)
+    page_number = request.GET.get('page', 1) 
+    paginator = Paginator(penalties, 10)
+    page_obj = paginator.get_page(page_number) 
+    
+    return render(request, 'core/staff/penalty_management.html', {
+        'penalties': page_obj,  
+        'query': query,
+        'total_pending_fines': total_pending_fines
+    })
+
+# Hàm dưới này của bạn đã quá chuẩn, cứ giữ nguyên nhé!
 @user_passes_test(is_staff, login_url='login')
 def staff_confirm_penalty(request, penalty_id):
     penalty = get_object_or_404(Penalty, id=penalty_id, status__in=['UNPAID', 'PROCESSING'])
@@ -295,11 +393,13 @@ def staff_confirm_penalty(request, penalty_id):
 
 @user_passes_test(is_staff, login_url='login')
 def staff_user_management(request):
+    # 1. Lọc danh sách người đọc (Rất tốt, đã loại trừ đúng Admin/Staff)
     readers = User.objects.filter(
         is_staff=False, 
         is_superuser=False
     ).exclude(role__in=['STAFF', 'ADMIN']).order_by('username')
     
+    # 2. Xử lý tìm kiếm
     query = request.GET.get('q')
     if query:
         readers = readers.filter(
@@ -309,7 +409,14 @@ def staff_user_management(request):
             Q(msv__icontains=query)
         )
         
-    return render(request, 'core/staff/user_management.html', {'readers': readers})
+    # 3. ---> THÊM XỬ LÝ PHÂN TRANG Ở ĐÂY <---
+    page_number = request.GET.get('page', 1)  # Lấy số trang hiện tại từ URL
+    paginator = Paginator(readers, 10)        # Chia 10 người / 1 trang
+    page_obj = paginator.get_page(page_number) # Lấy dữ liệu của trang đó
+    
+    return render(request, 'core/staff/user_management.html', {
+        'readers': page_obj,  # Truyền page_obj ra HTML để các nút 1,2,3 hoạt động
+    })
 
 @user_passes_test(is_staff, login_url='login')
 def staff_user_detail(request, user_id):
@@ -325,15 +432,36 @@ def staff_user_detail(request, user_id):
 
 @user_passes_test(is_staff, login_url='login')
 def staff_review_management(request):
+    # 1. Bắt từ khóa tìm kiếm
+    query = request.GET.get('q', '').strip()
+
     # Lấy thông tin bài đánh giá gần nhất của mỗi cuốn sách
     latest_review = Review.objects.filter(book=OuterRef('pk')).order_by('-created_at')
 
-    # Đã sửa 'review_set' thành 'reviews' theo đúng cấu trúc Database của bạn
+    # Query gốc của bạn (rất xịn)
     books = Book.objects.annotate(
         review_count=Count('reviews'), 
         avg_rating=Avg('reviews__rating'), 
         latest_reviewer=Subquery(latest_review.values('user__username')[:1]),
         latest_review_date=Subquery(latest_review.values('created_at')[:1])
-    ).filter(review_count__gt=0).order_by('-avg_rating', '-review_count')
+    ).filter(review_count__gt=0)
+    
+    # 2. Xử lý tìm kiếm (nếu có)
+    if query:
+        books = books.filter(
+            Q(title__icontains=query) |
+            Q(author__icontains=query)
+        )
 
-    return render(request, 'core/staff/review_management.html', {'books': books})
+    # 3. Sắp xếp dữ liệu
+    books = books.order_by('-avg_rating', '-review_count')
+
+    # 4. Xử lý phân trang (10 cuốn / 1 trang)
+    page_number = request.GET.get('page', 1)
+    paginator = Paginator(books, 10)
+    page_obj = paginator.get_page(page_number)
+
+    return render(request, 'core/staff/review_management.html', {
+        'books': page_obj,  # Truyền page_obj thay cho toàn bộ books
+        'query': query      # Truyền query để giữ text ở thanh tìm kiếm
+    })

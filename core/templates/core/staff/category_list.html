@@ -1,54 +1,130 @@
 {% extends 'core/base.html' %}
 
-{% block title %}Quản lý danh mục - Staff Alovu{% endblock %}
+{% block title %}Quản lý danh mục - Admin Alovu{% endblock %}
 
 {% block content %}
 <div class="container-fluid px-lg-5 py-5 mt-5">
     <div class="row g-4">
         <div class="col-lg-3">
-            {% include 'core/includes/sidebar.html' %}
+            <div class="sticky-sidebar">
+                {% include 'core/includes/sidebar.html' %}
+            </div>
         </div>
         
         <div class="col-lg-9">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+            <div class="row mb-4">
+                <div class="col-md-6 col-lg-5">
+                    <form method="GET" action="{% url 'staff_category_list' %}" class="input-group shadow-sm">
+                        <input type="text" name="q" class="form-control border-success" 
+                               placeholder="Tìm tên danh mục, mô tả..." 
+                               value="{{ query|default:'' }}">
+                        <button class="btn btn-success px-4 fw-bold text-white" type="submit">
+                            <i class="fas fa-search me-2"></i>Tìm kiếm
+                        </button>
+                        {% if query %}
+                            <a href="{% url 'staff_category_list' %}" class="btn btn-outline-secondary d-flex align-items-center">Xóa lọc</a>
+                        {% endif %}
+                    </form>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4 border-start border-4 border-success ps-3">
                         <h4 class="fw-bold m-0 text-dark"><i class="fas fa-tags me-2 text-success"></i>DANH MỤC SÁCH</h4>
-                        <a href="{% url 'staff_category_add' %}" class="btn btn-success rounded-pill px-4 shadow-sm">
+                        <a href="{% url 'staff_category_add' %}" class="btn btn-success rounded-pill px-4 shadow-sm fw-bold">
                             <i class="fas fa-plus me-2"></i>Thêm mới
                         </a>
                     </div>
 
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show rounded-4 shadow-sm mb-4 django-flash">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
                     <div class="table-responsive">
-                        <table class="table table-hover align-middle">
+                        <table class="table table-hover align-middle border-light">
                             <thead class="bg-light text-muted small text-uppercase">
                                 <tr>
-                                    <th class="border-0 py-3" width="80">STT</th>
+                                    <th class="border-0 py-3 ps-3" width="80">STT</th>
                                     <th class="border-0">Tên danh mục</th>
                                     <th class="border-0">Mô tả</th>
-                                    <th class="border-0 text-center" width="120">Thao tác</th>
+                                    <th class="border-0 text-end pe-3" width="120">Thao tác</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for item in categories %}
-                                <tr>
-                                    <td class="py-3">{{ forloop.counter }}</td>
-                                    <td><div class="fw-bold text-primary">{{ item.name }}</div></td>
+                                <tr class="animate__animated animate__fadeIn"> <td class="py-3 ps-3 fw-medium text-muted">
+                                        {{ forloop.counter0|add:categories.start_index }}
+                                    </td>
+                                    <td><div class="fw-bold text-success">{{ item.name }}</div></td>
                                     <td><small class="text-muted">{{ item.description|default:"---"|truncatechars:100 }}</small></td>
-                                    <td class="text-center">
-                                        <a href="{% url 'staff_category_edit' item.pk %}" class="btn btn-sm btn-light border rounded-pill px-3">
-                                            <i class="fas fa-edit text-warning me-1"></i> Sửa
+                                    <td class="text-end pe-3">
+                                        <a href="{% url 'staff_category_edit' item.pk %}" class="btn btn-sm btn-outline-success rounded-pill px-3 shadow-sm">
+                                            <i class="fas fa-edit me-1"></i> Sửa
                                         </a>
                                     </td>
                                 </tr>
                                 {% empty %}
                                 <tr>
-                                    <td colspan="4" class="text-center py-5 text-muted fst-italic">Chưa có danh mục nào được tạo.</td>
+                                    <td colspan="4" class="text-center py-5 text-muted fst-italic">
+                                        <i class="fas fa-tags fa-3x d-block mb-3 opacity-25"></i>
+                                        Không tìm thấy danh mục nào phù hợp.
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
+
+                    {% if categories.has_other_pages %}
+                    <nav aria-label="Page navigation" class="mt-4 pb-3">
+                        <ul class="pagination justify-content-center shadow-sm mb-0" style="border-radius: 50px;">
+                            
+                            {% if categories.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-start-pill px-3 text-success fw-bold" href="?q={{ query|default:'' }}&page={{ categories.previous_page_number }}">
+                                        <i class="fas fa-chevron-left me-1"></i> Trước
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link rounded-start-pill px-3 text-muted"><i class="fas fa-chevron-left me-1"></i> Trước</span>
+                                </li>
+                            {% endif %}
+
+                            {% for num in categories.paginator.page_range %}
+                                {% if categories.number == num %}
+                                    <li class="page-item active" aria-current="page">
+                                        <span class="page-link bg-success border-success text-white px-3 fw-bold">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link px-3 text-dark" href="?q={{ query|default:'' }}&page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if categories.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-end-pill px-3 text-success fw-bold" href="?q={{ query|default:'' }}&page={{ categories.next_page_number }}">
+                                        Sau <i class="fas fa-chevron-right ms-1"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link rounded-end-pill px-3 text-muted">Sau <i class="fas fa-chevron-right ms-1"></i></span>
+                                </li>
+                            {% endif %}
+                            
+                        </ul>
+                    </nav>
+                    {% endif %}
+
                 </div>
             </div>
         </div>

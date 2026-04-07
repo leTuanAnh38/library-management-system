@@ -60,8 +60,7 @@
                             
                             <tbody id="staff-book-container">
                                 {% for book in books %}
-                                <tr>
-                                    <td class="ps-4 py-3">
+                                <tr class="animate__animated animate__fadeIn"> <td class="ps-4 py-3">
                                         <div class="d-flex align-items-center">
                                             <img src="{{ book.get_cover }}" 
                                                  alt="{{ book.title }}"
@@ -117,17 +116,49 @@
                         </table>
                     </div>
 
-                    <div id="staff-book-scroll-trigger" 
-                         data-url="{% url 'api_staff_load_more_books' %}" 
-                         data-page="2" 
-                         data-query="{{ request.GET.search_staff|default:'' }}" 
-                         data-has-next="{% if books.has_next %}true{% else %}false{% endif %}">
-                    </div>
+                    {% if books.has_other_pages %}
+                    <nav aria-label="Page navigation" class="mt-4 pb-3">
+                        <ul class="pagination justify-content-center shadow-sm mb-0" style="border-radius: 50px;">
+                            
+                            {% if books.has_previous %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-start-pill px-3 text-primary fw-bold" href="?search_staff={{ request.GET.search_staff|default:'' }}&page={{ books.previous_page_number }}">
+                                        <i class="fas fa-chevron-left me-1"></i> Trước
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link rounded-start-pill px-3 text-muted"><i class="fas fa-chevron-left me-1"></i> Trước</span>
+                                </li>
+                            {% endif %}
 
-                    <div id="staff-book-loading-spinner" class="text-center py-4" style="display: none;">
-                         <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
-                         <p class="text-muted mt-2 fw-bold small">Đang tải thêm sách...</p>
-                    </div>
+                            {% for num in books.paginator.page_range %}
+                                {% if books.number == num %}
+                                    <li class="page-item active" aria-current="page">
+                                        <span class="page-link px-3 fw-bold">{{ num }}</span>
+                                    </li>
+                                {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link px-3 text-dark" href="?search_staff={{ request.GET.search_staff|default:'' }}&page={{ num }}">{{ num }}</a>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if books.has_next %}
+                                <li class="page-item">
+                                    <a class="page-link rounded-end-pill px-3 text-primary fw-bold" href="?search_staff={{ request.GET.search_staff|default:'' }}&page={{ books.next_page_number }}">
+                                        Sau <i class="fas fa-chevron-right ms-1"></i>
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li class="page-item disabled">
+                                    <span class="page-link rounded-end-pill px-3 text-muted">Sau <i class="fas fa-chevron-right ms-1"></i></span>
+                                </li>
+                            {% endif %}
+                            
+                        </ul>
+                    </nav>
+                    {% endif %}
 
                 </div>
             </div>
