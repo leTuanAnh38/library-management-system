@@ -1239,6 +1239,11 @@ main {
     /* ==========================================
    GIAO DIỆN ĐĂNG NHẬP / ĐĂNG KÝ (AUTH PAGES)
    ========================================== */
+    .bg-auth-image {
+        background-image: url('../img/nenDHKT.jpg');
+        background-size: cover;
+        background-position: center;
+    }
 body.auth-page { 
     background: linear-gradient(rgba(15, 23, 42, 0.7), rgba(15, 23, 42, 0.7)), 
                 url('../img/nenDHKT.jpg') center/cover no-repeat fixed;

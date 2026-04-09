@@ -23,11 +23,10 @@ def rate_limit_gemini(func):
 
 class GeminiChatService:
     def __init__(self):
-        # Khởi tạo client Gemini mới nhất
         self.client = genai.Client(api_key=settings.GEMINI_API_KEY)
     
     def _get_user_status(self, user):
-        """Lấy trạng thái thực tế của User để Bot tư vấn chuẩn xác (ĐÂY LÀ ĐIỂM THÔNG MINH CỐT LÕI)"""
+        """Lấy trạng thái thực tế của User"""
         active_borrows = BorrowTransaction.objects.filter(
             user=user, status__in=['PENDING', 'BORROWED', 'OVERDUE']
         ).count()
@@ -35,7 +34,8 @@ class GeminiChatService:
         return {
             'active_borrows': active_borrows,
             'fine': fine,
-            'can_borrow': active_borrows < 4 and fine == 0
+            'can_borrow': active_borrows < 4 and fine == 0,
+            'remaining_quota': max(0, 4 - active_borrows) # SỐ LƯỢNG SÁCH CÒN ĐƯỢC MƯỢN THÊM
         }
 
     def get_user_preferences(self, user):
@@ -46,94 +46,136 @@ class GeminiChatService:
         ).select_related('book').values('book__category__name')[:15]
         
         categories = [b['book__category__name'] for b in borrows if b['book__category__name']]
-        # Lấy các danh mục xuất hiện nhiều nhất
         return list(set(categories))[:3]
     
-    def get_book_recommendations(self, user, category=None, limit=3):
-        """Thuật toán gợi ý sách thông minh"""
-        query = Book.objects.filter(status='AVAILABLE', quantity__gt=0).exclude(
-            borrow_records__user=user
-        )
-        if category:
-            query = query.filter(category__name__icontains=category)
-        else:
-            user_categories = self.get_user_preferences(user)
-            if user_categories:
-                query = query.filter(category__name__in=user_categories)
+    def get_dynamic_context(self, user, user_message):
+        """Tự động rà soát database dựa trên câu chat của người dùng (Bao gồm xử lý sách Free)"""
+        query = Book.objects.filter(status='AVAILABLE', quantity__gt=0).exclude(borrow_records__user=user)
+        user_msg_lower = user_message.lower()
+
+        # 1. Bắt từ khóa tìm sách Miễn phí / Free
+        is_searching_free = "free" in user_msg_lower or "miễn phí" in user_msg_lower
+        if is_searching_free:
+            query = query.filter(Q(price=0) | Q(price__isnull=True))
+
+        keywords = user_msg_lower.split()
+        stop_words = ['có', 'sách', 'nào', 'về', 'không', 'tìm', 'cho', 'mình', 'cuốn', 'thể', 'loại', 'muốn', 'đọc', 'free', 'miễn', 'phí']
+        search_terms = [w for w in keywords if w not in stop_words and len(w) > 2]
         
-        # Lấy top sách mượn nhiều nhất trong nhóm gợi ý
+        # 2. Tìm kiếm đích danh theo từ khóa
+        if search_terms:
+            q_objects = Q()
+            for term in search_terms:
+                q_objects |= Q(title__icontains=term) | Q(author__icontains=term) | Q(category__name__icontains=term)
+            
+            searched_books = query.filter(q_objects).distinct()[:3]
+            if searched_books.exists():
+                return "Sách khớp với yêu cầu tìm kiếm của sinh viên:\n" + "\n".join(
+                    [f"- {b.title} (Tác giả: {b.author or 'Đang cập nhật'} | {b.price if b.price and b.price > 0 else 'Miễn phí'})" for b in searched_books]
+                )
+        
+        # 3. Lọc theo sở thích (nếu không chủ động tìm sách free)
+        user_categories = self.get_user_preferences(user)
+        if user_categories and not is_searching_free:
+            query_pref = query.filter(category__name__in=user_categories)
+            if query_pref.exists():
+                query = query_pref
+            
         query = query.annotate(borrow_count=Count('borrow_records')).order_by('-borrow_count')
+        recs = [f"- {b.title} (Tác giả: {b.author or 'Đang cập nhật'} | {b.price if b.price and b.price > 0 else 'Miễn phí'})" for b in query[:3]]
         
-        return [f"- {b.title} (Tác giả: {b.author or 'Đang cập nhật'} | {b.price if b.price and b.price > 0 else 'Miễn phí'})" for b in query[:limit]]
-    
+        # 4. Luôn kẹp thêm 1-2 cuốn sách FREE vào cuối cùng để AI chủ động gợi ý (NẾU CHƯA TÌM)
+        if not is_searching_free:
+            free_books = Book.objects.filter(Q(price=0) | Q(price__isnull=True), status='AVAILABLE', quantity__gt=0).exclude(borrow_records__user=user).order_by('?')[:2]
+            free_recs = [f"- {b.title} (Tác giả: {b.author or 'Đang cập nhật'} | Miễn phí)" for b in free_books]
+            if free_recs:
+                 return "Gợi ý sách hay thư viện đang có sẵn:\n" + "\n".join(recs) + "\n\nSách MIỄN PHÍ có thể gợi ý thêm:\n" + "\n".join(free_recs)
+
+        return "Gợi ý sách hay thư viện đang có sẵn:\n" + "\n".join(recs) if recs else "Hiện thư viện đang cập nhật thêm sách mới."
+
     @rate_limit_gemini
-    def chat(self, user_message, user):
-        """Xử lý chat thông minh với Context-Aware"""
+    def chat(self, user_message, user, chat_history=None):
+        """Xử lý chat thông minh với Context-Aware & Memory"""
         try:
-            # 1. Thu thập dữ liệu thời gian thực của sinh viên
             user_status = self._get_user_status(user)
-            user_categories = self.get_user_preferences(user)
-            recommendations = self.get_book_recommendations(user)
+            dynamic_books_info = self.get_dynamic_context(user, user_message)
             
-            # 2. Xây dựng System Instruction (Định hình nhân cách và luật lệ cho Bot)
-            system_instruction = f"""Bạn là Alovu Assistant - Thủ thư AI thông minh, nhiệt tình của Thư viện Alovu.
+            system_instruction = f"""Bạn là Alovu Assistant - Thủ thư AI xuất sắc và thân thiện của Thư viện Alovu.
             
-QUY ĐỊNH THƯ VIỆN BẠN CẦN NẮM RÕ:
+QUY ĐỊNH THƯ VIỆN CHUẨN (TUYỆT ĐỐI TUÂN THỦ):
 1. Mượn tối đa: 4 cuốn/người.
-2. Quy trình mượn sách Miễn phí: Bấm 'MƯỢN SÁCH' -> Xác nhận Form -> Chờ Thủ thư duyệt. (Hệ thống chạy ngầm, không cần load lại trang).
-3. Quy trình mượn sách VIP (Có phí): Bấm 'MƯỢN SÁCH' -> Chọn Tiền mặt hoặc Chuyển khoản (quét QR) -> Xác nhận -> Chờ duyệt.
-4. Thời hạn mượn: 14 ngày mặc định. Phạt nếu trả muộn hoặc làm hỏng.
+2. Thời hạn mượn: 14 ngày/cuốn.
+3. Quy định trả trễ: Nếu sinh viên trả sách trễ hạn so với quy định 14 ngày, sẽ bị phạt tiền (5.000 VNĐ/ngày trễ) và bị trừ 5 điểm tích lũy.
+4. Quy định mất sách/hỏng sách: Nếu sinh viên làm mất sách hoặc làm hỏng nặng không thể phục hồi, bắt buộc phải đền bù 100% số tiền gốc mua cuốn sách đó.
+5. Quy trình mượn: Bấm 'MƯỢN SÁCH' (Sách có phí cần thanh toán tiền mặt/QR) -> Chờ Thủ thư duyệt.
 
-THÔNG TIN NGƯỜI DÙNG ĐANG CHAT VỚI BẠN:
-- Đang mượn/chờ duyệt: {user_status['active_borrows']}/4 cuốn.
-- Tiền phạt đang nợ: {user_status['fine']} VNĐ.
-- Thể loại hay đọc: {', '.join(user_categories) if user_categories else 'Đang tìm hiểu'}
-- Danh sách sách có thể gợi ý NGAY LẬP TỨC:
-{chr(10).join(recommendations) if recommendations else 'Hiện chưa có sách phù hợp'}
+HỒ SƠ CỦA SINH VIÊN ĐANG CHAT (BÁM SÁT THÔNG TIN NÀY):
+- Số sách đang mượn/chờ duyệt: {user_status['active_borrows']}/4 cuốn.
+- SỐ SÁCH CÒN CÓ THỂ MƯỢN THÊM LÀ: {user_status['remaining_quota']} cuốn.
+- Tiền nợ phạt hiện tại: {user_status['fine']} VNĐ.
+- Quyền mượn tiếp: {'ĐƯỢC PHÉP' if user_status['can_borrow'] else 'BỊ CHẶN (Phải trả sách hoặc đóng phạt trước khi mượn tiếp)'}.
 
-NGUYÊN TẮC TRẢ LỜI (QUAN TRỌNG):
-- TRẢ LỜI NGẮN GỌN (Tối đa 3-4 câu), ngôn ngữ TỰ NHIÊN, thân thiện như một người bạn (dùng xưng hô Mình - Bạn).
-- Không lặp lại toàn bộ quy định nếu không được hỏi. Chỉ trả lời đúng trọng tâm câu hỏi.
-- NẾU NGƯỜI DÙNG MUỐN MƯỢN SÁCH: Hãy kiểm tra thông tin của họ. Nếu họ nợ phạt (>0 VNĐ) hoặc đã mượn đủ 4 cuốn, hãy TỪ CHỐI KHÉO LÉO và nhắc họ thanh toán/trả sách.
-- Nếu người dùng cảm ơn hoặc khen, hãy đáp lại vui vẻ và hỏi họ có cần tìm sách gì không.
-- Thêm các Emoji phù hợp (📚, ✨, 😊, 💡).
+DỮ LIỆU SÁCH TRONG KHO (Dùng để trả lời câu hỏi hiện tại):
+{dynamic_books_info}
+
+NGUYÊN TẮC GIAO TIẾP:
+- TRẢ LỜI NGẮN GỌN (tối đa 3-4 câu). Trả lời thẳng vào câu hỏi của sinh viên.
+- Chủ động giới thiệu các đầu sách "Miễn phí" nếu thấy phù hợp với ngữ cảnh.
+- Nếu sinh viên hỏi "tôi có thể mượn bao nhiêu cuốn nữa", hãy trả lời chính xác là {user_status['remaining_quota']} cuốn dựa trên thông tin hồ sơ của họ.
+- Nếu sinh viên hỏi về đền bù, trả trễ, hỏng sách: Cung cấp thông tin phạt trễ hoặc đền 100% giá trị sách như quy định thư viện.
+- NẾU SINH VIÊN BỊ CHẶN QUYỀN MƯỢN: Lịch sự từ chối yêu cầu mượn và nhắc nhở số tiền nợ hoặc số sách cần trả.
+- Xưng hô 'Mình - Bạn', dùng emoji thân thiện (📚, 💡, ⚠️, ✨).
 """
-            # 3. Gọi Gemini API thế hệ mới (Sử dụng config để truyền System Instruction)
+            # Nạp Lịch sử trò chuyện để Bot có trí nhớ
+            contents = []
+            if chat_history:
+                for msg in chat_history:
+                    # Đã sửa lỗi Part.from_text
+                    contents.append(types.Content(role=msg['role'], parts=[types.Part.from_text(text=msg['text'])]))
+            
+            # Nạp câu hỏi mới nhất
+            # Đã sửa lỗi Part.from_text
+            contents.append(types.Content(role="user", parts=[types.Part.from_text(text=user_message)]))
+
             response = self.client.models.generate_content(
                 model="gemini-2.5-flash",
-                contents=user_message,
+                contents=contents,
                 config=types.GenerateContentConfig(
                     system_instruction=system_instruction,
-                    temperature=0.7, # Độ sáng tạo vừa phải, giữ tính logic không bị "ngáo"
+                    temperature=0.3,
                 )
             )
             return response.text
             
         except Exception as e:
-            # Ghi log lỗi vào server thay vì ném ra màn hình cho người dùng
             logger.error(f"Gemini API Error: {str(e)}")
             return self._get_mock_response(user_message, user)
             
     def _get_mock_response(self, user_message, user):
-        """Hệ thống Trả lời Offline thông minh khi đứt cáp hoặc API Limit"""
+        """Hệ thống Trả lời Offline khi API lỗi hoặc hết hạn mức"""
         user_msg_lower = user_message.lower()
         user_status = self._get_user_status(user)
+        remaining = user_status['remaining_quota']
         
-        if any(word in user_msg_lower for word in ["mượn", "cách mượn", "muon sach"]):
+        # Bắt từ khóa hỏi sách Free lúc Offline
+        if any(word in user_msg_lower for word in ["free", "miễn phí"]):
+            return "💡 Thư viện Alovu có rất nhiều sách Miễn phí (Free) nha! Bạn có thể vào mục 'Kho sách', chọn bộ lọc 'Sách Miễn phí' để xem toàn bộ nhé."
+
+        if any(word in user_msg_lower for word in ["mượn thêm", "bao nhiêu cuốn"]):
+            return f"📚 Theo hệ thống, bạn đang giữ {user_status['active_borrows']} cuốn. Bạn có thể mượn thêm tối đa {remaining} cuốn nữa nhé!"
+
+        if any(word in user_msg_lower for word in ["mất sách", "đền", "bị mất", "làm mất"]):
+            return "⚠️ Chào bạn, theo quy định nếu làm mất sách hoặc hỏng nặng, bạn sẽ phải đền 100% giá trị tiền gốc của cuốn sách đó. Bạn hãy ra quầy báo ngay cho Thủ thư để được hỗ trợ giải quyết nhé."
+
+        if any(word in user_msg_lower for word in ["trễ", "muộn", "phạt"]):
+            return "⚠️ Nếu trả sách trễ hạn 14 ngày, bạn sẽ bị phạt 5.000 VNĐ cho mỗi ngày trễ và bị trừ 5 điểm tích lũy. Nhớ trả sách đúng hạn để không bị khóa quyền mượn sách mới nha!"
+
+        if any(word in user_msg_lower for word in ["mượn", "cách mượn"]):
             if not user_status['can_borrow']:
-                return f"⚠️ Mình kiểm tra thấy bạn đang mượn {user_status['active_borrows']}/4 cuốn và nợ {user_status['fine']} VNĐ tiền phạt. Bạn cần hoàn tất các khoản này trước khi mượn thêm sách nhé!"
-            return "📚 Rất dễ! Bạn chỉ cần tìm sách ưng ý -> Bấm 'MƯỢN SÁCH' -> Chọn hình thức thanh toán (nếu là sách VIP) và Xác nhận. Hệ thống sẽ báo ngay cho Thủ thư duyệt."
+                return f"⚠️ Mình kiểm tra thấy bạn đang mượn {user_status['active_borrows']}/4 cuốn và nợ {user_status['fine']} VNĐ tiền phạt. Bạn cần hoàn tất các khoản này trước khi mượn thêm nhé!"
+            return "📚 Rất dễ! Tìm sách ưng ý -> Bấm 'MƯỢN SÁCH' -> Xác nhận thanh toán (nếu có phí) -> Chờ Thủ thư duyệt."
             
-        if any(word in user_msg_lower for word in ["gợi ý", "sách hay", "đề xuất"]):
-            recs = self.get_book_recommendations(user)
-            if recs:
-                return f"💡 Mình nghĩ bạn sẽ thích những cuốn này đó:\n{chr(10).join(recs)}\nBạn ưng cuốn nào không?"
-            return "Hiện tại kho sách đang cập nhật thêm, bạn dạo một vòng trang chủ xem sao nhé! ✨"
+        if any(word in user_msg_lower for word in ["gợi ý", "sách hay"]):
+            return "💡 Bạn thử dạo một vòng trang chủ xem sao, hệ thống đang cập nhật rất nhiều đầu sách miễn phí và sách VIP mới đó! ✨"
             
-        if any(word in user_msg_lower for word in ["trả", "trả sách"]):
-            return "🔄 Khi nào đọc xong, bạn chỉ cần mang sách đến quầy, Thủ thư sẽ quét mã và cập nhật hệ thống cho bạn trong 1 nốt nhạc!"
-            
-        if any(word in user_msg_lower for word in ["phạt", "đóng tiền"]):
-            return "⚠️ Nếu trả muộn hoặc làm hỏng sách sẽ có phí phạt. Bạn có thể đóng tiền mặt trực tiếp tại quầy hoặc chuyển khoản QR cho Thủ thư nhé."
-            
-        return "👋 Chào bạn! Trợ lý AI Alovu đây. Mình có thể giúp bạn tìm sách, hướng dẫn mượn trả hoặc kiểm tra tình trạng tài khoản. Bạn cần mình giúp gì nào? 😊"
+        return "👋 Chào bạn! Trợ lý AI Alovu đây. Hệ thống đang hơi quá tải một chút do quá nhiều bạn sinh viên đang sử dụng, nhưng mình vẫn có thể giải đáp các quy định cơ bản. Bạn cần giúp gì nào? 😊"
