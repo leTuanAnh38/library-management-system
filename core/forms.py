@@ -4,14 +4,25 @@ from .models import User
 from .models import User, Book,Category, Publisher # Thêm Book vào đây
 
 class CustomUserCreationForm(UserCreationForm):
-    # Thêm các trường email, số điện thoại vào form đăng ký
-    email = forms.EmailField(required=True)
-    phone = forms.CharField(max_length=15, required=False)
+    email = forms.EmailField(required=True, label="Địa chỉ Email")
+    last_name = forms.CharField(required=True, label="Tên") 
+    first_name = forms.CharField(required=True, label="Họ và chữ lót")          
+    msv = forms.CharField(max_length=20, required=False, label="Mã sinh viên")
+    lop = forms.CharField(max_length=50, required=False, label="Lớp học")
 
     class Meta(UserCreationForm.Meta):
         model = User
-        fields = ('username', 'email', 'phone', 'first_name', 'last_name')
-    # THÊM HÀM NÀY ĐỂ KIỂM TRA TRÙNG EMAIL
+        fields = ('last_name', 'first_name','username', 'email', 'msv', 'lop')
+
+    # Hàm ma thuật: Tự động gắn class CSS bo tròn của bạn vào TẤT CẢ các ô nhập liệu của Django
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for field in self.fields.values():
+            field.widget.attrs.update({
+                'class': 'form-control rounded-pill border-secondary-subtle ps-4',
+                'placeholder': field.label
+            })
+
     def clean_email(self):
         email = self.cleaned_data.get('email')
         if email and User.objects.filter(email=email).exists():
