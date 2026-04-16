@@ -119,68 +119,107 @@ function renderBookHTML(book, is_premium) {
         actionBtn = `<button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 shadow-sm disabled">ĐANG MƯỢN</button>`;
     } else if (book.btn_status === 'OUT_OF_STOCK' || book.quantity <= 0) {
         actionBtn = `<button class="btn btn-danger rounded-pill fw-bold w-100 py-2 shadow-sm disabled">HẾT SÁCH</button>`;
-    } else if (book.btn_status === 'VIP' || book.price > 0) {
-        actionBtn = `<button type="button" class="btn btn-primary w-100 fw-bold rounded-pill text-white shadow-sm py-2" data-bs-toggle="modal" data-bs-target="#paymentModal${book.id}">MƯỢN SÁCH</button>`;
+    } else { 
+        // TRƯỜNG HỢP CÒN SÁCH -> BẬT MODAL CHỌN CA/NGÀY LẤY SÁCH (CHO CẢ SÁCH FREE VÀ VIP)
+        actionBtn = `<button type="button" class="btn btn-primary w-100 fw-bold rounded-pill text-white shadow-sm py-2" data-bs-toggle="modal" data-bs-target="#borrowModal${book.id}">MƯỢN SÁCH</button>`;
         
+        var paymentHtml = '';
+        var modalHeaderBg = 'bg-primary';
+        var modalHeaderClass = 'text-white';
+        var btnCloseClass = 'btn-close-white';
+        var btnSubmitClass = 'btn-primary';
+
+        // Phân nhánh logic thanh toán nếu sách VIP
+        if (book.price && book.price > 0) {
+            modalHeaderBg = 'bg-warning';
+            modalHeaderClass = 'text-dark';
+            btnCloseClass = '';
+            btnSubmitClass = 'btn-warning text-dark';
+
+            paymentHtml = `
+                <h3 class="text-danger fw-bold mb-4 border-top pt-4">${safePrice} VNĐ</h3>
+                <p class="text-start fw-bold mb-2">Chọn phương thức thanh toán phí:</p>
+                <label class="w-100 text-start border p-3 rounded-3 mb-3 cursor-pointer payment-option selected-payment shadow-sm transition">
+                    <div class="form-check d-flex align-items-center m-0">
+                        <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="CASH" data-book-id="${book.id}" required checked style="transform: scale(1.3);">
+                        <div>
+                            <div class="fw-bold text-dark"><i class="fas fa-money-bill-wave text-success me-2"></i> Thanh toán tại quầy</div>
+                            <small class="text-muted">Đóng tiền mặt trực tiếp cho Thủ thư.</small>
+                        </div>
+                    </div>
+                </label>
+                <label class="w-100 text-start border p-3 rounded-3 cursor-pointer payment-option shadow-sm transition">
+                    <div class="form-check d-flex align-items-center m-0">
+                        <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="BANK" data-book-id="${book.id}" required style="transform: scale(1.3);">
+                        <div>
+                            <div class="fw-bold text-dark"><i class="fas fa-qrcode text-primary me-2"></i> Chuyển khoản (Mã QR)</div>
+                            <small class="text-muted">Chuyển khoản trước, Thủ thư sẽ kiểm tra.</small>
+                        </div>
+                    </div>
+                </label>
+                <div id="qrCodeSection${book.id}" class="qr-box mt-3" style="display: none;">
+                    <div class="p-3 bg-light border border-warning rounded-3 text-center shadow-sm">
+                        <p class="fw-bold text-dark mb-2">Quét mã MoMo/Ngân hàng</p>
+                        <img src="/static/img/qr.png" alt="Mã QR" class="img-fluid rounded border mb-2" style="max-width: 160px;">
+                        <div class="small text-dark mt-2 bg-white p-2 rounded border border-dashed">
+                            Nội dung chuyển khoản:<br>
+                            <strong class="text-danger fs-6">Sách ${book.id} - MSSV của bạn</strong>
+                        </div>
+                    </div>
+                </div>`;
+        } else {
+            paymentHtml = `<input type="hidden" name="payment_method" value="FREE">`;
+        }
+
+        // Render toàn bộ Modal giống hệt book_card.html
+        var todayString = new Date().toISOString().split('T')[0];
         modalHtml = `
-        <div class="modal fade payment-modal" id="paymentModal${book.id}" tabindex="-1" aria-hidden="true">
+        <div class="modal fade payment-modal borrow-modal" id="borrowModal${book.id}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
                 <div class="modal-content" style="border-radius: 20px; border: none;">
-                    <div class="modal-header bg-warning border-0" style="border-radius: 20px 20px 0 0;">
-                        <h5 class="modal-title fw-bold text-dark"><i class="fas fa-money-check-alt me-2"></i> Xác nhận thanh toán</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    <div class="modal-header ${modalHeaderBg} border-0" style="border-radius: 20px 20px 0 0;">
+                        <h5 class="modal-title fw-bold ${modalHeaderClass}">
+                            <i class="fas fa-calendar-check me-2"></i> Đăng ký lịch nhận sách
+                        </h5>
+                        <button type="button" class="btn-close ${btnCloseClass}" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <form method="POST" action="${book.borrow_url}">
                         <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
                         <div class="modal-body p-4 text-center">
-                            <h6 class="fw-bold mb-3">${safeTitle}</h6>
-                            <h3 class="text-danger fw-bold mb-4">${safePrice} VNĐ</h3>
-                            <p class="text-start fw-bold mb-2">Chọn phương thức thanh toán:</p>
+                            <h6 class="fw-bold mb-4 text-dark">${safeTitle}</h6>
                             
-                            <label class="w-100 text-start border p-3 rounded-3 mb-3 cursor-pointer payment-option selected-payment shadow-sm transition">
-                                <div class="form-check d-flex align-items-center m-0">
-                                    <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="CASH" data-book-id="${book.id}" required checked style="transform: scale(1.3);">
-                                    <div>
-                                        <div class="fw-bold text-dark"><i class="fas fa-money-bill-wave text-success me-2"></i> Thanh toán tại quầy</div>
-                                        <small class="text-muted">Đóng tiền mặt trực tiếp cho Thủ thư.</small>
+                            <div class="bg-light p-3 rounded-3 mb-4 border text-start shadow-sm">
+                                <label class="fw-bold mb-2 text-dark"><i class="far fa-clock text-primary me-2"></i>Thời gian sẽ đến lấy sách:</label>
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="date" name="pickup_date" class="form-control" min="${todayString}" required>
+                                    </div>
+                                    <div class="col-6">
+                                        <select name="pickup_shift" class="form-select" required>
+                                            <option value="" disabled selected>Chọn ca...</option>
+                                            <option value="SANG">Sáng (07:30 - 11:30)</option>
+                                            <option value="CHIEU">Chiều (13:00 - 17:00)</option>
+                                        </select>
                                     </div>
                                 </div>
-                            </label>
-                            
-                            <label class="w-100 text-start border p-3 rounded-3 cursor-pointer payment-option shadow-sm transition">
-                                <div class="form-check d-flex align-items-center m-0">
-                                    <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="BANK" data-book-id="${book.id}" required style="transform: scale(1.3);">
-                                    <div>
-                                        <div class="fw-bold text-dark"><i class="fas fa-qrcode text-primary me-2"></i> Chuyển khoản (Mã QR)</div>
-                                        <small class="text-muted">Chuyển khoản trước, Thủ thư sẽ kiểm tra và duyệt.</small>
-                                    </div>
-                                </div>
-                            </label>
-                            
-                            <div id="qrCodeSection${book.id}" class="qr-box mt-3" style="display: none;">
-                                <div class="p-3 bg-light border border-warning rounded-3 text-center shadow-sm">
-                                    <p class="fw-bold text-dark mb-2">Quét mã MoMo/Ngân hàng</p>
-                                    <img src="/static/img/qr.png" alt="Mã QR" class="img-fluid rounded border mb-2" style="max-width: 160px;">
-                                    <div class="small text-dark mt-2 bg-white p-2 rounded border border-dashed">
-                                        Nội dung chuyển khoản:<br>
-                                        <strong class="text-danger fs-6">Sách ${book.id} - MSSV_CUA_BAN</strong>
-                                    </div>
-                                </div>
+                                <small class="text-danger mt-2 d-block"><i class="fas fa-exclamation-triangle me-1"></i>Hệ thống sẽ tự động hủy đơn nếu bạn không đến đúng hạn.</small>
                             </div>
+                            
+                            ${paymentHtml}
+                            
                         </div>
                         <div class="modal-footer border-0 pb-4 pt-0 justify-content-center">
                             <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
-                            <button type="submit" class="btn btn-warning rounded-pill px-5 fw-bold text-dark shadow-sm">Xác nhận mượn</button>
+                            <button type="submit" class="btn ${btnSubmitClass} rounded-pill px-5 fw-bold shadow-sm">Xác nhận đặt sách</button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>`;
         
-        $('#paymentModal' + book.id).remove();
+        // Cập nhật modal vào DOM
+        $('#borrowModal' + book.id).remove();
         $('body').append(modalHtml);
-    } else {
-        actionBtn = `<a href="${book.borrow_url}" class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm ajax-borrow-btn" data-message="Bạn ơi, bạn có chắc chắn muốn mượn sách [${safeTitle}] không?">MƯỢN SÁCH</a>`;
     }
 
     var heartClass = book.is_wished ? 'fas text-danger' : 'far text-muted';

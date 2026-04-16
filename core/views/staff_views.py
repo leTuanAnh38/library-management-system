@@ -14,7 +14,9 @@ from django.core.paginator import Paginator
 from core.models import Book, BorrowTransaction, Penalty, User, Notification
 from core.forms import BookForm
 from django.db.models import Avg, Count, OuterRef, Subquery
-
+from django.urls import reverse
+from urllib.parse import urlencode
+from datetime import datetime
 # Hàm kiểm tra quyền Staff
 def is_staff(user):
     return user.is_authenticated and user.role in ['STAFF', 'ADMIN']
@@ -84,7 +86,7 @@ def add_book(request):
         if form.is_valid():
             form.save()
             messages.success(request, f"Thêm sách '{form.cleaned_data.get('title')}' thành công!")
-            return redirect('staff_dashboard')
+            return redirect('staff_book_list')
     else:
         form = BookForm()
     
@@ -96,28 +98,52 @@ def add_book(request):
 @user_passes_test(is_staff)
 def edit_book(request, book_id):
     book = get_object_or_404(Book, id=book_id)
+    
+    # 1. Bắt lấy số trang hiện tại từ URL (Nếu không có thì mặc định là 1)
+    current_page = request.GET.get('page', '1')
+    
     if request.method == 'POST':
-        form = BookForm(request.POST,request.FILES, instance=book)
+        form = BookForm(request.POST, request.FILES, instance=book)
         if form.is_valid():
             form.save()
             messages.success(request, "Cập nhật thông tin sách thành công!")
-            return redirect('staff_dashboard')
+            
+            # 2. Tạo URL chuyển hướng về Kho sách kèm theo số trang hiện tại
+            base_url = reverse('staff_book_list')
+            query_string = urlencode({'page': current_page})
+            url = f"{base_url}?{query_string}"
+            return redirect(url)
     else:
         form = BookForm(instance=book)
-    return render(request, 'core/staff/book_form.html', {'form': form, 'title': 'Chỉnh sửa sách'})
+        
+    return render(request, 'core/staff/book_form.html', {
+        'form': form, 
+        'title': 'Chỉnh sửa sách',
+        'current_page': current_page  # 3. Truyền số trang ra giao diện HTML cho nút Hủy bỏ
+    })
 
 @user_passes_test(is_staff)
 def delete_book(request, book_id):
     book = get_object_or_404(Book, id=book_id)
+    
+    # 1. Lấy số trang hiện tại từ URL
+    current_page = request.GET.get('page', '1')
+    
+    # 2. Xóa sách
     book.delete()
     messages.success(request, "Đã xóa sách khỏi hệ thống!")
-    return redirect('staff_dashboard')
+    
+    # 3. Trở về đúng trang vừa thao tác xóa
+    base_url = reverse('staff_book_list')
+    query_string = urlencode({'page': current_page})
+    url = f"{base_url}?{query_string}"
+    return redirect(url)
 
 # --- QUẢN LÝ DANH MỤC ---
 @user_passes_test(is_staff, login_url='login')
 def staff_category_list(request):
     # 1. Bắt từ khóa tìm kiếm
-    query = request.GET.get('q', '').strip()
+    query = request.GET.get('search_query', '').strip()
     
     # 2. Lấy danh sách danh mục (Sắp xếp theo tên như cũ)
     categories = Category.objects.all().order_by('name')
@@ -158,7 +184,7 @@ def staff_category_form(request, pk=None):
 @user_passes_test(is_staff, login_url='login')
 def staff_publisher_list(request):
     # 1. Bắt từ khóa tìm kiếm trên URL
-    query = request.GET.get('q', '').strip()
+    query = request.GET.get('search_query', '').strip()
     
     # 2. Lấy toàn bộ danh sách NXB (Sắp xếp theo tên như code cũ của bạn)
     publishers = Publisher.objects.all().order_by('name')
@@ -195,19 +221,75 @@ def staff_publisher_form(request, pk=None):
     # Sửa từ 'staff/category_form.html' thành 'core/staff/category_form.html'
     return render(request, 'core/staff/category_form.html', {'form': form, 'title': title})
 
-# Quản lý mượn trả sách
 @user_passes_test(is_staff, login_url='login')
 def staff_borrow_management(request):
-    query = request.GET.get('q', '').strip()
+    # ========================================================
+    # 1. LOGIC TỰ ĐỘNG HỦY ĐƠN TRỄ HẸN LẤY SÁCH (CHO MƯỢN)
+    # ========================================================
+    # Lấy chính xác giờ trên đồng hồ máy tính để tránh lỗi múi giờ UTC
+    now = datetime.now() 
+    today_date = now.date()
+    current_hour = now.hour
+    # Lấy các đơn CHỜ DUYỆT (Loại trừ các đơn sinh viên đang yêu cầu trả)
+    pending_mmuon = BorrowTransaction.objects.filter(status='PENDING').exclude(reason='YÊU CẦU TRẢ')
     
-    # Sắp xếp mức độ ưu tiên cho Thủ thư
+    for t in pending_mmuon:
+        is_expired = False
+        if t.pickup_date:
+            # Nếu ngày hẹn đã qua hoặc là hôm nay nhưng đã quá ca trực
+            if t.pickup_date < today_date:
+                is_expired = True
+            elif t.pickup_date == today_date:
+                if t.pickup_shift == 'SANG' and current_hour >= 12: # Quá 12h trưa hủy ca Sáng
+                    is_expired = True
+                elif t.pickup_shift == 'CHIEU' and current_hour >= 18: # Quá 18h tối hủy ca Chiều
+                    is_expired = True
+
+        if is_expired:
+            with db_transaction.atomic():
+                t.status = 'CANCELLED'
+                t.reason = 'Hủy tự động do quá hạn thời gian đến nhận sách'
+                t.save()
+                # Hoàn lại số lượng sách vào kho
+                t.book.quantity += 1
+                t.book.save()
+                
+                # Gửi thông báo cho sinh viên
+                shift_text = "Sáng" if t.pickup_shift == 'SANG' else "Chiều"
+                cancel_msg = f"HỦY TỰ ĐỘNG: Đơn mượn sách '{t.book.title}' bị hủy do bạn không đến nhận đúng hẹn (Ca {shift_text} ngày {t.pickup_date.strftime('%d/%m/%Y')})."
+                Notification.objects.create(user=t.user, message=cancel_msg, type='SYSTEM', status='UNREAD')
+
+    # ========================================================
+    # 2. LOGIC TỰ ĐỘNG XỬ LÝ "YÊU CẦU TRẢ" ẢO (SAU 24 GIỜ)
+    # ========================================================
+    # Nếu sinh viên bấm trả nhưng quá 24h không mang sách tới quầy, trả về trạng thái Đang mượn
+    return_requests = BorrowTransaction.objects.filter(status='PENDING', reason='YÊU CẦU TRẢ')
+    for r in return_requests:
+        if r.updated_at < timezone.now() - timedelta(days=1):
+            r.status = 'BORROWED'
+            r.reason = '' # Xóa nhãn yêu cầu trả
+            r.save()
+            
+            Notification.objects.create(
+                user=r.user,
+                message=f"Yêu cầu trả sách '{r.book.title}' bị hủy do bạn không mang sách tới quầy. Vui lòng thực hiện lại khi sẵn sàng.",
+                type='SYSTEM', status='UNREAD'
+            )
+
+    # ========================================================
+    # 3. LẤY DANH SÁCH & PHÂN TRANG
+    # ========================================================
+    query = request.GET.get('search_query', '').strip()
+    
+    # Sắp xếp ưu tiên: Chờ duyệt > Quá hạn > Đang mượn > Khác
     transactions = BorrowTransaction.objects.select_related('user', 'book').annotate(
         status_priority=Case(
-            When(status='PENDING', then=Value(1)),   # Chờ duyệt (nóng nhất)
-            When(status='OVERDUE', then=Value(2)),   # Quá hạn (nóng thứ hai)
-            When(status='BORROWED', then=Value(3)),  # Đang mượn (bình thường)
-            When(status='RETURNED', then=Value(4)),  # Đã trả (đã xong)
-            default=Value(5),
+            When(status='PENDING', then=Value(1)),
+            When(status='OVERDUE', then=Value(2)),
+            When(status='BORROWED', then=Value(3)),
+            When(status='CANCELLED', then=Value(4)),
+            When(status='RETURNED', then=Value(5)),
+            default=Value(6),
             output_field=IntegerField(),
         )
     )
@@ -216,27 +298,19 @@ def staff_borrow_management(request):
         transactions = transactions.filter(
             Q(user__msv__icontains=query) |          
             Q(user__username__icontains=query) |     
-            Q(user__first_name__icontains=query) |   
-            Q(user__last_name__icontains=query)      
+            Q(book__title__icontains=query)
         ).distinct()
         
-    # Sắp xếp theo ưu tiên trạng thái trước, sau đó mới đến ngày tạo
     transactions = transactions.order_by('status_priority', '-created_at')
     
-    # ==========================================
-    # ---> ĐÃ SỬA LẠI PHẦN PHÂN TRANG Ở ĐÂY <---
-    # ==========================================
-    # 1. Bắt lấy tham số 'page' trên thanh địa chỉ URL (mặc định là 1 nếu không có)
     page_number = request.GET.get('page', 1) 
-    
     paginator = Paginator(transactions, 10)
-    
-    # 2. Truyền biến page_number vào để nó lấy đúng trang người dùng bấm
     page_obj = paginator.get_page(page_number) 
     
     return render(request, 'core/staff/borrow_management.html', {
-        'transactions': page_obj, # HTML đang dùng vòng lặp, nên sẽ lặp qua page_obj này
-        'query': query
+        'transactions': page_obj, 
+        'query': query,
+        'today': today_date
     })
 
 @user_passes_test(is_staff, login_url='login')
@@ -280,61 +354,84 @@ def staff_confirm_return(request, transaction_id):
     borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, status__in=['BORROWED', 'PENDING'])
     user = borrow_record.user
     
-    try:
-        with db_transaction.atomic():
-            today = timezone.now().date()
-            borrow_record.status = 'RETURNED'
-            borrow_record.return_date = today
-            borrow_record.save()
-            
-            if today > borrow_record.due_date:
-                user.points = max(0, user.points - 5)
-                days_late = (today - borrow_record.due_date).days
-                fine_amount = days_late * 5000
-                
-                Penalty.objects.create(
-                    user=user,
-                    borrow_transaction=borrow_record,
-                    amount=fine_amount,
-                    reason=f"Trả sách trễ {days_late} ngày",
-                    status='UNPAID'
-                )
-
-                Notification.objects.create(
-                    user=user,
-                    message=f"CẢNH BÁO: Thủ thư đã thu hồi cuốn '{borrow_record.book.title}'. Bạn trả trễ {days_late} ngày, hệ thống phạt {fine_amount} VNĐ và TRỪ 5 ĐIỂM tích lũy.",
-                    type='SYSTEM',
-                    status='UNREAD'
-                )
-            else:
-                user.points += 10 
-                Notification.objects.create(
-                    user=user,
-                    message=f"Tuyệt vời! Thủ thư đã xác nhận thu hồi cuốn '{borrow_record.book.title}' thành công. Bạn được cộng 10 điểm thưởng vì trả sách đúng hạn.",
-                    type='SYSTEM',
-                    status='UNREAD'
-                )
-            
-            user.save() 
-            
-            book = borrow_record.book
-            book.quantity += 1
-            book.save()
-            
-            messages.success(request, f"Đã xác nhận thu hồi sách từ Sinh viên {user.msv} (Tên: {user.get_full_name() or user.username}).")
-    except Exception as e:
-        messages.error(request, f"Lỗi hệ thống: {str(e)}")
+    if request.method == 'POST':
+        book_condition = request.POST.get('book_condition', 'NORMAL')
         
+        try:
+            with db_transaction.atomic():
+                today = timezone.now().date()
+                borrow_record.status = 'RETURNED'
+                borrow_record.return_date = today
+                borrow_record.save()
+                
+                fine_amount = 0
+                penalty_reasons = []
+                
+                # 1. Xử lý phạt trễ hạn
+                if today > borrow_record.due_date:
+                    user.points = max(0, user.points - 5)
+                    days_late = (today - borrow_record.due_date).days
+                    late_fine = days_late * 5000
+                    fine_amount += late_fine
+                    penalty_reasons.append(f"Trả trễ {days_late} ngày ({late_fine:,.0f}đ)")
+                else:
+                    user.points += 10 
+                    
+                # 2. Xử lý phạt hư hỏng/mất sách
+                original_price = borrow_record.book.original_price or 0
+                if book_condition == 'LIGHT_DAMAGE':
+                    damage_fine = int(float(original_price) * 0.10) # Phạt 10%
+                    fine_amount += damage_fine
+                    penalty_reasons.append(f"Hư hỏng nhẹ sách ({damage_fine:,.0f}đ)")
+                elif book_condition == 'LOST_OR_DESTROYED':
+                    damage_fine = int(original_price) # Đền 100%
+                    fine_amount += damage_fine
+                    penalty_reasons.append(f"Mất/Hư hỏng nặng sách ({damage_fine:,.0f}đ)")
+                    
+                # 3. Tạo phiếu phạt và thông báo
+                if fine_amount > 0:
+                    reason_str = " + ".join(penalty_reasons)
+                    Penalty.objects.create(
+                        user=user,
+                        borrow_transaction=borrow_record,
+                        amount=fine_amount,
+                        reason=reason_str,
+                        status='UNPAID'
+                    )
+                    Notification.objects.create(
+                        user=user,
+                        message=f"CẢNH BÁO: Thủ thư đã thu hồi cuốn '{borrow_record.book.title}'. Hệ thống phạt {fine_amount:,.0f} VNĐ vì lý do: {reason_str}.",
+                        type='SYSTEM',
+                        status='UNREAD'
+                    )
+                else:
+                    Notification.objects.create(
+                        user=user,
+                        message=f"Tuyệt vời! Thủ thư đã thu hồi cuốn '{borrow_record.book.title}' thành công. Bạn được cộng 10 điểm thưởng vì trả đúng hạn.",
+                        type='SYSTEM',
+                        status='UNREAD'
+                    )
+                
+                user.save() 
+                
+                # 4. Hoàn sách vào kho (Trừ khi bị mất)
+                book = borrow_record.book
+                if book_condition != 'LOST_OR_DESTROYED':
+                    book.quantity += 1
+                book.save()
+                
+                messages.success(request, f"Đã xác nhận thu hồi sách từ Sinh viên {user.msv}. Tình trạng: {book_condition}")
+        except Exception as e:
+            messages.error(request, f"Lỗi hệ thống: {str(e)}")
+            
     return redirect('staff_borrow_management')
-
-
 # ==========================================
 # 3. QUẢN LÝ TIỀN PHẠT & NGƯỜI DÙNG
 # ==========================================
 
 @user_passes_test(is_staff, login_url='login')
 def staff_penalty_management(request):
-    query = request.GET.get('q', '').strip()
+    query = request.GET.get('search_query', '').strip()
     
     # 1. Lấy TẤT CẢ khoản phạt (không dùng exclude PAID nữa)
     # Sắp xếp ưu tiên: Chờ duyệt (1) -> Chưa đóng (2) -> Đã đóng (3)
@@ -400,7 +497,7 @@ def staff_user_management(request):
     ).exclude(role__in=['STAFF', 'ADMIN']).order_by('username')
     
     # 2. Xử lý tìm kiếm
-    query = request.GET.get('q')
+    query = request.GET.get('search_query', '').strip()
     if query:
         readers = readers.filter(
             Q(username__icontains=query) | 
@@ -433,7 +530,7 @@ def staff_user_detail(request, user_id):
 @user_passes_test(is_staff, login_url='login')
 def staff_review_management(request):
     # 1. Bắt từ khóa tìm kiếm
-    query = request.GET.get('q', '').strip()
+    query = request.GET.get('search_query', '').strip()
 
     # Lấy thông tin bài đánh giá gần nhất của mỗi cuốn sách
     latest_review = Review.objects.filter(book=OuterRef('pk')).order_by('-created_at')

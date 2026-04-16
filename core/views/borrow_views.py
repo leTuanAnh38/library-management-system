@@ -1,6 +1,6 @@
 # file: core/views/borrow_views.py
 from django.http import JsonResponse
-from datetime import timedelta
+from datetime import timedelta, datetime
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
@@ -68,39 +68,51 @@ def borrow_book(request, book_id):
     if book.quantity <= 0:
         return respond('error', f"Sách '{book.title}' đã hết trong kho!")
         
-    # XỬ LÝ SÁCH VIP VÀ THANH TOÁN
+    # 8. LẤY DỮ LIỆU TỪ FORM (Ngày, Ca lấy, Phương thức thanh toán)
     is_premium = book.price and book.price > 0
     if request.method == 'POST':
+        pickup_date = request.POST.get('pickup_date')
+        pickup_shift = request.POST.get('pickup_shift')
         payment_method = request.POST.get('payment_method', 'FREE')
+        
+        if not pickup_date or not pickup_shift:
+            return respond('error', "Vui lòng chọn ngày và ca lấy sách!")
     else:
-        if is_premium:
-            return respond('warning', "Vui lòng chọn phương thức thanh toán để mượn sách VIP!", 'premium_books')
-        payment_method = 'FREE'
+        # Chặn truy cập trực tiếp qua URL (GET request) vì phải dùng Modal để chọn ngày
+        return respond('error', "Vui lòng sử dụng form đăng ký để chọn thời gian nhận sách.")
 
     han_tra = timezone.now().date() + timedelta(days=14)
     status = 'PENDING' 
     is_paid = False if is_premium else True
 
-    # 8. TIẾN HÀNH TẠO GIAO DỊCH
+    # Xử lý chuỗi thông báo thời gian
+    try:
+        formatted_date = datetime.strptime(pickup_date, '%Y-%m-%d').strftime('%d/%m/%Y')
+    except:
+        formatted_date = pickup_date
+    shift_display = "Buổi Sáng (07:30 - 11:30)" if pickup_shift == 'SANG' else "Buổi Chiều (13:00 - 17:00)"
+
+    # 9. TIẾN HÀNH TẠO GIAO DỊCH
     try:
         with db_transaction.atomic():
             BorrowTransaction.objects.create(
                 user=user, book=book, due_date=han_tra, 
-                status=status, payment_method=payment_method, is_paid=is_paid                
+                status=status, payment_method=payment_method, is_paid=is_paid,
+                pickup_date=pickup_date, pickup_shift=pickup_shift # Lưu thông tin lịch hẹn
             )
 
+            # Tùy chỉnh tin nhắn theo loại sách
             if is_premium:
                 payment_display = dict(BorrowTransaction.PAYMENT_CHOICES).get(payment_method, payment_method)
-                msg = f"Yêu cầu thành công! Vui lòng thanh toán {book.price:,.0f} VNĐ qua [{payment_display}] để được duyệt."
+                msg = f"Đăng ký thành công! Vui lòng thanh toán {book.price:,.0f} VNĐ ({payment_display}) và đến nhận sách vào {shift_display} ngày {formatted_date}."
             else:
-                msg = f"Yêu cầu thành công! Vui lòng chờ Thủ thư duyệt hoặc đến quầy nhận sách."
+                msg = f"Đăng ký thành công! Bạn nhớ đến nhận sách vào {shift_display} ngày {formatted_date}. Quá hạn hệ thống sẽ tự hủy đơn!"
 
             Notification.objects.create(user=user, message=msg, type='SYSTEM', status='UNREAD')
             book.quantity -= 1
             book.save()
 
-        # If this is a normal (non-AJAX) request, set a one-time session message
-        # so templates can show the informational message once after redirect.
+        # Giữ nguyên logic hiển thị tin nhắn của bạn
         if not is_ajax:
             try:
                 request.session['show_borrow_info_msg'] = msg
@@ -155,7 +167,7 @@ def return_book(request, transaction_id):
         borrow_record.reason = 'YÊU CẦU TRẢ' 
         borrow_record.save()
         
-        messages.success(request, f"Yêu cầu trả cuốn '{borrow_record.book.title}' đã được gửi. Vui lòng mang sách đến quầy để Thủ thư xác nhận.")
+        messages.success(request, f"Yêu cầu trả cuốn '{borrow_record.book.title}' đã được gửi. Vui lòng mang sách đến quầy trong vòng 24h để Thủ thư xác nhận.")
     except Exception as e:
         messages.error(request, f"Đã xảy ra lỗi: {str(e)}")
         
