@@ -108,7 +108,8 @@ class Book(TimeStampedModel):
     cover_image = models.CharField(max_length=255, null=True, blank=True)
     cover_file = models.ImageField(upload_to='books/covers/', blank=True, null=True)
     author = models.CharField(max_length=150, null=True, blank=True)
-    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
+    price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Giá thuê sách (nếu có)")
+    original_price = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True, verbose_name="Giá gốc của sách")
     initial_quantity = models.IntegerField(default=0)
     quantity = models.IntegerField(default=0)
     published_year = models.IntegerField(null=True, blank=True)
@@ -142,13 +143,22 @@ class BookImage(TimeStampedModel):
 class BorrowTransaction(TimeStampedModel):
     STATUS_CHOICES = (
         ('BORROWED', 'Đang mượn'),
-        ('PENDING', 'Chờ xác nhận'), # Dùng cho cả: Chờ duyệt TRẢ sách và Chờ duyệt MƯỢN (nếu sách có phí)
+        ('PENDING', 'Chờ xác nhận'), # Dùng cho cả: Chờ duyệt TRẢ sách và Chờ duyệt MƯỢN
         ('RETURNED', 'Đã trả'),
         ('OVERDUE', 'Quá hạn'),
+        ('CANCELLED', 'Đã hủy hẹn'), # ---> [MỚI THÊM] Trạng thái khi hệ thống tự động hủy
     )
 
     # ==========================================
-    # [MỚI THÊM] Các lựa chọn phương thức thanh toán
+    # [MỚI THÊM] Các lựa chọn ca lấy sách
+    # ==========================================
+    SHIFT_CHOICES = (
+        ('SANG', 'Buổi Sáng (07:30 - 11:30)'),
+        ('CHIEU', 'Buổi Chiều (13:00 - 17:00)'),
+    )
+
+    # ==========================================
+    # Các lựa chọn phương thức thanh toán
     # ==========================================
     PAYMENT_CHOICES = (
         ('FREE', 'Miễn phí'),
@@ -167,7 +177,13 @@ class BorrowTransaction(TimeStampedModel):
     reason = models.CharField(max_length=255, null=True, blank=True)
 
     # ==========================================
-    # [MỚI THÊM] Trường lưu thông tin thanh toán
+    # [MỚI THÊM] Trường lưu thông tin hẹn lấy sách
+    # ==========================================
+    pickup_date = models.DateField(null=True, blank=True, verbose_name="Ngày hẹn lấy")
+    pickup_shift = models.CharField(max_length=10, choices=SHIFT_CHOICES, null=True, blank=True, verbose_name="Ca hẹn lấy")
+
+    # ==========================================
+    # Trường lưu thông tin thanh toán
     # ==========================================
     payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default='FREE', verbose_name="Phương thức thanh toán")
     is_paid = models.BooleanField(default=False, verbose_name="Trạng thái thanh toán")

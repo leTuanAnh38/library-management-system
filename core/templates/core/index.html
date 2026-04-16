@@ -40,64 +40,11 @@
                 
                 <div class="row g-4">
                     {% for book in books %}
-                    {% if not book.price or book.price == 0 %}
-                    <div class="col-md-6 col-lg-4 d-flex align-items-stretch">
-                        <div class="bg-white border rounded-4 shadow-sm w-100 d-flex flex-column overflow-hidden position-relative transition-hover">
+                        {% if not book.price or book.price == 0 %}
                             
-                            <div class="text-center bg-light border-bottom" style="height: 240px;">
-                                <a href="{% url 'book_detail' book.id %}" class="d-block h-100">
-                                    <img src="{{ book.get_cover }}" class="h-100 w-100" style="object-fit: cover; object-position: top;">
-                                </a>
-                            </div>
-
-                            <div class="p-4 text-center d-flex flex-column flex-grow-1">
-                                <h5 class="fw-bold text-dark text-truncate-2 mb-3">
-                                    <a href="{% url 'book_detail' book.id %}" class="text-dark text-decoration-none">{{ book.title }}</a>
-                                </h5>
-                                
-                                <p class="small text-muted mb-2">Tác giả: <strong class="text-dark">{{ book.author|default:"Chưa rõ" }}</strong></p>
-                                <p class="small text-muted mb-2">Số lượng còn lại: <strong class="text-dark">{{ book.quantity }}</strong></p>
-                                <p class="small text-muted mb-4">Trạng thái: 
-                                    {% if book.quantity > 0 %}
-                                        <strong class="text-success">Có sẵn</strong>
-                                    {% else %}
-                                        <strong class="text-danger">Hết sách</strong>
-                                    {% endif %}
-                                </p>
-                                
-                                <div class="mt-auto w-100">
-                                    {% if book.id in pending_book_ids %}
-                                        <button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled" style="opacity: 0.85;">
-                                            <i class="fas fa-clock me-1"></i>CHỜ XÁC NHẬN
-                                        </button>
-                                    {% elif book.id in borrowed_book_ids %}
-                                        <button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 shadow-sm disabled">
-                                            ĐANG MƯỢN
-                                        </button>
-                                    {% elif book.quantity <= 0 %}
-                                        <button class="btn btn-danger rounded-pill fw-bold w-100 py-2 shadow-sm disabled">
-                                            HẾT SÁCH
-                                        </button>
-                                    {% else %}
-                                        <a href="{% url 'borrow_book' book.id %}" 
-                                           class="btn btn-primary rounded-pill fw-bold w-100 py-2 shadow-sm ajax-borrow-btn" 
-                                           data-message="Bạn ơi, bạn có chắc chắn muốn mượn cuốn sách [{{ book.title }}] này không?">
-                                            MƯỢN SÁCH
-                                        </a>
-                                    {% endif %}
-                                </div>
-                                
-                                <div class="text-center mt-3 pt-2">
-                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none btn-toggle-wishlist" 
-                                          data-url="{% url 'api_toggle_wishlist' book.id %}" 
-                                          data-book-id="{{ book.id }}">
-                                        <i class="{% if book.id in wishlist_book_ids %}fas text-danger{% else %}far text-muted{% endif %} fa-heart fs-5 heart-icon-{{ book.id }}"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
+                            {% include 'core/includes/book_card.html' %}
+                            
+                        {% endif %}
                     {% endfor %}
                 </div>
 
@@ -113,118 +60,11 @@
                 
                 <div class="row g-4">
                     {% for book in books %}
-                    {% if book.price and book.price > 0 %}
-                    <div class="col-md-6 col-lg-4 d-flex align-items-stretch">
-                        <div class="bg-white border rounded-4 shadow-sm w-100 d-flex flex-column overflow-hidden position-relative transition-hover border-danger border-opacity-25">
+                        {% if book.price and book.price > 0 %}
+                        
+                            {% include 'core/includes/book_card.html' %}
                             
-                            <div class="position-absolute bg-danger text-white px-3 py-1 fw-bold" 
-                                 style="top: 15px; left: 0; border-radius: 0 20px 20px 0; z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
-                                {{ book.price|floatformat:0 }} VNĐ
-                            </div>
-
-                            <div class="text-center bg-light border-bottom" style="height: 240px;">
-                                <a href="{% url 'book_detail' book.id %}" class="d-block h-100">
-                                    <img src="{{ book.get_cover }}" class="h-100 w-100" style="object-fit: cover; object-position: top;">
-                                </a>
-                            </div>
-
-                            <div class="p-4 text-center d-flex flex-column flex-grow-1">
-                                <h5 class="fw-bold text-dark text-truncate-2 mb-3">
-                                    <a href="{% url 'book_detail' book.id %}" class="text-dark text-decoration-none">{{ book.title }}</a>
-                                </h5>
-                                
-                                <p class="small text-muted mb-2">Tác giả: <strong class="text-dark">{{ book.author|default:"Chưa rõ" }}</strong></p>
-                                <p class="small text-muted mb-2">Số lượng còn lại: <strong class="text-dark">{{ book.quantity }}</strong></p>
-                                <p class="small text-muted mb-4">Trạng thái: 
-                                    {% if book.quantity > 0 %}
-                                        <strong class="text-success">Có sẵn</strong>
-                                    {% else %}
-                                        <strong class="text-danger">Hết sách</strong>
-                                    {% endif %}
-                                </p>
-                                
-                                <div class="mt-auto w-100">
-                                    {% if book.id in pending_book_ids %}
-                                        <button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled" style="opacity: 0.85;">
-                                            <i class="fas fa-clock me-1"></i>CHỜ XÁC NHẬN
-                                        </button>
-                                    {% elif book.id in borrowed_book_ids %}
-                                        <button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 shadow-sm disabled">
-                                            ĐANG MƯỢN
-                                        </button>
-                                    {% elif book.quantity <= 0 %}
-                                        <button class="btn btn-danger rounded-pill fw-bold w-100 py-2 shadow-sm disabled">
-                                            HẾT SÁCH
-                                        </button>
-                                    {% else %}
-                                        <button type="button" class="btn btn-primary w-100 fw-bold rounded-pill text-white shadow-sm py-2" data-bs-toggle="modal" data-bs-target="#paymentModal{{ book.id }}">
-                                            MƯỢN SÁCH
-                                        </button>
-                                    {% endif %}
-                                </div>
-                                
-                                <div class="text-center mt-3 pt-2">
-                                    <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none btn-toggle-wishlist" 
-                                      data-url="{% url 'api_toggle_wishlist' book.id %}" 
-                                      data-book-id="{{ book.id }}">
-                                        <i class="{% if book.id in wishlist_book_ids %}fas text-danger{% else %}far text-muted{% endif %} fa-heart fs-5 heart-icon-{{ book.id }}"></i>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="modal fade payment-modal" id="paymentModal{{ book.id }}" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered">
-                                <div class="modal-content" style="border-radius: 20px; border: none;">
-                                    <div class="modal-header bg-warning border-0" style="border-radius: 20px 20px 0 0;">
-                                        <h5 class="modal-title fw-bold text-dark"><i class="fas fa-money-check-alt me-2"></i> Xác nhận thanh toán</h5>
-                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                    </div>
-                                    <form method="POST" action="{% url 'borrow_book' book.id %}">
-                                        {% csrf_token %}
-                                        <div class="modal-body p-4 text-center">
-                                            <h6 class="fw-bold mb-3">{{ book.title }}</h6>
-                                            <h3 class="text-danger fw-bold mb-4">{{ book.price|floatformat:0 }} VNĐ</h3>
-                                            
-                                            <p class="text-start fw-bold mb-2">Chọn phương thức thanh toán:</p>
-                                            
-                                            <label class="w-100 text-start border p-3 rounded-3 mb-3 cursor-pointer payment-option selected-payment shadow-sm transition">
-                                                <div class="form-check d-flex align-items-center m-0">
-                                                    <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="CASH" data-book-id="{{ book.id }}" required checked style="transform: scale(1.3);">
-                                                    <div>
-                                                        <div class="fw-bold text-dark"><i class="fas fa-money-bill-wave text-success me-2"></i> Thanh toán tại quầy</div>
-                                                        <small class="text-muted">Đóng tiền mặt trực tiếp cho Thủ thư.</small>
-                                                    </div>
-                                                </div>
-                                            </label>
-
-                                            <label class="w-100 text-start border p-3 rounded-3 cursor-pointer payment-option shadow-sm transition">
-                                                <div class="form-check d-flex align-items-center m-0">
-                                                    <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="BANK" data-book-id="{{ book.id }}" required style="transform: scale(1.3);">
-                                                    <div>
-                                                        <div class="fw-bold text-dark"><i class="fas fa-qrcode text-primary me-2"></i> Chuyển khoản (Mã QR)</div>
-                                                        <small class="text-muted">Chuyển khoản trước, Thủ thư sẽ kiểm tra.</small>
-                                                    </div>
-                                                </div>
-                                            </label>
-                                            
-                                            <div id="qrCodeSection{{ book.id }}" class="qr-box mt-3" style="display: none;">
-                                                <div class="p-3 bg-light border border-warning rounded-3 text-center shadow-sm">
-                                                    <p class="fw-bold text-dark mb-2">Quét mã MoMo/Ngân hàng</p>
-                                                    <img src="{% static 'img/qr.png' %}" alt="Mã QR Thanh Toán" class="img-fluid rounded border mb-2" style="max-width: 160px;">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="modal-footer border-0 pb-4 pt-0 justify-content-center">
-                                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
-                                            <button type="submit" class="btn btn-warning rounded-pill px-5 fw-bold text-dark shadow-sm">Xác nhận mượn</button>
-                                        </div>
-                                    </form>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endif %}
+                        {% endif %}
                     {% endfor %}
                 </div>
                 

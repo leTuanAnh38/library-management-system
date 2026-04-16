@@ -52,10 +52,10 @@ class PublisherForm(forms.ModelForm):
 class BookForm(forms.ModelForm):
     class Meta:
         model = Book
-        # 1. THÊM 3 trường mới (floor, shelf, area) vào danh sách fields
+        # 1. THÊM các trường mới (floor, shelf, area, original_price) vào danh sách fields
         fields = [
             'title', 'category', 'publisher', 'author', 'cover_image', 'cover_file',
-            'price', 'initial_quantity', 'quantity', 'published_year', 
+            'price', 'original_price', 'initial_quantity', 'quantity', 'published_year', 
             'floor', 'shelf', 'area', 'location', 'description', 'status'
         ]
         
@@ -66,20 +66,42 @@ class BookForm(forms.ModelForm):
             'category': forms.Select(attrs={'class': 'form-select'}),
             'publisher': forms.Select(attrs={'class': 'form-select'}),
             'cover_image': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Dán link ảnh bìa'}),
-            'price': forms.NumberInput(attrs={'class': 'form-control'}),
+            
+            # --- TRƯỜNG GIÁ CHO MƯỢN VÀ GIÁ GỐC ---
+            'price': forms.NumberInput(attrs={'class': 'form-control text-danger fw-bold', 'placeholder': 'VD: 50000 (Để trống nếu sách Free)'}),
+            'original_price': forms.NumberInput(attrs={'class': 'form-control text-primary fw-bold', 'placeholder': 'Giá mua bìa sách (Dùng tính phí phạt)'}),
+            
             'initial_quantity': forms.NumberInput(attrs={'class': 'form-control'}),
             'quantity': forms.NumberInput(attrs={'class': 'form-control'}),
             'published_year': forms.NumberInput(attrs={'class': 'form-control'}),
             
-            # --- BA TRƯỜNG VỊ TRÍ MỚI ---
+            # --- BA TRƯỜNG VỊ TRÍ ---
             'floor': forms.NumberInput(attrs={'class': 'form-control', 'placeholder': 'Tầng'}),
             'shelf': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Kệ sách'}),
             'area': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Khu vực/Phòng'}),
             
             # Giữ lại location (nó sẽ bị ẩn ở giao diện HTML đã sửa trước đó)
             'location': forms.TextInput(attrs={'class': 'form-control'}),
-            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'status': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+        # 3. Chuyển đổi nhãn (Label) sang tiếng Việt cho thân thiện
+        labels = {
+            'title': 'Tên cuốn sách',
+            'category': 'Danh mục',
+            'publisher': 'Nhà xuất bản',
+            'author': 'Tác giả',
+            'price': 'Giá cho mượn (VNĐ)',
+            'original_price': 'Giá gốc cuốn sách (VNĐ)',
+            'initial_quantity': 'Tổng số lượng ban đầu',
+            'quantity': 'Số lượng còn trong kho',
+            'published_year': 'Năm xuất bản',
+            'description': 'Tóm tắt nội dung',
+            'floor': 'Tầng số',
+            'shelf': 'Kệ số / Ngăn số',
+            'area': 'Khu vực / Phòng',
+            'status': 'Trạng thái hiện tại'
         }
 class UserProfileForm(forms.ModelForm):
     class Meta:
