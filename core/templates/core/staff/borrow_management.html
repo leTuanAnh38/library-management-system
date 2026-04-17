@@ -113,7 +113,12 @@
                                             {% endif %}
                                         {% endif %}
                                     {% elif trans.status == 'CANCELLED' %}
-                                        <span class="text-danger fw-bold" style="font-size: 0.9rem;"><i class="fas fa-circle me-2" style="font-size: 8px;"></i>Đã hủy</span>
+                                        <span class="text-danger fw-bold" style="font-size: 0.9rem;">
+                                            <i class="fas fa-circle me-2" style="font-size: 8px;"></i>Đã hủy
+                                        </span>
+                                        <div class="mt-1 text-muted fw-medium" style="font-size: 0.75rem; line-height: 1.4;">
+                                            Lý do: Không lấy sách<br>ca {% if trans.pickup_shift == 'SANG' %}Sáng{% else %}Chiều{% endif %} ({{ trans.pickup_date|date:"d/m/Y" }})
+                                        </div>
                                     {% else %}
                                         <span class="text-success fw-medium" style="font-size: 0.9rem;"><i class="fas fa-circle me-2" style="font-size: 8px;"></i>Hoàn tất</span>
                                     {% endif %}
@@ -129,7 +134,7 @@
                                     {% if trans.status == 'PENDING' %}
                                         {% if trans.reason == 'YÊU CẦU TRẢ' %}
                                             <button type="button" class="btn btn-sm btn-dark px-3 fw-medium rounded-2" data-bs-toggle="modal" data-bs-target="#returnModal{{ trans.id }}">
-                                                Thu hồi sách
+                                                Thu hồi sách trả
                                             </button>
                                         {% else %}
                                             <a href="{% url 'staff_approve_borrow' trans.id %}" 
@@ -228,7 +233,7 @@
                     <div>
                         <label class="fw-medium mb-2 text-dark small">Đánh giá tình trạng sách lúc nhận:</label>
                         <select name="book_condition" class="form-select rounded-2 shadow-none border" required>
-                            <option value="NORMAL" selected>Bình thường (Không phạt)</option>
+                            <option value="NORMAL" selected>Bình thường </option>
                             <option value="LIGHT_DAMAGE">Hư hỏng nhẹ (Phạt 10% giá gốc)</option>
                             <option value="LOST_OR_DESTROYED">Mất sách / Rách nát (Đền 100% giá gốc)</option>
                         </select>
