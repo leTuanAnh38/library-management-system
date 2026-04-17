@@ -49,9 +49,17 @@ urlpatterns = [
     # ==========================================
     # 4. NHÓM MƯỢN TRẢ SÁCH (BORROW / RETURN)
     # ==========================================
+    # URL Giỏ sách mới
+    path('cart/', borrow_views.view_cart, name='view_cart'),
+    path('api/cart/add/<int:book_id>/', borrow_views.add_to_cart, name='api_add_to_cart'),
+    path('cart/remove/<int:book_id>/', borrow_views.remove_from_cart, name='remove_from_cart'),
+    path('cart/checkout/', borrow_views.checkout_cart, name='checkout_cart'),
+
     path('borrow/<int:book_id>/', borrow_views.borrow_book, name='borrow_book'),
     path('borrow-history/', borrow_views.borrow_history, name='borrow_history'),
     path('return/<int:transaction_id>/', borrow_views.return_book, name='return_book'),
+    # URL trả sách hàng loạt mới
+    path('return-batch/', borrow_views.return_books_batch, name='return_books_batch'),
 
     # ==========================================
     # 5. NHÓM NGHIỆP VỤ THỦ THƯ (STAFF DASHBOARD)

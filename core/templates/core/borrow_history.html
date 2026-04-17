@@ -16,104 +16,131 @@
         </div>
 
         <div class="col-lg-9">
-            <div class="bg-white p-4 rounded-4 shadow-sm border">
+            <div class="bg-white p-4 rounded-4 shadow-sm border position-relative">
                 <div class="d-flex justify-content-between align-items-center mb-4 border-start border-4 border-primary ps-3">
-                    <h2 class="fw-bold m-0 text-dark">Lịch sử mượn sách của bạn</h2>
-                    <span class="badge bg-light text-dark border rounded-pill px-3 py-2 small">
+                    <h3 class="fw-bold m-0 text-dark">Lịch sử mượn sách</h3>
+                    <span class="badge bg-light text-secondary border rounded-pill px-3 py-2 small fw-medium">
                         Tổng cộng: {{ history.paginator.count|default:history.count }} lượt mượn
                     </span>
                 </div>
                 
-                <div class="table-responsive rounded-4 shadow-sm overflow-hidden border mb-3">
-                    <table class="table table-hover align-middle bg-white mb-0">
-                        <thead class="bg-primary text-white">
-                            <tr>
-                                <th class="py-3 ps-4" style="width: 35%;">Tên sách</th>
-                                <th class="py-3">Ngày mượn</th>
-                                <th class="py-3">Hạn trả</th>
-                                <th class="py-3">Ngày trả thực tế</th>
-                                <th class="py-3">Trạng thái</th>
-                                <th class="py-3 text-center">Hành động</th>
-                            </tr>
-                        </thead>
-                        <tbody id="history-container">
-                            {% for item in history %}
-                            <tr> 
-                                <td class="ps-4">
-                                    <div class="d-flex align-items-center">
-                                        <img src="{{ item.book.get_cover }}" alt="" style="width: 45px; height: 60px; object-fit: cover;" class="rounded me-3 border shadow-sm">
-                                        <div>
-                                            <div class="fw-bold text-dark">{{ item.book.title }}</div>
-                                            <small class="text-muted italic">Tác giả: {{ item.book.author }}</small>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td class="small">{{ item.borrow_date|date:"d/m/Y"|default:"-" }}</td>
-                                <td class="small">
-                                    <span class="{% if item.status == 'BORROWED' %}text-primary fw-bold{% endif %}">
-                                        {{ item.due_date|date:"d/m/Y"|default:"-" }}
-                                    </span>
-                                </td>
-                                <td class="small">
-                                    {% if item.return_date %}
-                                        {{ item.return_date|date:"d/m/Y" }}
-                                    {% else %}
-                                        <span class="text-muted">-</span>
-                                    {% endif %}
-                                </td>
-                                
-                                <td>
-                                    {% if item.status == 'RETURNED' %}
-                                        {% if item.is_late %}
-                                            <span class="badge bg-danger px-3 py-2 rounded-pill shadow-sm">Trả trễ</span>
-                                            <div class="mt-1 small text-danger fw-bold">
-                                                <i class="fas fa-hand-holding-usd me-1"></i>Phạt: {{ item.penalty_amount }} VNĐ
-                                            </div>
+                <form id="batchReturnForm" method="POST" action="{% url 'return_books_batch' %}">
+                    {% csrf_token %}
+                    
+                    <div class="table-responsive rounded-4 shadow-sm overflow-hidden border mb-3">
+                        <table class="table table-hover align-middle bg-white mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="py-3 ps-4 border-0 text-center" style="width: 50px;">
+                                        <input class="form-check-input" type="checkbox" id="selectAll" style="transform: scale(1.3); cursor: pointer;" title="Chọn tất cả">
+                                    </th>
+                                    <th class="py-3 text-muted small text-uppercase fw-bold border-0" style="width: 30%;">Tài liệu</th>
+                                    <th class="py-3 text-muted small text-uppercase fw-bold border-0">Ngày mượn</th>
+                                    <th class="py-3 text-muted small text-uppercase fw-bold border-0">Hạn trả</th>
+                                    <th class="py-3 text-muted small text-uppercase fw-bold border-0">Ngày trả</th>
+                                    <th class="py-3 text-muted small text-uppercase fw-bold border-0">Trạng thái</th>
+                                    <th class="py-3 text-center text-muted small text-uppercase fw-bold border-0">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="history-container">
+                                {% for item in history %}
+                                <tr class="transition-hover-row"> 
+                                    <td class="ps-4 text-center">
+                                        {% if item.status == 'BORROWED' or item.status == 'OVERDUE' %}
+                                            <input class="form-check-input book-checkbox" type="checkbox" name="transaction_ids" value="{{ item.id }}" style="transform: scale(1.3); cursor: pointer;">
                                         {% else %}
-                                            <span class="badge bg-success px-3 py-2 rounded-pill shadow-sm">Đã trả</span>
+                                            <input class="form-check-input" type="checkbox" disabled style="opacity: 0.3; transform: scale(1.3);">
                                         {% endif %}
-                                    {% elif item.status == 'BORROWED' %}
-                                        <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm">Đang mượn</span>
-                                    {% elif item.status == 'PENDING' %}
-                                        <span class="badge bg-warning text-dark px-3 py-2 rounded-pill shadow-sm">Đang chờ duyệt</span>
-                                    {% elif item.status == 'CANCELLED' %}
-                                        <span class="badge bg-secondary px-3 py-2 rounded-pill shadow-sm">Đã hủy hẹn</span>
-                                    {% elif item.status == 'OVERDUE' %}
-                                        <span class="badge bg-danger px-3 py-2 rounded-pill shadow-sm">Quá hạn</span>
-                                    {% endif %}
-                                </td>
-                                
-                                <td class="text-center">
-                                    {% if item.status == 'BORROWED' or item.status == 'OVERDUE' %}
-                                        <a href="{% url 'return_book' item.id %}"
-                                           class="btn btn-warning btn-sm rounded-pill px-4 fw-bold shadow-sm text-white transition-hover custom-confirm"
-                                           data-message="Bạn chắc chắn muốn trả cuốn sách [{{ item.book.title }}] này chứ?">
-                                            Trả sách
-                                        </a>
-                                    {% elif item.status == 'PENDING' %}
-                                        <button class="btn btn-secondary btn-sm rounded-pill px-3 fw-bold shadow-sm" disabled style="opacity: 0.7;">
-                                            <i class="fas fa-clock me-1"></i>Chờ xác nhận...
-                                        </button>
-                                    {% elif item.status == 'CANCELLED' %}
-                                        <span class="text-muted small"><i class="fas fa-ban text-secondary me-1"></i>Đã hủy</span>
-                                    {% else %}
-                                        <span class="text-muted small"><i class="fas fa-check-double text-success me-1"></i>Xong</span>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% empty %}
-                            <tr>
-                                <td colspan="6" class="text-center py-5">
-                                    <div class="py-4">
-                                        <i class="fas fa-history fa-3x text-light mb-3"></i>
-                                        <p class="text-muted fs-5">Lịch sử trống. Bạn chưa mượn cuốn sách nào cả.</p>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                                    </td>
+                                    
+                                    <td class="py-3">
+                                        <div class="d-flex align-items-center">
+                                            <img src="{{ item.book.get_cover }}" alt="" style="width: 45px; height: 65px; object-fit: cover;" class="rounded me-3 border shadow-sm">
+                                            <div>
+                                                <div class="fw-bold text-dark">{{ item.book.title }}</div>
+                                                <small class="text-muted"><i class="far fa-user me-1"></i>{{ item.book.author|default:"Chưa rõ" }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="small text-secondary">{{ item.borrow_date|date:"d/m/Y"|default:"-" }}</td>
+                                    <td class="small">
+                                        <span class="{% if item.status == 'BORROWED' or item.status == 'OVERDUE' %}text-primary fw-bold{% else %}text-secondary{% endif %}">
+                                            {{ item.due_date|date:"d/m/Y"|default:"-" }}
+                                        </span>
+                                    </td>
+                                    <td class="small text-secondary">
+                                        {% if item.return_date %}
+                                            {{ item.return_date|date:"d/m/Y" }}
+                                        {% else %}
+                                            <span class="text-muted opacity-50">-</span>
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <td>
+                                        {% if item.status == 'RETURNED' %}
+                                            {% if item.is_late %}
+                                                <span class="badge bg-white border border-danger text-danger px-3 py-1 rounded-pill">Trả trễ</span>
+                                                <div class="mt-1 small text-danger fw-bold" style="font-size: 0.75rem;">
+                                                    <i class="fas fa-file-invoice-dollar me-1"></i>Phạt: {{ item.penalty_amount }}đ
+                                                </div>
+                                            {% else %}
+                                                <span class="badge bg-white border border-success text-success px-3 py-1 rounded-pill">Đã trả</span>
+                                            {% endif %}
+                                        {% elif item.status == 'BORROWED' %}
+                                            <span class="badge bg-white border border-primary text-primary px-3 py-1 rounded-pill">Đang mượn</span>
+                                        {% elif item.status == 'PENDING' %}
+                                            <span class="badge bg-white border border-warning text-warning px-3 py-1 rounded-pill">Chờ duyệt</span>
+                                        {% elif item.status == 'CANCELLED' %}
+                                            <span class="badge bg-light text-secondary border px-3 py-1 rounded-pill">Đã hủy</span>
+                                            <div class="mt-1 small text-muted fw-medium" style="font-size: 0.75rem;">
+                                                <i class="fas fa-info-circle me-1"></i>Bỏ hẹn ca {% if item.pickup_shift == 'SANG' %}Sáng{% else %}Chiều{% endif %}
+                                            </div>
+                                        {% elif item.status == 'OVERDUE' %}
+                                            <span class="badge bg-white border border-danger text-danger px-3 py-1 rounded-pill shadow-sm">Quá hạn</span>
+                                        {% endif %}
+                                    </td>
+                                    
+                                    <td class="text-center">
+                                        {% if item.status == 'BORROWED' or item.status == 'OVERDUE' %}
+                                            <a href="{% url 'return_book' item.id %}"
+                                               class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold transition-hover custom-confirm"
+                                               data-message="Bạn chắc chắn muốn báo trả cuốn sách [{{ item.book.title }}]? Vui lòng mang sách đến quầy sau khi xác nhận.">
+                                                Trả sách
+                                            </a>
+                                        {% elif item.status == 'PENDING' %}
+                                            <span class="text-warning small fw-medium"><i class="fas fa-spinner fa-spin me-1"></i>Chờ xử lý</span>
+                                        {% elif item.status == 'CANCELLED' %}
+                                            <span class="text-muted small opacity-75"><i class="fas fa-ban me-1"></i>Đã hủy</span>
+                                        {% else %}
+                                            <span class="text-success small fw-medium"><i class="fas fa-check-double me-1"></i>Hoàn tất</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="7" class="text-center py-5">
+                                        <div class="py-4">
+                                            <i class="fas fa-box-open fa-3x text-muted mb-3 opacity-25"></i>
+                                            <h5 class="fw-bold text-dark">Lịch sử trống</h5>
+                                            <p class="text-muted">Bạn chưa mượn cuốn sách nào từ thư viện cả.</p>
+                                            <a href="{% url 'book_list' %}" class="btn btn-primary rounded-pill px-4 mt-2">Đi mượn sách ngay</a>
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div id="floating-action-bar" class="position-fixed bottom-0 start-50 translate-middle-x mb-4 bg-white p-3 rounded-pill shadow-lg border border-primary" style="display: none; z-index: 1050; min-width: 320px;">
+                        <div class="d-flex justify-content-between align-items-center px-2">
+                            <span class="fw-bold text-dark me-4">Đã chọn: <span id="selected-count" class="text-primary fs-5">0</span> cuốn</span>
+                            <button type="submit" class="btn btn-primary rounded-pill fw-bold px-4 shadow-sm">
+                                <i class="fas fa-box-open me-2"></i>Trả sách ngay
+                            </button>
+                        </div>
+                    </div>
+                </form>
                 
                 <div id="history-scroll-trigger" 
                      data-url="{% url 'api_load_more_history' %}" 
@@ -121,11 +148,18 @@
                      data-has-next="{% if history.has_next %}true{% else %}false{% endif %}">
                 </div>
                 <div id="history-loading-spinner" class="text-center py-3" style="display: none;">
-                    <i class="fas fa-spinner fa-spin fa-2x text-primary"></i>
+                    <i class="fas fa-spinner fa-spin fa-2x text-primary opacity-50"></i>
                 </div>
 
             </div>
         </div>
     </div>
 </div>
+
+<style>
+    .transition-hover-row { transition: all 0.2s ease; }
+    .transition-hover-row:hover { background-color: #f8faff !important; }
+    .transition-hover { transition: all 0.2s ease; }
+    .transition-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(13, 110, 253, 0.15) !important; }
+</style>
 {% endblock %}

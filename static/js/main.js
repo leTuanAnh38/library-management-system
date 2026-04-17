@@ -348,3 +348,114 @@ document.addEventListener('DOMContentLoaded', function() {
             confirmModal.show();
         });
 });
+//THÊM SÁCH VÀO GIỎ (AJAX + LOADING)
+// Hàm chuẩn của Django để lấy mã CSRF Token bảo mật từ trình duyệt
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// 2. Hàm tạo Toast Thông báo trượt mượt mà
+function showModernToast(message, type = 'success') {
+    let container = document.getElementById('modern-toast-container');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'modern-toast-container';
+        // Vị trí cố định ở góc trên bên phải
+        container.style.cssText = 'position: fixed; top: 90px; right: 20px; z-index: 9999; display: flex; flex-direction: column; gap: 12px; pointer-events: none;';
+        document.body.appendChild(container);
+    }
+
+    const toast = document.createElement('div');
+    const isSuccess = type === 'success';
+    const icon = isSuccess ? 'fa-check-circle text-success' : 'fa-exclamation-circle text-danger';
+    const borderColor = isSuccess ? 'border-success' : 'border-danger';
+
+    // UI của thẻ thông báo
+    toast.className = `d-flex align-items-center bg-white shadow-lg rounded-4 p-3 border-start border-4 ${borderColor}`;
+    toast.style.cssText = 'min-width: 280px; max-width: 350px; transform: translateX(150%); opacity: 0; transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); pointer-events: auto;';
+
+    toast.innerHTML = `
+        <i class="fas ${icon} fs-3 me-3"></i>
+        <div class="text-dark lh-sm" style="font-size: 0.95rem;">${message}</div>
+    `;
+
+    container.appendChild(toast);
+
+    // Hiệu ứng trượt vào
+    requestAnimationFrame(() => {
+        toast.style.transform = 'translateX(0)';
+        toast.style.opacity = '1';
+    });
+
+    // Hiệu ứng trượt ra và tự xóa sau 3 giây
+    setTimeout(() => {
+        toast.style.transform = 'translateX(150%)';
+        toast.style.opacity = '0';
+        setTimeout(() => toast.remove(), 400); // Xóa element khỏi DOM
+    }, 3000);
+}
+
+// 3. Xử lý nút Thêm vào giỏ
+document.addEventListener("DOMContentLoaded", function() {
+    document.body.addEventListener('click', function(e) {
+        let btn = e.target.closest('.btn-add-to-cart');
+        if (!btn) return;
+
+        e.preventDefault();
+        let url = btn.getAttribute('data-url');
+        
+        let originalHTML = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+
+        const csrftoken = getCookie('csrftoken');
+
+        fetch(url, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(res => res.json())
+        .then(data => {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            
+            if(data.success) {
+                // Gọi Toast xanh báo thành công
+                showModernToast(`<b>${data.message}</b><br><small class="text-muted">Hiện có ${data.cart_count} cuốn trong giỏ.</small>`, 'success');
+                
+                // Cập nhật số vòng tròn đỏ trên Sidebar tự động
+                let badge = document.querySelector('a[href*="/cart/"] .badge');
+                if (badge) {
+                    badge.innerText = data.cart_count;
+                } else {
+                    let cartLink = document.querySelector('a[href*="/cart/"]');
+                    if (cartLink) {
+                        cartLink.innerHTML += ` <span class="badge bg-info rounded-pill float-end">${data.cart_count}</span>`;
+                    }
+                }
+            } else {
+                // Gọi Toast đỏ báo lỗi (ví dụ: quá 4 cuốn)
+                showModernToast(`<b>Từ chối:</b> ${data.message}`, 'error');
+            }
+        })
+        .catch(error => {
+            btn.innerHTML = originalHTML;
+            btn.disabled = false;
+            showModernToast('<b>Lỗi mạng:</b> Vui lòng kiểm tra kết nối và thử lại!', 'error');
+        });
+    });
+});

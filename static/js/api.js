@@ -90,80 +90,87 @@ function showSingleNotify(type, message) {
 }
 
 /* =================================================================
-   RENDER HTML SÁCH TRÀN VIỀN
+   RENDER HTML SÁCH TRÀN VIỀN (AJAX - ĐỒNG BỘ MODERN DASHBOARD)
    ================================================================= */
 function renderBookHTML(book, is_premium) {
     // Làm sạch dữ liệu đầu vào tránh XSS
     var safeTitle = escapeHTML(book.title);
     var safeAuthor = escapeHTML(book.author || 'Chưa rõ');
     var safePrice = escapeHTML(String(book.price));
+    var safeCategory = escapeHTML(book.category_name || '');
     
     // 1. Nhãn giá tiền (Sách VIP)
     var priceRibbon = (book.price && book.price > 0) 
-        ? `<div class="position-absolute bg-danger text-white px-3 py-1 fw-bold" style="top: 15px; left: 0; border-radius: 0 20px 20px 0; z-index: 2; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">${safePrice} VNĐ</div>` 
+        ? `<div class="position-absolute bg-danger text-white px-3 py-1 fw-bold small" style="top: 15px; left: 0; border-radius: 0 20px 20px 0; z-index: 2; box-shadow: 2px 2px 10px rgba(220, 53, 69, 0.3);">${safePrice} VNĐ</div>` 
         : '';
     
     // 2. Trạng thái số lượng
     var stockHtml = book.quantity > 0 
-        ? `<strong class="text-success">Có sẵn</strong>` 
-        : `<strong class="text-danger">Hết sách</strong>`;
+        ? `<span class="text-success fw-bold"><i class="fas fa-check-circle me-1"></i>Có sẵn</span>` 
+        : `<span class="text-danger fw-bold"><i class="fas fa-times-circle me-1"></i>Hết sách</span>`;
+        
+    var categoryHtml = safeCategory 
+        ? `<span class="badge bg-light text-secondary border-0 px-2 py-1">${safeCategory}</span>` 
+        : '';
     
     // 3. Nút mượn sách & Form Modal
     var actionBtn = '';
     var modalHtml = '';
     var csrfToken = getCSRFToken();
+    var todayString = new Date().toISOString().split('T')[0];
 
     if (book.btn_status === 'PENDING') {
-        actionBtn = `<button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled" style="opacity: 0.85;"><i class="fas fa-clock me-1"></i>CHỜ XÁC NHẬN</button>`;
+        actionBtn = `<button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-none disabled" style="opacity: 0.8;"><i class="fas fa-spinner fa-spin me-1"></i>CHỜ XÁC NHẬN</button>`;
     } else if (book.btn_status === 'BORROWED') {
-        actionBtn = `<button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 shadow-sm disabled">ĐANG MƯỢN</button>`;
+        actionBtn = `<button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 disabled shadow-none">ĐANG GIỮ SÁCH</button>`;
     } else if (book.btn_status === 'OUT_OF_STOCK' || book.quantity <= 0) {
-        actionBtn = `<button class="btn btn-danger rounded-pill fw-bold w-100 py-2 shadow-sm disabled">HẾT SÁCH</button>`;
+        actionBtn = `<button class="btn btn-light border rounded-pill fw-bold w-100 py-2 disabled text-muted">TẠM HẾT</button>`;
     } else { 
-        // TRƯỜNG HỢP CÒN SÁCH -> BẬT MODAL CHỌN CA/NGÀY LẤY SÁCH (CHO CẢ SÁCH FREE VÀ VIP)
-        actionBtn = `<button type="button" class="btn btn-primary w-100 fw-bold rounded-pill text-white shadow-sm py-2" data-bs-toggle="modal" data-bs-target="#borrowModal${book.id}">MƯỢN SÁCH</button>`;
+        // TRƯỜNG HỢP CÒN SÁCH -> TẠO 2 NÚT & BẬT MODAL
+        actionBtn = `
+        <div class="d-flex gap-2">
+            <button type="button" class="btn btn-outline-primary fw-bold rounded-pill shadow-sm py-2 btn-add-to-cart transition-hover w-50" data-url="/api/cart/add/${book.id}/" title="Thêm vào giỏ sách">
+                <i class="fas fa-cart-plus"></i> Giỏ
+            </button>
+            <button type="button" class="btn btn-primary fw-bold rounded-pill text-white shadow-sm py-2 transition-hover w-50" data-bs-toggle="modal" data-bs-target="#borrowModal${book.id}" title="Mượn sách này ngay">
+                Mượn ngay
+            </button>
+        </div>`;
         
         var paymentHtml = '';
-        var modalHeaderBg = 'bg-primary';
-        var modalHeaderClass = 'text-white';
-        var btnCloseClass = 'btn-close-white';
-        var btnSubmitClass = 'btn-primary';
 
         // Phân nhánh logic thanh toán nếu sách VIP
         if (book.price && book.price > 0) {
-            modalHeaderBg = 'bg-warning';
-            modalHeaderClass = 'text-dark';
-            btnCloseClass = '';
-            btnSubmitClass = 'btn-warning text-dark';
-
             paymentHtml = `
-                <h3 class="text-danger fw-bold mb-4 border-top pt-4">${safePrice} VNĐ</h3>
-                <p class="text-start fw-bold mb-2">Chọn phương thức thanh toán phí:</p>
-                <label class="w-100 text-start border p-3 rounded-3 mb-3 cursor-pointer payment-option selected-payment shadow-sm transition">
-                    <div class="form-check d-flex align-items-center m-0">
-                        <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="CASH" data-book-id="${book.id}" required checked style="transform: scale(1.3);">
-                        <div>
-                            <div class="fw-bold text-dark"><i class="fas fa-money-bill-wave text-success me-2"></i> Thanh toán tại quầy</div>
-                            <small class="text-muted">Đóng tiền mặt trực tiếp cho Thủ thư.</small>
+                <div class="mt-4 pt-4 border-top">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="fw-bold text-dark">Phí dịch vụ:</span>
+                        <span class="h5 fw-bold text-danger mb-0">${safePrice} VNĐ</span>
+                    </div>
+                    
+                    <div class="payment-methods">
+                        <div class="form-check p-0 mb-2">
+                            <input class="btn-check" type="radio" name="payment_method" id="payCashJS${book.id}" value="CASH" checked onchange="document.getElementById('qrCodeSectionJS${book.id}').style.display='none'">
+                            <label class="btn btn-outline-secondary border-dashed w-100 text-start p-3 rounded-3" for="payCashJS${book.id}">
+                                <i class="fas fa-wallet me-2 text-success"></i> Tiền mặt tại quầy
+                            </label>
+                        </div>
+                        <div class="form-check p-0">
+                            <input class="btn-check" type="radio" name="payment_method" id="payBankJS${book.id}" value="BANK" onchange="document.getElementById('qrCodeSectionJS${book.id}').style.display='block'">
+                            <label class="btn btn-outline-secondary border-dashed w-100 text-start p-3 rounded-3" for="payBankJS${book.id}">
+                                <i class="fas fa-qrcode me-2 text-primary"></i> Chuyển khoản QR
+                            </label>
                         </div>
                     </div>
-                </label>
-                <label class="w-100 text-start border p-3 rounded-3 cursor-pointer payment-option shadow-sm transition">
-                    <div class="form-check d-flex align-items-center m-0">
-                        <input class="form-check-input me-3 radio-payment-toggle" type="radio" name="payment_method" value="BANK" data-book-id="${book.id}" required style="transform: scale(1.3);">
-                        <div>
-                            <div class="fw-bold text-dark"><i class="fas fa-qrcode text-primary me-2"></i> Chuyển khoản (Mã QR)</div>
-                            <small class="text-muted">Chuyển khoản trước, Thủ thư sẽ kiểm tra.</small>
-                        </div>
-                    </div>
-                </label>
-                <div id="qrCodeSection${book.id}" class="qr-box mt-3" style="display: none;">
-                    <div class="p-3 bg-light border border-warning rounded-3 text-center shadow-sm">
-                        <p class="fw-bold text-dark mb-2">Quét mã MoMo/Ngân hàng</p>
-                        <img src="/static/img/qr.png" alt="Mã QR" class="img-fluid rounded border mb-2" style="max-width: 160px;">
-                        <div class="small text-dark mt-2 bg-white p-2 rounded border border-dashed">
-                            Nội dung chuyển khoản:<br>
-                            <strong class="text-danger fs-6">Sách ${book.id} - MSSV của bạn</strong>
+
+                    <div id="qrCodeSectionJS${book.id}" class="mt-3 animate__animated animate__fadeIn" style="display: none;">
+                        <div class="p-3 bg-light border border-primary rounded-3 text-center shadow-sm">
+                            <p class="fw-bold text-dark mb-2">Quét mã MoMo/Ngân hàng</p>
+                            <img src="/static/img/qr.png" alt="Mã QR Thanh Toán" class="img-fluid rounded border mb-2" style="max-width: 140px;">
+                            <div class="small text-dark mt-2 bg-white p-2 rounded border border-dashed">
+                                Nội dung chuyển khoản:<br>
+                                <strong class="text-danger fs-6">Sách ${book.id} - Ghi rõ MSSV</strong>
+                            </div>
                         </div>
                     </div>
                 </div>`;
@@ -171,83 +178,113 @@ function renderBookHTML(book, is_premium) {
             paymentHtml = `<input type="hidden" name="payment_method" value="FREE">`;
         }
 
-        // Render toàn bộ Modal giống hệt book_card.html
-        var todayString = new Date().toISOString().split('T')[0];
+        // Render toàn bộ Modal MỚI
         modalHtml = `
-        <div class="modal fade payment-modal borrow-modal" id="borrowModal${book.id}" tabindex="-1" aria-hidden="true">
+        <div class="modal fade borrow-modal" id="borrowModal${book.id}" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content" style="border-radius: 20px; border: none;">
-                    <div class="modal-header ${modalHeaderBg} border-0" style="border-radius: 20px 20px 0 0;">
-                        <h5 class="modal-title fw-bold ${modalHeaderClass}">
-                            <i class="fas fa-calendar-check me-2"></i> Đăng ký lịch nhận sách
+                <div class="modal-content border-0 shadow-lg rounded-5 overflow-hidden">
+                    <div class="modal-header border-0 p-4 pb-0">
+                        <h5 class="modal-title fw-bold text-dark">
+                            <i class="fas fa-calendar-alt text-primary me-2"></i>Lịch hẹn lấy sách
                         </h5>
-                        <button type="button" class="btn-close ${btnCloseClass}" data-bs-dismiss="modal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                     </div>
+
                     <form method="POST" action="${book.borrow_url}">
                         <input type="hidden" name="csrfmiddlewaretoken" value="${csrfToken}">
-                        <div class="modal-body p-4 text-center">
-                            <h6 class="fw-bold mb-4 text-dark">${safeTitle}</h6>
-                            
-                            <div class="bg-light p-3 rounded-3 mb-4 border text-start shadow-sm">
-                                <label class="fw-bold mb-2 text-dark"><i class="far fa-clock text-primary me-2"></i>Thời gian sẽ đến lấy sách:</label>
-                                <div class="row g-2">
-                                    <div class="col-6">
-                                        <input type="date" name="pickup_date" class="form-control" min="${todayString}" required>
-                                    </div>
-                                    <div class="col-6">
-                                        <select name="pickup_shift" class="form-select" required>
-                                            <option value="" disabled selected>Chọn ca...</option>
-                                            <option value="SANG">Sáng (07:30 - 11:30)</option>
-                                            <option value="CHIEU">Chiều (13:00 - 17:00)</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <small class="text-danger mt-2 d-block"><i class="fas fa-exclamation-triangle me-1"></i>Hệ thống sẽ tự động hủy đơn nếu bạn không đến đúng hạn.</small>
+                        <div class="modal-body p-4">
+                            <div class="mb-4 text-center">
+                                <img src="${book.cover_image}" class="rounded-3 shadow-sm mb-3 border" style="width: 80px; height: 110px; object-fit: cover;">
+                                <h6 class="fw-bold text-dark">${safeTitle}</h6>
                             </div>
                             
+                            <div class="mb-4">
+                                <label class="form-label small fw-bold text-muted text-uppercase">1. Chọn ngày đến quầy</label>
+                                <div class="input-group shadow-sm rounded-3">
+                                    <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="far fa-calendar-check text-primary"></i></span>
+                                    <input type="date" name="pickup_date" class="form-control border-start-0 rounded-end-3 py-2" min="${todayString}" required>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label small fw-bold text-muted text-uppercase">2. Chọn buổi (Ca trực)</label>
+                                <div class="row g-3">
+                                    <div class="col-6">
+                                        <input type="radio" class="btn-check" name="pickup_shift" id="shiftSangJS${book.id}" value="SANG" required>
+                                        <label class="btn btn-outline-info w-100 py-3 rounded-4 border-2 d-flex flex-column align-items-center" for="shiftSangJS${book.id}">
+                                            <i class="fas fa-sun mb-2 fs-4"></i>
+                                            <span class="fw-bold">Ca Sáng</span>
+                                            <small class="opacity-75">07:30 - 11:30</small>
+                                        </label>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="radio" class="btn-check" name="pickup_shift" id="shiftChieuJS${book.id}" value="CHIEU" required>
+                                        <label class="btn btn-outline-warning w-100 py-3 rounded-4 border-2 d-flex flex-column align-items-center" for="shiftChieuJS${book.id}">
+                                            <i class="fas fa-cloud-sun mb-2 fs-4"></i>
+                                            <span class="fw-bold text-dark">Ca Chiều</span>
+                                            <small class="text-dark opacity-75">13:00 - 17:00</small>
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="alert alert-warning border border-warning rounded-4 small mb-0 d-flex align-items-center bg-white text-dark shadow-sm">
+                                <i class="fas fa-info-circle me-3 fs-5 text-warning"></i>
+                                <span>Đơn sẽ <b>tự động hủy</b> nếu bạn không đến đúng ngày & ca đã chọn.</span>
+                            </div>
+
                             ${paymentHtml}
-                            
                         </div>
-                        <div class="modal-footer border-0 pb-4 pt-0 justify-content-center">
-                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
-                            <button type="submit" class="btn ${btnSubmitClass} rounded-pill px-5 fw-bold shadow-sm">Xác nhận đặt sách</button>
+
+                        <div class="modal-footer border-0 p-4 pt-0">
+                            <button type="submit" class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow-lg transition-hover">
+                                XÁC NHẬN ĐĂNG KÝ
+                            </button>
                         </div>
                     </form>
                 </div>
             </div>
         </div>`;
         
-        // Cập nhật modal vào DOM
+        // Xóa modal cũ (nếu có) và gắn cái mới vào <body>
         $('#borrowModal' + book.id).remove();
         $('body').append(modalHtml);
     }
 
     var heartClass = book.is_wished ? 'fas text-danger' : 'far text-muted';
     
+    // TRẢ VỀ HTML THẺ SÁCH HOÀN CHỈNH
     return `
         <div class="col-md-6 col-lg-4 d-flex align-items-stretch animate__animated animate__fadeInUp">
-            <div class="bg-white border rounded-4 shadow-sm w-100 d-flex flex-column overflow-hidden position-relative transition-hover">
+            <div class="bg-white border-0 shadow-sm rounded-4 w-100 d-flex flex-column overflow-hidden position-relative transition-hover">
+                
                 ${priceRibbon}
                 
-                <div class="text-center bg-light border-bottom" style="height: 240px;">
+                <div class="text-center bg-light" style="height: 260px; overflow: hidden;">
                     <a href="${book.url}" class="d-block h-100">
-                        <img src="${book.cover_image}" class="h-100 w-100" style="object-fit: cover; object-position: top;">
+                        <img src="${book.cover_image}" class="h-100 w-100 transition-zoom" style="object-fit: cover; object-position: top;">
                     </a>
                 </div>
-                
+
                 <div class="p-4 text-center d-flex flex-column flex-grow-1">
-                    <h5 class="fw-bold text-dark text-truncate-2 mb-3">
-                        <a href="${book.url}" class="text-dark text-decoration-none">${safeTitle}</a>
-                    </h5>
+                    <h6 class="fw-bold text-dark text-truncate-2 mb-2" style="min-height: 44px;">
+                        <a href="${book.url}" class="text-dark text-decoration-none hover-primary">${safeTitle}</a>
+                    </h6>
                     
-                    <p class="small text-muted mb-2">Tác giả: <strong class="text-dark">${safeAuthor}</strong></p>
-                    <p class="small text-muted mb-2">Số lượng còn lại: <strong class="text-dark">${book.quantity}</strong></p>
-                    <p class="small text-muted mb-4">Trạng thái: ${stockHtml}</p>
+                    <div class="small text-muted mb-3">
+                        <div class="mb-1"><i class="far fa-user me-1"></i> ${safeAuthor}</div>
+                        ${categoryHtml}
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-4 mt-auto p-2 bg-light rounded-3">
+                        <div class="small text-muted">Còn lại: <strong class="text-dark">${book.quantity}</strong></div>
+                        <div class="small">${stockHtml}</div>
+                    </div>
                     
-                    <div class="mt-auto w-100">${actionBtn}</div>
+                    <div class="w-100">${actionBtn}</div>
                     
-                    <div class="text-center mt-3 pt-2">
-                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none btn-toggle-wishlist" data-url="${book.wishlist_api_url}" data-book-id="${book.id}">
+                    <div class="mt-3">
+                        <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted btn-toggle-wishlist" data-url="${book.wishlist_api_url}" data-book-id="${book.id}">
                             <i class="${heartClass} fa-heart fs-5 heart-icon-${book.id}"></i>
                         </button>
                     </div>
@@ -267,8 +304,6 @@ if (typeof $ !== 'undefined' && $.ajaxSetup) {
         }
     });
 }
-
-
 /* =================================================================
    CHƯƠNG TRÌNH CHÍNH (CHẠY KHI TRANG ĐÃ LOAD XONG)
    ================================================================= */
@@ -291,6 +326,85 @@ $(document).ready(function() {
 
     adjustMainMinHeight();
     $(window).on('resize', adjustMainMinHeight);
+
+    function updateFloatingBar() {
+        var count = $('.book-checkbox:checked').length;
+        if (count > 0) {
+            $('#selected-count').text(count);
+            $('#floating-action-bar').fadeIn(200).css('display', 'block !important'); 
+        } else {
+            $('#floating-action-bar').fadeOut(200);
+        }
+    }
+// Khi người dùng bấm vào từng Checkbox của sách
+    $(document).on('change', '.book-checkbox', function() {
+        updateFloatingBar();
+        // Cập nhật trạng thái của nút "Chọn tất cả"
+        var allBoxes = $('.book-checkbox:not(:disabled)').length;
+        var checkedBoxes = $('.book-checkbox:checked').length;
+        if ($('#selectAll').length) {
+            $('#selectAll').prop('checked', allBoxes > 0 && allBoxes === checkedBoxes);
+        }
+    });
+
+    // Khi người dùng bấm vào nút "Chọn tất cả"
+    $(document).on('change', '#selectAll', function() {
+        var isChecked = $(this).is(':checked');
+        $('.book-checkbox:not(:disabled)').prop('checked', isChecked);
+        updateFloatingBar();
+    });
+
+    // =================================================================
+    // HÀM TẠO POPUP XÁC NHẬN SIÊU ĐẸP (Thay thế confirm mặc định)
+    // =================================================================
+    function showBeautifulConfirm(message, callback) {
+        $('#beautifulConfirmModal').remove(); 
+        let html = `
+        <div class="modal fade" id="beautifulConfirmModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-sm">
+                <div class="modal-content border-0 shadow text-center p-4" style="border-radius: 20px;">
+                    <div class="mb-3"><i class="fas fa-question-circle text-primary" style="font-size: 3.5rem;"></i></div>
+                    <h6 class="fw-bold text-dark mb-4">${message}</h6>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" class="btn btn-primary text-white rounded-pill px-4 fw-bold" id="btn-beautiful-yes">Xác nhận</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+        $('body').append(html);
+        let modal = new bootstrap.Modal(document.getElementById('beautifulConfirmModal'));
+        modal.show();
+        
+        // Khi bấm xác nhận thì mới chạy hành động tiếp theo
+        $('#btn-beautiful-yes').off('click').on('click', function() {
+            modal.hide();
+            callback();
+        });
+    }
+
+    // =================================================================
+    // Bắt sự kiện khi bấm nút Trả sách hàng loạt (ĐÃ SỬA THÀNH MODAL ĐẸP)
+    // =================================================================
+    $(document).on('submit', '#batchReturnForm', function(e) {
+        e.preventDefault(); // CHẶN form tự động gửi đi ngay lập tức
+        var form = this;
+        var count = $('.book-checkbox:checked').length;
+        
+        // 1. Thay thế alert() bằng hàm thông báo vàng có sẵn của bạn
+        if (count === 0) {
+            showSingleNotify('warning', 'Vui lòng chọn ít nhất 1 cuốn sách!');
+            return false;
+        }
+        
+        // 2. Thay thế confirm() bằng Popup bo tròn sang trọng
+        showBeautifulConfirm(`Bạn có chắc chắn muốn gửi yêu cầu báo trả ${count} cuốn sách đã chọn không?`, function() {
+            form.submit(); // Khi người dùng bấm nút "Xác nhận" màu xanh thì mới thực sự gửi form
+        });
+    });
+    // =======================================================
+    // KẾT THÚC ĐOẠN CODE CHECKBOX
+    // =======================================================
 
     // 1. CHUYỂN ĐỔI CHẾ ĐỘ XEM/SỬA PROFILE
     $('#btn-edit-toggle').on('click', function() {
@@ -649,7 +763,7 @@ $(document).ready(function() {
     if ($('#unread-count-sidebar').length > 0) {
         setInterval(checkNewNotifications, 30000); 
     }
-
+    
     // 9. INFINITE SCROLL (THÔNG BÁO, LỊCH SỬ, YÊU THÍCH)
     // Bỏ hàm throttle để tránh lỗi "hụt nhịp" ở đáy trang
     $(window).scroll(function() {
@@ -706,12 +820,12 @@ $(document).ready(function() {
             }
         }
 
-        // B. Cuộn Lịch Sử Mượn
+// B. Cuộn Lịch Sử Mượn (Đã đồng bộ giao diện Minimal Dashboard)
         var histTrigger = $('#history-scroll-trigger');
         if (histTrigger.length && histTrigger.data('has-next') === true) {
-            // Tăng từ 50 lên 300
+            // Không được dùng $(window).on('scroll') ở đây nữa vì đã nằm trong $(window).scroll rồi
             if ($(window).scrollTop() + $(window).height() >= $(document).height() - 300) {
-                if (histTrigger.hasClass('loading')) return;
+                if (histTrigger.hasClass('loading') || histTrigger.data('has-next') === false) return;
                 histTrigger.addClass('loading');
                 $('#history-loading-spinner').show();
 
@@ -724,50 +838,73 @@ $(document).ready(function() {
                             var html = '';
                             response.data.forEach(function(item) {
                                 var safeTitle = escapeHTML(item.book_title);
-                                var safeAuthor = escapeHTML(item.book_author);
+                                var safeAuthor = escapeHTML(item.book_author || 'Chưa rõ');
+                                
+                                // Lấy ID giao dịch từ return_url để bỏ vào value của Checkbox
+                                var cbValue = item.return_url ? item.return_url.split('/').filter(Boolean).pop() : ''; 
+                                var checkboxHtml = (item.status === 'BORROWED' || item.status === 'OVERDUE') 
+                                    ? `<input class="form-check-input book-checkbox" type="checkbox" name="transaction_ids" value="${cbValue}" style="transform: scale(1.3); cursor: pointer;">`
+                                    : `<input class="form-check-input" type="checkbox" disabled style="opacity: 0.3; transform: scale(1.3);">`;
+
                                 var statusHtml = '';
+                                var actionHtml = '';
                                 
                                 if (item.status === 'RETURNED') {
                                     if (item.is_late) {
-                                        statusHtml = `<span class="badge bg-danger px-3 py-2 rounded-pill shadow-sm">Trả trễ</span>
-                                                      <div class="mt-1 small text-danger fw-bold"><i class="fas fa-hand-holding-usd me-1"></i>Phạt: ${item.penalty_amount} VNĐ</div>`;
+                                        statusHtml = `<span class="badge bg-white border border-danger text-danger px-3 py-1 rounded-pill">Trả trễ</span>
+                                                      <div class="mt-1 small text-danger fw-bold" style="font-size: 0.75rem;"><i class="fas fa-file-invoice-dollar me-1"></i>Phạt: ${item.penalty_amount}đ</div>`;
                                     } else {
-                                        statusHtml = `<span class="badge bg-success px-3 py-2 rounded-pill shadow-sm">Đã trả</span>`;
+                                        statusHtml = `<span class="badge bg-white border border-success text-success px-3 py-1 rounded-pill">Đã trả</span>`;
                                     }
                                 } else if (item.status === 'BORROWED') {
-                                    statusHtml = `<span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm">Đang mượn</span>`;
+                                    statusHtml = `<span class="badge bg-white border border-primary text-primary px-3 py-1 rounded-pill">Đang mượn</span>`;
                                 } else if (item.status === 'PENDING') {
-                                    statusHtml = `<span class="badge bg-warning text-dark px-3 py-2 rounded-pill shadow-sm">Đang chờ duyệt</span>`;
+                                    statusHtml = `<span class="badge bg-white border border-warning text-warning px-3 py-1 rounded-pill">Chờ duyệt</span>`;
+                                } else if (item.status === 'CANCELLED') {
+                                    // Xác định ca trực từ API (nếu API của bạn trả về trường pickup_shift)
+                                var shiftText = (item.pickup_shift === 'SANG') ? 'Sáng' : 'Chiều';
+                                
+                                statusHtml = `<span class="badge bg-light text-secondary border px-3 py-1 rounded-pill">Đã hủy</span>
+                                            <div class="mt-1 small text-muted fw-medium" style="font-size: 0.75rem;">
+                                                <i class="fas fa-info-circle me-1"></i>Bỏ hẹn ca ${shiftText}
+                                            </div>`;
                                 } else {
-                                    statusHtml = `<span class="badge bg-dark px-3 py-2 rounded-pill shadow-sm">Quá hạn</span>`;
+                                    statusHtml = `<span class="badge bg-white border border-danger text-danger px-3 py-1 rounded-pill shadow-sm">Quá hạn</span>`;
                                 }
 
-                                var actionHtml = (item.status === 'BORROWED' || item.status === 'OVERDUE') 
-                                    ? `<a href="${item.return_url}" class="btn btn-warning btn-sm rounded-pill px-4 fw-bold shadow-sm text-white transition-hover custom-confirm" data-message="Bạn chắc chắn muốn trả cuốn sách [${safeTitle}] này chứ?">Trả sách</a>`
-                                    : (item.status === 'PENDING') 
-                                    ? `<button class="btn btn-secondary btn-sm rounded-pill px-3 fw-bold shadow-sm" disabled style="opacity: 0.7;"><i class="fas fa-clock me-1"></i>Chờ xác nhận...</button>`
-                                    : `<span class="text-muted small"><i class="fas fa-check-double text-success me-1"></i>Xong</span>`;
+                                if (item.status === 'BORROWED' || item.status === 'OVERDUE') {
+                                    actionHtml = `<a href="${item.return_url}" class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold transition-hover custom-confirm" data-message="Bạn chắc chắn muốn báo trả cuốn sách [${safeTitle}]? Vui lòng mang sách đến quầy sau khi xác nhận.">Trả sách</a>`;
+                                } else if (item.status === 'PENDING') {
+                                    actionHtml = `<span class="text-warning small fw-medium"><i class="fas fa-spinner fa-spin me-1"></i>Chờ xử lý</span>`;
+                                } else if (item.status === 'CANCELLED') {
+                                    actionHtml = `<span class="text-muted small opacity-75"><i class="fas fa-ban me-1"></i>Đã hủy</span>`;
+                                } else {
+                                    actionHtml = `<span class="text-success small fw-medium"><i class="fas fa-check-double me-1"></i>Hoàn tất</span>`;
+                                }
                                 
-                                var dateColor = item.status === 'BORROWED' ? 'text-primary fw-bold' : '';
+                                var dateColor = (item.status === 'BORROWED' || item.status === 'OVERDUE') ? 'text-primary fw-bold' : 'text-secondary';
+                                var returnDateHtml = item.return_date ? item.return_date : `<span class="text-muted opacity-50">-</span>`;
 
                                 html += `
-                                <tr class="animate__animated animate__fadeIn">
-                                    <td class="ps-4">
+                                <tr class="transition-hover-row animate__animated animate__fadeIn">
+                                    <td class="ps-4 text-center">${checkboxHtml}</td>
+                                    <td class="py-3">
                                         <div class="d-flex align-items-center">
-                                            <img src="${item.cover_image}" alt="" style="width: 45px; height: 60px; object-fit: cover;" class="rounded me-3 border shadow-sm">
+                                            <img src="${item.cover_image}" alt="" style="width: 45px; height: 65px; object-fit: cover;" class="rounded me-3 border shadow-sm">
                                             <div>
                                                 <div class="fw-bold text-dark">${safeTitle}</div>
-                                                <small class="text-muted italic">Tác giả: ${safeAuthor}</small>
+                                                <small class="text-muted"><i class="far fa-user me-1"></i>${safeAuthor}</small>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="small">${item.borrow_date}</td>
-                                    <td class="small"><span class="${dateColor}">${item.due_date}</span></td>
-                                    <td class="small">${item.return_date}</td>
+                                    <td class="small text-secondary">${item.borrow_date || '-'}</td>
+                                    <td class="small"><span class="${dateColor}">${item.due_date || '-'}</span></td>
+                                    <td class="small text-secondary">${returnDateHtml}</td>
                                     <td>${statusHtml}</td>
                                     <td class="text-center">${actionHtml}</td>
                                 </tr>`;
                             });
+                            
                             $('#history-container').append(html);
                             
                             if (response.has_next) {
@@ -776,13 +913,15 @@ $(document).ready(function() {
                                 histTrigger.data('has-next', false);
                             }
                             $('#history-loading-spinner').hide();
-                            adjustMainMinHeight();
+                            
+                            if (typeof adjustMainMinHeight === "function") {
+                                adjustMainMinHeight();
+                            }
                         }
                     }
                 });
             }
         }
-
         // C. Cuộn Sách Yêu Thích
         var wishTrigger = $('#wishlist-scroll-trigger');
         if (wishTrigger.length && wishTrigger.data('has-next') === true) {
