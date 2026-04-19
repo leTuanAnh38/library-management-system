@@ -79,7 +79,7 @@ def profile_view(request):
     # Tính tổng tiền đang chờ duyệt (nếu có)
     processing_amount = processing_penalties.aggregate(Sum('amount'))['amount__sum'] or 0
     
-    return render(request, 'core/profile.html', {
+    return render(request, 'core/user/profile.html', {
         'user_reviews': user_reviews,
         'has_unpaid': has_unpaid,
         'has_processing': has_processing,
@@ -139,7 +139,7 @@ def wishlist_view(request):
     borrowed_book_ids = BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True)
     pending_book_ids = BorrowTransaction.objects.filter(user=request.user, status='PENDING').values_list('book_id', flat=True)
     
-    return render(request, 'core/wishlist.html', {
+    return render(request, 'core/user/wishlist.html', {
         'wishlist_items': items, 
         'borrowed_book_ids': list(borrowed_book_ids),
         'pending_book_ids': list(pending_book_ids)
@@ -164,4 +164,4 @@ def notification_list(request):
     if notifications:
         Notification.objects.filter(id__in=[n.id for n in notifications], status='UNREAD').update(status='READ')
     
-    return render(request, 'core/notifications.html', {'notifications': notifications})
+    return render(request, 'core/user/notifications.html', {'notifications': notifications})

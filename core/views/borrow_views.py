@@ -152,7 +152,7 @@ def view_cart(request):
     cart_ids = request.session.get('borrow_cart', [])
     books = Book.objects.filter(id__in=cart_ids)
     total_fee = sum(book.price for book in books if book.price)
-    return render(request, 'core/cart.html', {'books': books, 'total_fee': total_fee})
+    return render(request, 'core/user/cart.html', {'books': books, 'total_fee': total_fee})
 
 @login_required(login_url='login')
 def remove_from_cart(request, book_id):
@@ -233,7 +233,7 @@ def borrow_history(request):
     except (PageNotAnInteger, EmptyPage):
         history = paginator.page(1)
         
-    return render(request, 'core/borrow_history.html', {'history': history})
+    return render(request, 'core/user/borrow_history.html', {'history': history})
 
 # ==========================================
 # 3. NGHIỆP VỤ YÊU CẦU TRẢ SÁCH (Dành cho Sinh viên)

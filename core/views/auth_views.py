@@ -28,7 +28,7 @@ def register(request):
     else:
         form = CustomUserCreationForm()
     
-    return render(request, 'core/register.html', {'form': form})
+    return render(request, 'core/auth/register.html', {'form': form})
 
 def user_login(request):
     # 1. Kiểm tra nếu đã đăng nhập từ trước
@@ -67,7 +67,7 @@ def user_login(request):
     else:
         form = AuthenticationForm()
     
-    return render(request, 'core/login.html', {'form': form})
+    return render(request, 'core/auth/login.html', {'form': form})
 
 @login_required(login_url='login') 
 def change_password(request):
@@ -83,4 +83,4 @@ def change_password(request):
     else:
         form = PasswordChangeForm(request.user)
     
-    return render(request, 'core/change_password.html', {'form': form})
+    return render(request, 'core/auth/change_password.html', {'form': form})
