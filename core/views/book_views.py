@@ -43,7 +43,7 @@ def home(request):
         borrowed_book_ids = BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True)
         pending_book_ids = BorrowTransaction.objects.filter(user=request.user, status='PENDING').values_list('book_id', flat=True)
 
-    return render(request, 'core/index.html', {
+    return render(request, 'core/pages/index.html', {
         'featured_books': featured_books,
         'recommended_books': recommended_books, 
         'books': books,
@@ -57,7 +57,7 @@ def home(request):
 
 def guide_view(request):
     """Trang hướng dẫn sử dụng thư viện cho sinh viên"""
-    return render(request, 'core/guide.html')
+    return render(request, 'core/pages/guide.html')
 
 def contact_view(request):
     if request.method == 'POST':
@@ -85,7 +85,7 @@ def contact_view(request):
 
         return redirect('contact')
         
-    return render(request, 'core/contact.html')
+    return render(request, 'core/pages/contact.html')
 
 
 # ==========================================
@@ -145,7 +145,7 @@ def book_list(request):
         'borrowed_book_ids': list(borrowed_book_ids),
         'pending_book_ids': list(pending_book_ids) 
     }
-    return render(request, 'core/book_list.html', context)
+    return render(request, 'core/books/book_list.html', context)
 
 
 def premium_book_list(request):
@@ -177,7 +177,7 @@ def premium_book_list(request):
             user=request.user
         ).values_list('book_id', flat=True)
         
-    return render(request, 'core/premium_books.html', {
+    return render(request, 'core/books/premium_books.html', {
         'books': books, 
         'borrowed_book_ids': list(borrowed_book_ids),
         'pending_book_ids': list(pending_book_ids),
@@ -222,7 +222,7 @@ def book_detail(request, book_id):
             status='PENDING'
         ).values_list('book_id', flat=True)
     
-    return render(request, 'core/book_detail.html', {
+    return render(request, 'core/books/book_detail.html', {
         'book': book,
         'reviews': reviews,
         'recommended_books': recommended_books, 
@@ -278,7 +278,7 @@ def event_list(request):
     if request.user.is_authenticated:
         registered_event_ids = EventRegistration.objects.filter(user=request.user).values_list('event_id', flat=True)
 
-    return render(request, 'core/event_list.html', {
+    return render(request, 'core/events/event_list.html', {
         'events': events,
         'registered_event_ids': registered_event_ids,
         'now': timezone.now()
