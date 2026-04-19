@@ -319,6 +319,37 @@ class Chat(TimeStampedModel):
         verbose_name = 'Tin nhắn Chat'
         verbose_name_plural = 'Lịch sử Tin nhắn'
 
+class Event(models.Model):
+    title = models.CharField(max_length=255, verbose_name="Tên sự kiện")
+    cover_image = models.ImageField(upload_to='events/covers/', null=True, blank=True, verbose_name="Ảnh bìa")
+    content = models.TextField(verbose_name="Nội dung chi tiết")
+    start_date = models.DateTimeField(verbose_name="Thời gian bắt đầu")
+    end_date = models.DateTimeField(verbose_name="Thời gian kết thúc")
+    location = models.CharField(max_length=255, verbose_name="Địa điểm tổ chức")
+    max_participants = models.PositiveIntegerField(default=100, verbose_name="Giới hạn người tham gia (0 = Không giới hạn)")
+    is_active = models.BooleanField(default=True, verbose_name="Đang mở")
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-start_date']
+
+    def __str__(self):
+        return self.title
+
+    def registered_count(self):
+        return self.eventregistration_set.count()
+
+class EventRegistration(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    event = models.ForeignKey(Event, on_delete=models.CASCADE)
+    registered_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('user', 'event') # Mỗi người chỉ được đăng ký 1 lần/sự kiện
+
+    def __str__(self):
+        return f"{self.user.username} - {self.event.title}"
+
 # core/models.py
 
 @receiver(post_save, sender=Book)

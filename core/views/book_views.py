@@ -7,7 +7,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
-
+from django.utils import timezone
+from core.models import Event, EventRegistration
 # Import models và services từ app core
 from core.models import Book, Category, BorrowTransaction, Wishlist, Review
 from core.services import check_and_create_due_reminders
@@ -268,3 +269,17 @@ def add_review(request, book_id):
         messages.success(request, "Cảm ơn Bạn đã để lại nhận xét!")
     
     return redirect('book_detail', book_id=book_id)
+def event_list(request):
+    # Lấy các sự kiện đang mở và sắp xếp theo ngày gần nhất
+    events = Event.objects.filter(is_active=True).order_by('start_date')
+    
+    # Lấy danh sách ID các sự kiện user đã đăng ký để đổi màu nút
+    registered_event_ids = []
+    if request.user.is_authenticated:
+        registered_event_ids = EventRegistration.objects.filter(user=request.user).values_list('event_id', flat=True)
+
+    return render(request, 'core/event_list.html', {
+        'events': events,
+        'registered_event_ids': registered_event_ids,
+        'now': timezone.now()
+    })

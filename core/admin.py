@@ -5,6 +5,7 @@ from .models import (
     BorrowTransaction, Penalty, Review, Wishlist, 
     Recommendation, Membership, Notification, ChatRoom, Chat
 )
+from .models import Event, EventRegistration
 
 # 1. Quản lý Người dùng (Dựa trên bảng USERS)
 @admin.register(User)
@@ -44,7 +45,17 @@ class PenaltyAdmin(admin.ModelAdmin):
     list_display = ('user', 'borrow_transaction', 'amount', 'due_date')
     list_filter = ('due_date',)
     search_fields = ('user__username', 'reason')
+@admin.register(Event)
+class EventAdmin(admin.ModelAdmin):
+    list_display = ('title', 'start_date', 'location', 'max_participants', 'is_active')
+    list_filter = ('is_active', 'start_date')
+    search_fields = ('title', 'location')
 
+@admin.register(EventRegistration)
+class EventRegistrationAdmin(admin.ModelAdmin):
+    list_display = ('user', 'event', 'registered_at')
+    list_filter = ('event',)
+    search_fields = ('user__username', 'event__title')
 # 5. Quản lý Nhận xét (Dựa trên bảng REVIEWS)
 @admin.register(Review)
 class ReviewAdmin(admin.ModelAdmin):

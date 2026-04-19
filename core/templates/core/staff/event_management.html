@@ -1,0 +1,128 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block title %}Quản lý Sự kiện - Admin Alovu{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-lg-5 py-5 mt-4">
+    <div class="row g-4">
+        <div class="col-lg-3">
+            <div class="sticky-sidebar">  
+                {% include 'core/includes/sidebar.html' %}
+            </div>
+        </div>
+        
+        <div class="col-lg-9">
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+                <div>
+                    <h3 class="fw-bold m-0 text-dark">Quản lý Sự kiện</h3>
+                    <p class="text-muted small m-0 mt-1">Tổng cộng <strong>{{ events.paginator.count }}</strong> sự kiện trong hệ thống.</p>
+                </div>
+                
+                <div class="d-flex gap-2">
+                    <div class="bg-white rounded-3 shadow-sm p-1 border d-flex align-items-center">
+                        <form method="GET" action="{% url 'staff_event_list' %}" class="d-flex align-items-center m-0">
+                            <i class="fas fa-search text-muted ms-3"></i>
+                            <input type="text" name="search_query" class="form-control border-0 shadow-none bg-transparent px-3 py-2" 
+                                   style="width: 250px; font-size: 0.95rem;" placeholder="Tìm tên sự kiện, địa điểm..." value="{{ query|default:'' }}">
+                            {% if query %}
+                                <a href="{% url 'staff_event_list' %}" class="btn btn-sm btn-light text-muted me-1 rounded-2 px-3">Xóa</a>
+                            {% endif %}
+                            <button class="btn btn-dark btn-sm px-4 rounded-2 fw-medium me-1" type="submit">Tìm</button>
+                        </form>
+                    </div>
+                    <a href="{% url 'event_create' %}" class="btn btn-primary px-4 fw-bold rounded-3 shadow-sm d-flex align-items-center">
+                        <i class="fas fa-plus me-2"></i>Thêm Mới
+                    </a>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-3 shadow-sm border mb-4">
+                <div class="table-responsive">
+                    <table class="table table-borderless table-hover align-middle mb-0">
+                        <thead class="border-bottom bg-light">
+                            <tr>
+                                <th class="text-muted fw-semibold small text-uppercase py-3 ps-4">Thông tin sự kiện</th>
+                                <th class="text-muted fw-semibold small text-uppercase py-3">Thời gian & Địa điểm</th>
+                                <th class="text-muted fw-semibold small text-uppercase py-3 text-center">Người tham gia</th>
+                                <th class="text-muted fw-semibold small text-uppercase py-3 text-center">Trạng thái</th>
+                                <th class="text-muted fw-semibold small text-uppercase py-3 text-end pe-4">Thao tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in events %}
+                            <tr class="border-bottom transition-hover-row">
+                                <td class="ps-4 py-3">
+                                    <div class="d-flex align-items-center">
+                                        <img src="{% if event.cover_image %}{{ event.cover_image.url }}{% else %}https://placehold.co/100x100?text=Event{% endif %}" class="rounded border shadow-sm me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                        <div>
+                                            <div class="fw-bold text-dark text-truncate" style="max-width: 200px; font-size: 0.95rem;" title="{{ event.title }}">{{ event.title }}</div>
+                                            <div class="text-muted small mt-1"><i class="far fa-clock me-1"></i>Tạo lúc: {{ event.created_at|date:"d/m/Y" }}</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark small"><i class="far fa-calendar-alt text-primary me-2"></i>{{ event.start_date|date:"d/m/Y - H:i" }}</div>
+                                    <div class="text-muted small mt-1"><i class="fas fa-map-marker-alt text-danger me-2"></i>{{ event.location }}</div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-dark border px-3 py-2 rounded-pill fs-6 shadow-sm">
+                                        {{ event.registered_count }} / {% if event.max_participants > 0 %}{{ event.max_participants }}{% else %}&infin;{% endif %}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    {% if event.is_active %}
+                                        <span class="badge bg-white border border-success text-success px-3 py-1 rounded-pill">Đang mở</span>
+                                    {% else %}
+                                        <span class="badge bg-white border border-secondary text-secondary px-3 py-1 rounded-pill">Đã đóng</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end pe-4">
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="{% url 'event_edit' event.id %}" class="btn btn-sm btn-outline-primary rounded-circle" style="width: 32px; height: 32px; padding: 0; line-height: 30px;" title="Sửa">
+                                            <i class="fas fa-pen"></i>
+                                        </a>
+                                        <a href="{% url 'event_delete' event.id %}" class="btn btn-sm btn-outline-danger rounded-circle custom-confirm" style="width: 32px; height: 32px; padding: 0; line-height: 30px;" data-message="Chắc chắn muốn xóa sự kiện [{{ event.title }}]?" title="Xóa">
+                                            <i class="fas fa-trash"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-5">
+                                    <i class="fas fa-bullhorn fa-3x text-muted opacity-25 mb-3"></i>
+                                    <p class="text-muted mb-0 fw-medium">Chưa có sự kiện nào.</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            {% if events.has_other_pages %}
+            <div class="d-flex justify-content-center mt-4">
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm shadow-sm bg-white rounded-3 overflow-hidden border m-0">
+                        {% if events.has_previous %}
+                            <li class="page-item"><a class="page-link text-dark border-0 px-3 py-2 fw-medium" href="?search_query={{ query }}&page={{ events.previous_page_number }}">Trước</a></li>
+                        {% endif %}
+                        {% for num in events.paginator.page_range %}
+                            {% if events.number == num %}
+                                <li class="page-item active"><span class="page-link bg-dark text-white border-0 fw-bold px-3 py-2">{{ num }}</span></li>
+                            {% else %}
+                                <li class="page-item"><a class="page-link text-dark border-0 px-3 py-2 fw-medium" href="?search_query={{ query }}&page={{ num }}">{{ num }}</a></li>
+                            {% endif %}
+                        {% endfor %}
+                        {% if events.has_next %}
+                            <li class="page-item"><a class="page-link text-dark border-0 px-3 py-2 fw-medium" href="?search_query={{ query }}&page={{ events.next_page_number }}">Sau</a></li>
+                        {% endif %}
+                    </ul>
+                </nav>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

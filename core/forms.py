@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from .models import User
 from .models import User, Book,Category, Publisher # Thêm Book vào đây
+from .models import Event
 
 class CustomUserCreationForm(UserCreationForm):
     email = forms.EmailField(required=True, label="Địa chỉ Email")
@@ -111,3 +112,20 @@ class UserProfileForm(forms.ModelForm):
             'dia_chi': forms.Textarea(attrs={'rows': 3}),
         }
 
+class EventForm(forms.ModelForm):
+    class Meta:
+        model = Event
+        fields = ['title', 'cover_image', 'content', 'start_date', 'end_date', 'location', 'max_participants', 'is_active']
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control'}),
+            # Gắn ID "cover-file-upload" để tái sử dụng JS xem trước ảnh trong main.js
+            'cover_image': forms.FileInput(attrs={'class': 'form-control', 'id': 'cover-file-upload'}),
+            'content': forms.Textarea(attrs={'rows': 5, 'class': 'form-control'}),
+            'start_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            'end_date': forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}),
+            # Gắn class bỏ viền trái cho đẹp
+            'location': forms.TextInput(attrs={'class': 'form-control border-start-0'}),
+            'max_participants': forms.NumberInput(attrs={'class': 'form-control border-start-0'}),
+            # Gắn class nút gạt Switch của Bootstrap
+            'is_active': forms.CheckboxInput(attrs={'class': 'form-check-input'})
+        }
