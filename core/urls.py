@@ -45,6 +45,11 @@ urlpatterns = [
     path('wishlist/', user_views.wishlist_view, name='wishlist'),
     path('wishlist/toggle/<int:book_id>/', user_views.toggle_wishlist, name='toggle_wishlist'),
     path('notifications/', user_views.notification_list, name='notification_list'),
+    # URL cho trang danh sách Sự kiện
+    path('events/', book_views.event_list, name='event_list'),
+    
+    # URL API cho nút bấm Tham gia/Hủy tham gia
+    path('api/events/<int:event_id>/toggle/', api_views.api_toggle_event_registration, name='api_toggle_event_registration'),
 
     # ==========================================
     # 4. NHÓM MƯỢN TRẢ SÁCH (BORROW / RETURN)
@@ -90,7 +95,13 @@ urlpatterns = [
     path('staff/publishers/edit/<int:pk>/', staff_views.staff_publisher_form, name='staff_publisher_edit'),
 
     path('staff/reviews/', staff_views.staff_review_management, name='staff_review_management'),
-
+    # ==========================================
+    # QUẢN LÝ SỰ KIỆN DÀNH CHO THỦ THƯ
+    # ==========================================
+    path('staff/events/', staff_views.staff_event_list, name='staff_event_list'),
+    path('staff/events/add/', staff_views.event_create, name='event_create'),
+    path('staff/events/<int:event_id>/edit/', staff_views.event_edit, name='event_edit'),
+    path('staff/events/<int:event_id>/delete/', staff_views.event_delete, name='event_delete'),
     # ==========================================
     # 6. NHÓM API (XỬ LÝ NGẦM AJAX & LOAD MORE)
     # ==========================================

@@ -1417,3 +1417,75 @@ body.auth-page {
         border-color: var(--bs-primary);
         box-shadow: 0 0 0 0.25rem rgba(var(--bs-primary-rgb), 0.1);
     }
+    
+/* =========================================
+   FORM COMPONENTS & UTILITIES 
+   ========================================= */
+.border-dashed { border-style: dashed !important; border-width: 2px !important; border-color: #dee2e6 !important; }
+.transition-hover { transition: all 0.3s ease; }
+.transition-hover:hover { transform: translateY(-3px); }
+.hover-primary:hover { color: #0d6efd !important; }
+
+/* Focus đẹp cho Input */
+.form-control:focus, .form-select:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
+
+/* Style cho Input Group (Ghép Icon và Text) */
+.input-group:focus-within {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+    border-radius: 0.375rem;
+}
+.input-group:focus-within .input-group-text, 
+.input-group:focus-within .form-control {
+    border-color: #0d6efd;
+}
+.input-group > .form-control:focus { box-shadow: none; border-color: #0d6efd; }
+
+/* Style riêng cho nút gạt (Switch) to đẹp hơn */
+.form-switch .form-check-input { width: 3.5em; height: 1.75em; margin-top: 0; cursor: pointer; }
+.form-switch .form-check-input:checked { background-color: #198754; border-color: #198754; }
+
+/* Hiệu ứng kéo thả file ảnh */
+.drag-over { background-color: #e9ecef !important; border-color: #0d6efd !important; }
+
+    /* CSS hỗ trợ trang Sự kiện */
+    .transition-hover { transition: all 0.3s ease; }
+    .transition-hover:hover { transform: translateY(-5px); box-shadow: 0 15px 35px rgba(0,0,0,0.08) !important; }
+    /* Giới hạn text tên sự kiện tối đa 2 dòng */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;  
+        overflow: hidden;
+    }
+    /* Giới hạn text chi tiết sự kiện tối đa 3 dòng */
+    .line-clamp-3 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;  
+        overflow: hidden;
+    }
+    /* Tùy chỉnh màu viền nét đứt khi trống */
+    .border-dashed { border-style: dashed !important; border-width: 2px !important; }
+
+     /* Custom CSS cho trang Hướng dẫn */
+    .guide-card { transition: transform 0.3s ease, box-shadow 0.3s ease; border: 1px solid #f0f0f0 !important; }
+    .guide-card:hover { transform: translateY(-3px); box-shadow: 0 10px 30px rgba(0,0,0,0.05) !important; }
+    
+    /* Thiết kế đường nối cho các bước (Steps) thu gọn lại */
+    .step-item { position: relative; z-index: 2; }
+    .step-icon { width: 50px; height: 50px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; transition: 0.3s; background-color: white !important; }
+    .step-item:hover .step-icon { background-color: #0d6efd !important; color: white !important; transform: scale(1.1); border-color: #0d6efd !important; }
+    
+    @media (min-width: 768px) {
+        .step-container::before {
+            content: ''; position: absolute; top: 25px; left: 12.5%; width: 75%; height: 2px;
+            background: repeating-linear-gradient(to right, #dee2e6 0, #dee2e6 6px, transparent 6px, transparent 12px);
+            z-index: 1;
+        }
+    }
+
+    

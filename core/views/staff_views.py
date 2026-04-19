@@ -1,4 +1,6 @@
 # file: core/views/staff_views.py
+from sched import Event
+
 from django.db.models import Case, When, Value, IntegerField
 from datetime import timedelta
 from django.utils import timezone
@@ -17,10 +19,11 @@ from django.db.models import Avg, Count, OuterRef, Subquery
 from django.urls import reverse
 from urllib.parse import urlencode
 from datetime import datetime
+from ..models import Event
+from ..forms import EventForm
 # Hàm kiểm tra quyền Staff
 def is_staff(user):
     return user.is_authenticated and user.role in ['STAFF', 'ADMIN']
-
 # ==========================================
 # 1. QUẢN LÝ KHO SÁCH (CRUD)
 # ==========================================
@@ -562,3 +565,65 @@ def staff_review_management(request):
         'books': page_obj,  # Truyền page_obj thay cho toàn bộ books
         'query': query      # Truyền query để giữ text ở thanh tìm kiếm
     })
+# ==========================================
+# 4. QUẢN LÝ SỰ KIỆN & TIN TỨC (DÀNH CHO THỦ THƯ)
+# ==========================================
+# Kiểm tra quyền thủ thư
+def is_staff_member(user):
+    return user.is_authenticated and (user.role in ['STAFF', 'ADMIN'] or user.is_superuser)
+
+@user_passes_test(is_staff_member)
+def staff_event_list(request):
+    """Trang danh sách sự kiện dành riêng cho Thủ thư"""
+    query = request.GET.get('search_query', '').strip()
+    events = Event.objects.all().order_by('-created_at')
+    
+    # Tìm kiếm theo tên hoặc địa điểm
+    if query:
+        events = events.filter(
+            Q(title__icontains=query) |
+            Q(location__icontains=query)
+        ).distinct()
+        
+    # Phân trang 10 sự kiện/trang
+    page_number = request.GET.get('page', 1)
+    paginator = Paginator(events, 10)
+    page_obj = paginator.get_page(page_number)
+    
+    return render(request, 'core/staff/event_management.html', {
+        'events': page_obj,
+        'query': query
+    })
+
+@user_passes_test(is_staff_member)
+def event_create(request):
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Thêm sự kiện mới thành công!")
+            return redirect('staff_event_list') # Đã sửa hướng redirect
+    else:
+        form = EventForm()
+    return render(request, 'core/staff/event_form.html', {'form': form, 'title': 'Thêm sự kiện'})
+
+@user_passes_test(is_staff_member)
+def event_edit(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES, instance=event)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Cập nhật sự kiện '{event.title}' thành công!")
+            return redirect('staff_event_list') # Đã sửa hướng redirect
+    else:
+        form = EventForm(instance=event)
+    return render(request, 'core/staff/event_form.html', {'form': form, 'title': 'Chỉnh sửa sự kiện'})
+
+@user_passes_test(is_staff_member)
+def event_delete(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    title = event.title
+    event.delete()
+    messages.success(request, f"Đã xóa sự kiện '{title}'.")
+    return redirect('staff_event_list') # Đã sửa hướng redirect

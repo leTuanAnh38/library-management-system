@@ -117,7 +117,7 @@
                                             <i class="fas fa-circle me-2" style="font-size: 8px;"></i>Đã hủy
                                         </span>
                                         <div class="mt-1 text-muted fw-medium" style="font-size: 0.75rem; line-height: 1.4;">
-                                            Lý do: Không lấy sách<br>ca {% if trans.pickup_shift == 'SANG' %}Sáng{% else %}Chiều{% endif %} ({{ trans.pickup_date|date:"d/m/Y" }})
+                                            Lý do: Không lấy sách<br>ca {% if trans.pickup_shift == 'SANG' %}Sáng (07:30 - 11:30){% else %}Chiều (13:00 - 17:00){% endif %} ({{ trans.pickup_date|date:"d/m/Y" }})
                                         </div>
                                     {% else %}
                                         <span class="text-success fw-medium" style="font-size: 0.9rem;"><i class="fas fa-circle me-2" style="font-size: 8px;"></i>Hoàn tất</span>

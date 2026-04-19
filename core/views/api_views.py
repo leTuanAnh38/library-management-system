@@ -18,8 +18,9 @@ User = get_user_model()
 from django.contrib.auth.decorators import user_passes_test
 from core.serializers import RegisterSerializer
 from django.utils import timezone
+
 # Import models từ app core
-from core.models import Book, Wishlist, Review, BorrowTransaction, Notification
+from core.models import Book,Event, EventRegistration, Wishlist, Review, BorrowTransaction, Notification
 
 # ==========================================
 # 1. API CƠ BẢN DÀNH CHO BÊN THỨ 3 (GET, POST, DELETE)
@@ -99,7 +100,11 @@ def live_search_api(request):
         
         results = []
         for book in books:
-            image_url = book.cover_image.url if hasattr(book.cover_image, 'url') else book.cover_image
+            # ĐÃ SỬA: Dùng get_cover() để tự động xử lý link /media/ hoặc http
+            if hasattr(book, 'get_cover'):
+                image_url = book.get_cover() if callable(book.get_cover) else book.get_cover
+            else:
+                image_url = book.cover_image.url if hasattr(book.cover_image, 'url') and book.cover_image else '/static/img/default-book.png'
             
             results.append({
                 'id': book.id,
@@ -308,7 +313,11 @@ def api_load_more_history(request):
         
     data = []
     for item in history:
-        cover_image = item.book.cover_image.url if hasattr(item.book.cover_image, 'url') else item.book.cover_image
+        # Xử lý ảnh an toàn
+        if hasattr(item.book, 'get_cover'):
+            cover_image = item.book.get_cover() if callable(item.book.get_cover) else item.book.get_cover
+        else:
+            cover_image = item.book.cover_image.url if hasattr(item.book.cover_image, 'url') and item.book.cover_image else '/static/img/default-book.png'
         
         data.append({
             'id': item.id,
@@ -321,7 +330,11 @@ def api_load_more_history(request):
             'status': item.status,
             'is_late': getattr(item, 'is_late', False), 
             'penalty_amount': getattr(item, 'penalty_amount', 0),
-            'return_url': reverse('return_book', args=[item.id])
+            'return_url': reverse('return_book', args=[item.id]),
+            
+            # ---> ĐÃ THÊM: Truyền dữ liệu Ca Trực và Ngày Hẹn cho JS xử lý <---
+            'pickup_shift': getattr(item, 'pickup_shift', ''),
+            'pickup_date': item.pickup_date.strftime("%d/%m/%Y") if getattr(item, 'pickup_date', None) else '-'
         })
         
     return JsonResponse({'status': 'success', 'data': data, 'has_next': history.has_next()})
@@ -350,7 +363,10 @@ def api_load_more_wishlist(request):
         elif b.price and b.price > 0: btn_status = 'VIP'
         else: btn_status = 'AVAILABLE'
 
-        image_url = b.cover_image.url if hasattr(b.cover_image, 'url') else b.cover_image
+        if hasattr(b, 'get_cover'):
+            image_url = b.get_cover() if callable(b.get_cover) else b.get_cover
+        else:
+            image_url = b.cover_image.url if hasattr(b.cover_image, 'url') and b.cover_image else '/static/img/default-book.png'
 
         data.append({
             'id': b.id,
@@ -367,4 +383,22 @@ def api_load_more_wishlist(request):
         })
         
     return JsonResponse({'status': 'success', 'data': data, 'has_next': items.has_next()})
+@login_required
+@require_POST
+def api_toggle_event_registration(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    registration = EventRegistration.objects.filter(user=request.user, event=event).first()
+    
+    if registration:
+        # Nếu đã tham gia -> Bấm lần nữa là Hủy
+        registration.delete()
+        return JsonResponse({'status': 'success', 'is_registered': False, 'message': 'Đã hủy đăng ký sự kiện.', 'count': event.registered_count()})
+    else:
+        # Kiểm tra xem đã đầy chỗ chưa
+        if event.max_participants > 0 and event.registered_count() >= event.max_participants:
+            return JsonResponse({'status': 'error', 'message': 'Sự kiện này đã đủ số lượng người tham gia!'})
+            
+        # Đăng ký mới
+        EventRegistration.objects.create(user=request.user, event=event)
+        return JsonResponse({'status': 'success', 'is_registered': True, 'message': 'Đăng ký tham gia thành công!', 'count': event.registered_count()})
 

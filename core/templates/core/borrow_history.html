@@ -3,7 +3,7 @@
 {% block title %}Lịch sử mượn sách - Alovu{% endblock %}
 
 {% block content %}
-<div class="container-fluid px-lg-5 py-5 mt-5">
+<div class="container-fluid px-lg-5 py-4">
     
     <div class="row g-4">
         
@@ -93,7 +93,7 @@
                                         {% elif item.status == 'CANCELLED' %}
                                             <span class="badge bg-light text-secondary border px-3 py-1 rounded-pill">Đã hủy</span>
                                             <div class="mt-1 small text-muted fw-medium" style="font-size: 0.75rem;">
-                                                <i class="fas fa-info-circle me-1"></i>Bỏ hẹn ca {% if item.pickup_shift == 'SANG' %}Sáng{% else %}Chiều{% endif %}
+                                                <i class="fas fa-info-circle me-1"></i>Bỏ hẹn ca {% if item.pickup_shift == 'SANG' %}Sáng (07:30 - 11:30){% else %}Chiều (13:00 - 17:00){% endif %}
                                             </div>
                                         {% elif item.status == 'OVERDUE' %}
                                             <span class="badge bg-white border border-danger text-danger px-3 py-1 rounded-pill shadow-sm">Quá hạn</span>

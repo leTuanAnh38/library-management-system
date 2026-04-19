@@ -459,3 +459,24 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 });
+
+/* ==========================================
+   GIỚI HẠN CHỌN NGÀY TỐI ĐA 7 NGÀY (FORM MƯỢN SÁCH)
+   ========================================== */
+document.addEventListener('DOMContentLoaded', function() {
+    // Tìm tất cả các ô chọn ngày trên giao diện
+    const dateInputs = document.querySelectorAll('input[name="pickup_date"]');
+    
+    if (dateInputs.length > 0) {
+        // Tính ngày tối đa (Hôm nay + 7 ngày)
+        const tzOffset = (new Date()).getTimezoneOffset() * 60000;
+        const maxDate = new Date();
+        maxDate.setDate(maxDate.getDate() + 7);
+        const maxDateString = new Date(maxDate.getTime() - tzOffset).toISOString().split('T')[0];
+        
+        // Gắn thuộc tính 'max' vào các ô input
+        dateInputs.forEach(input => {
+            input.setAttribute('max', maxDateString);
+        });
+    }
+});

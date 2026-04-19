@@ -1,7 +1,6 @@
 /* =================================================================
    CÁC HÀM TIỆN ÍCH DÙNG CHUNG (UTILITIES)
    ================================================================= */
-
 // Global helper to read CSRF cookie (used by AJAX calls)
 function getCookie(name) {
     let cookieValue = null;
@@ -117,7 +116,14 @@ function renderBookHTML(book, is_premium) {
     var actionBtn = '';
     var modalHtml = '';
     var csrfToken = getCSRFToken();
-    var todayString = new Date().toISOString().split('T')[0];
+    
+    // Tính ngày hôm nay và tối đa 7 ngày sau (Khử độ lệch múi giờ UTC)
+    var tzOffset = (new Date()).getTimezoneOffset() * 60000;
+    var todayString = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
+    
+    var maxDate = new Date();
+    maxDate.setDate(maxDate.getDate() + 7);
+    var maxDateString = new Date(maxDate.getTime() - tzOffset).toISOString().split('T')[0];
 
     if (book.btn_status === 'PENDING') {
         actionBtn = `<button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-none disabled" style="opacity: 0.8;"><i class="fas fa-spinner fa-spin me-1"></i>CHỜ XÁC NHẬN</button>`;
@@ -202,7 +208,7 @@ function renderBookHTML(book, is_premium) {
                                 <label class="form-label small fw-bold text-muted text-uppercase">1. Chọn ngày đến quầy</label>
                                 <div class="input-group shadow-sm rounded-3">
                                     <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="far fa-calendar-check text-primary"></i></span>
-                                    <input type="date" name="pickup_date" class="form-control border-start-0 rounded-end-3 py-2" min="${todayString}" required>
+                                   <input type="date" name="pickup_date" class="form-control border-start-0 rounded-end-3 py-2" min="${todayString}" max="${maxDateString}" required>
                                 </div>
                             </div>
 
@@ -308,6 +314,29 @@ if (typeof $ !== 'undefined' && $.ajaxSetup) {
    CHƯƠNG TRÌNH CHÍNH (CHẠY KHI TRANG ĐÃ LOAD XONG)
    ================================================================= */
 $(document).ready(function() {
+
+    // ====================================================================
+    // CHẶN CHỌN NGÀY QUÁ 7 NGÀY CHO TẤT CẢ MODAL MƯỢN SÁCH (SIÊU CHUẨN)
+    // ====================================================================
+    $(document).on('show.bs.modal', '.borrow-modal', function () {
+        var dateInput = $(this).find('input[type="date"][name="pickup_date"]');
+        if (dateInput.length > 0) {
+            // Khử độ lệch múi giờ (Việt Nam là +7)
+            var tzOffset = (new Date()).getTimezoneOffset() * 60000;
+            
+            // Tính ngày hôm nay (min)
+            var minDateString = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
+            
+            // Tính 7 ngày tới (max)
+            var maxDate = new Date();
+            maxDate.setDate(maxDate.getDate() + 7);
+            var maxDateString = new Date(maxDate.getTime() - tzOffset).toISOString().split('T')[0];
+            
+            // Ép buộc ô input không được chọn quá ngày này
+            dateInput.attr('min', minDateString);
+            dateInput.attr('max', maxDateString);
+        }
+    });
 
     // Đảm bảo main có chiều cao tối thiểu
     function adjustMainMinHeight() {
@@ -515,9 +544,18 @@ $(document).ready(function() {
                                 var safeTitle = escapeHTML(book.title);
                                 var safeAuthor = escapeHTML(book.author || 'Chưa rõ');
                                 
+                                // ĐÃ SỬA: TỰ ĐỘNG THÊM /media/ CHO ẢNH TẢI TỪ MÁY
+                                var coverUrl = book.cover_image || book.cover || book.image || book.image_url;
+
+                                if (!coverUrl || coverUrl === "null" || coverUrl === "None") {
+                                    coverUrl = 'https://placehold.co/150x220?text=No+Cover'; // Không có ảnh
+                                } else if (!coverUrl.startsWith('http') && !coverUrl.startsWith('/')) {
+                                    coverUrl = '/media/' + coverUrl; // Có ảnh tải lên từ máy
+                                }
+                                
                                 html += `
                                     <a href="${book.url}" class="d-flex align-items-center p-2 border-bottom text-decoration-none transition-hover" style="color: inherit; background-color: #fff;" onmouseover="this.style.backgroundColor='#f8f9fa'" onmouseout="this.style.backgroundColor='#fff'">
-                                        <img src="${book.cover_image}" alt="${safeTitle}" style="width: 40px; height: 60px; object-fit: cover;" class="rounded shadow-sm me-3">
+                                        <img src="${coverUrl}" alt="${safeTitle}" style="width: 40px; height: 60px; object-fit: cover;" class="rounded shadow-sm me-3">
                                         <div class="overflow-hidden">
                                             <h6 class="mb-1 fw-bold text-truncate text-dark" style="font-size: 0.9rem;">${safeTitle} ${priceTag}</h6>
                                             <small class="text-muted text-truncate d-block" style="font-size: 0.8rem;"><i class="fas fa-pen-nib me-1"></i>${safeAuthor}</small>
@@ -862,12 +900,12 @@ $(document).ready(function() {
                                     statusHtml = `<span class="badge bg-white border border-warning text-warning px-3 py-1 rounded-pill">Chờ duyệt</span>`;
                                 } else if (item.status === 'CANCELLED') {
                                     // Xác định ca trực từ API (nếu API của bạn trả về trường pickup_shift)
-                                var shiftText = (item.pickup_shift === 'SANG') ? 'Sáng' : 'Chiều';
-                                
-                                statusHtml = `<span class="badge bg-light text-secondary border px-3 py-1 rounded-pill">Đã hủy</span>
-                                            <div class="mt-1 small text-muted fw-medium" style="font-size: 0.75rem;">
-                                                <i class="fas fa-info-circle me-1"></i>Bỏ hẹn ca ${shiftText}
-                                            </div>`;
+                                var shiftText = (item.pickup_shift === 'SANG') ? 'Sáng (07:30 - 11:30)' : 'Chiều (13:00 - 17:00)';
+    
+                                    statusHtml = `<span class="badge bg-light text-secondary border px-3 py-1 rounded-pill">Đã hủy</span>
+                                                <div class="mt-1 small text-muted fw-medium" style="font-size: 0.75rem;">
+                                                    <i class="fas fa-info-circle me-1"></i>Bỏ hẹn ca ${shiftText}
+                                                </div>`;
                                 } else {
                                     statusHtml = `<span class="badge bg-white border border-danger text-danger px-3 py-1 rounded-pill shadow-sm">Quá hạn</span>`;
                                 }
@@ -1072,3 +1110,39 @@ $(document).ready(function() {
     }
 
 });
+// XỬ LÝ NÚT THAM GIA SỰ KIỆN
+    $(document).on('click', '.btn-toggle-event', function(e) {
+        e.preventDefault();
+        var btn = $(this);
+        var url = btn.data('url');
+        var eventId = btn.data('id');
+        var originalHtml = btn.html();
+
+        btn.html('<i class="fas fa-spinner fa-spin"></i> Đang xử lý...').prop('disabled', true);
+
+        $.ajax({
+            url: url,
+            type: 'POST',
+            headers: { 'X-CSRFToken': getCSRFToken() },
+            success: function(response) {
+                btn.prop('disabled', false);
+                if (response.status === 'success') {
+                    showModernToast(response.message, 'success');
+                    $('#count-' + eventId).text(response.count);
+                    
+                    if (response.is_registered) {
+                        btn.removeClass('btn-outline-primary').addClass('btn-success').html('<i class="fas fa-check-circle me-1"></i> Đã tham gia');
+                    } else {
+                        btn.removeClass('btn-success').addClass('btn-outline-primary').html('Tham gia ngay');
+                    }
+                } else {
+                    showModernToast('<b>Lỗi:</b> ' + response.message, 'error');
+                    btn.html(originalHtml);
+                }
+            },
+            error: function() {
+                btn.prop('disabled', false).html(originalHtml);
+                showModernToast('<b>Lỗi mạng:</b> Vui lòng thử lại sau.', 'error');
+            }
+        });
+    });
