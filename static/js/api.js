@@ -2,7 +2,7 @@
    CÁC HÀM TIỆN ÍCH DÙNG CHUNG (UTILITIES)
    ================================================================= */
 
-// Global helper to read CSRF cookie (used by AJAX calls)
+// Hàm hỗ trợ toàn cục để đọc cookie CSRF (được sử dụng bởi các lệnh gọi AJAX)
 function getCookie(name) {
     let cookieValue = null;
     if (document.cookie && document.cookie !== '') {
@@ -18,7 +18,7 @@ function getCookie(name) {
     return cookieValue;
 }
 
-// Read CSRF token from meta tag, cookie, or any hidden input on page
+// Đọc mã thông báo CSRF từ thẻ meta, cookie hoặc bất kỳ trường nhập ẩn nào trên trang.
 function getCSRFToken() {
     var meta = document.querySelector('meta[name="csrf-token"]');
     if (meta && meta.getAttribute('content')) return meta.getAttribute('content');

@@ -12,7 +12,7 @@ const apiClient = axios.create({
     }
 });
 
-// Interceptor Request
+// Yêu cầu chặn để tự động thêm token vào header
 apiClient.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('access_token');
@@ -22,7 +22,7 @@ apiClient.interceptors.request.use(
     (error) => Promise.reject(error)
 );
 
-// Interceptor Response
+// Phản hồi chặn
 apiClient.interceptors.response.use(
     (response) => response,
     async (error) => {
