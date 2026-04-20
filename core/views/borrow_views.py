@@ -9,8 +9,8 @@ from django.db import transaction as db_transaction
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 # ---> THÊM DÒNG NÀY ĐỂ SỬ DỤNG HÀM CASE, WHEN CỦA DJANGO ORM <---
-from django.db.models import Case, When, Value, IntegerField
-
+from django.db.models import Case, When, Value, IntegerField,F
+from core.models import Cart, CartItem
 # Import models từ app core
 from core.models import Book, BorrowTransaction, Notification
 
@@ -127,58 +127,68 @@ def borrow_book(request, book_id):
 # ==========================================
 @login_required(login_url='login')
 def add_to_cart(request, book_id):
-    cart = request.session.get('borrow_cart', [])
-    active_borrows = BorrowTransaction.objects.filter(user=request.user, status__in=['PENDING', 'BORROWED', 'OVERDUE']).count()
+    # 1. Lấy hoặc tạo giỏ hàng cho user
+    user_cart, created = Cart.objects.get_or_create(user=request.user)
     
-    if active_borrows + len(cart) >= 4:
-        return JsonResponse({'success': False, 'message': f'Giới hạn 4 cuốn! Bạn đang giữ {active_borrows} cuốn và có {len(cart)} cuốn trong giỏ.'})
+    # 2. Kiểm tra giới hạn 4 cuốn (Sách đang mượn + Sách trong giỏ)
+    active_borrows = BorrowTransaction.objects.filter(user=request.user, status__in=['PENDING', 'BORROWED', 'OVERDUE']).count()
+    items_in_cart = user_cart.items.count()
+    
+    if active_borrows + items_in_cart >= 4:
+        return JsonResponse({'success': False, 'message': f'Giới hạn 4 cuốn! Bạn đang giữ {active_borrows} cuốn và có {items_in_cart} cuốn trong giỏ.'})
         
+    # 3. Kiểm tra mượn trùng trong lịch sử
     already_borrowed = BorrowTransaction.objects.filter(user=request.user, book_id=book_id, status__in=['PENDING', 'BORROWED', 'OVERDUE']).exists()
     if already_borrowed:
         return JsonResponse({'success': False, 'message': 'Bạn đã mượn hoặc đang chờ duyệt cuốn sách này rồi.'})
 
-    if str(book_id) not in cart:
-        cart.append(str(book_id))
-        request.session['borrow_cart'] = cart
-        
-        # ---> THÊM DÒNG NÀY: Ép Django phải lưu lại Session ngay lập tức <---
-        request.session.modified = True 
-        
-        return JsonResponse({'success': True, 'cart_count': len(cart), 'message': 'Đã thêm vào giỏ sách!'})
+    # 4. Kiểm tra xem sách đã có trong giỏ chưa
+    book = get_object_or_404(Book, id=book_id)
+    item, created_item = CartItem.objects.get_or_create(cart=user_cart, book=book)
+    
+    if created_item:
+        return JsonResponse({'success': True, 'cart_count': user_cart.items.count(), 'message': 'Đã thêm vào giỏ sách!'})
     else:
         return JsonResponse({'success': False, 'message': 'Sách này đã có trong giỏ.'})
+
 @login_required(login_url='login')
 def view_cart(request):
-    cart_ids = request.session.get('borrow_cart', [])
-    books = Book.objects.filter(id__in=cart_ids)
+    # Lấy giỏ hàng và danh sách sách bên trong
+    user_cart, _ = Cart.objects.get_or_create(user=request.user)
+    cart_items = user_cart.items.select_related('book').all()
+    
+    books = [item.book for item in cart_items]
     total_fee = sum(book.price for book in books if book.price)
+    
     return render(request, 'core/user/cart.html', {'books': books, 'total_fee': total_fee})
 
 @login_required(login_url='login')
 def remove_from_cart(request, book_id):
-    cart = request.session.get('borrow_cart', [])
-    if str(book_id) in cart:
-        cart.remove(str(book_id))
-        request.session['borrow_cart'] = cart
-        messages.success(request, "Đã xóa sách khỏi giỏ.")
+    # Xóa sách khỏi database
+    CartItem.objects.filter(cart__user=request.user, book_id=book_id).delete()
+    messages.success(request, "Đã xóa sách khỏi giỏ.")
     return redirect('view_cart')
 
 @login_required(login_url='login')
 def checkout_cart(request):
     if request.method == 'POST':
-        cart_ids = request.session.get('borrow_cart', [])
-        if not cart_ids: return redirect('book_list')
+        user_cart = Cart.objects.filter(user=request.user).first()
+        if not user_cart or not user_cart.items.exists():
+            return redirect('book_list')
             
         pickup_date = request.POST.get('pickup_date')
         pickup_shift = request.POST.get('pickup_shift')
         payment_method = request.POST.get('payment_method', 'FREE')
         
-        books = Book.objects.filter(id__in=cart_ids)
+        cart_items = user_cart.items.all()
         han_tra = timezone.now().date() + timedelta(days=14)
         
         try:
             with db_transaction.atomic():
-                for book in books:
+                count = 0
+                total_fee = 0
+                for item in cart_items:
+                    book = item.book
                     if book.quantity > 0:
                         is_premium = book.price and book.price > 0
                         BorrowTransaction.objects.create(
@@ -188,18 +198,16 @@ def checkout_cart(request):
                         )
                         book.quantity -= 1
                         book.save()
-                        
-                total_fee = sum(b.price for b in books if b.price)
+                        total_fee += book.price if book.price else 0
+                        count += 1
+                
+                # Xóa sạch giỏ hàng sau khi đặt thành công
+                cart_items.delete()
+                
                 shift_display = "Sáng" if pickup_shift == 'SANG' else "Chiều"
-                
-                if total_fee > 0:
-                    msg = f"Đăng ký {len(books)} cuốn thành công! Tổng phí: {total_fee:,.0f} VNĐ. Hẹn bạn lấy sách vào ca {shift_display} ngày {pickup_date}."
-                else:
-                    msg = f"Đăng ký {len(books)} cuốn thành công! Nhớ đến lấy sách vào ca {shift_display} ngày {pickup_date} nhé."
-                
+                msg = f"Đăng ký {count} cuốn thành công! Nhớ đến lấy sách vào ca {shift_display} ngày {pickup_date}."
                 Notification.objects.create(user=request.user, message=msg, type='SYSTEM', status='UNREAD')
                 
-            request.session['borrow_cart'] = []
             messages.success(request, msg)
             return redirect('borrow_history')
         except Exception as e:
@@ -209,20 +217,19 @@ def checkout_cart(request):
 # ==========================================
 # 2. LỊCH SỬ GIAO DỊCH
 # ==========================================
-
 @login_required(login_url='login')
 def borrow_history(request):
-    # ---> ĐÃ SỬA LẠI ĐOẠN QUERY NÀY ĐỂ SẮP XẾP ƯU TIÊN TRẠNG THÁI <---
+    # ĐÃ SỬA: Thêm F('return_date').desc(nulls_last=True) để ưu tiên ngày trả gần nhất lên đầu
     history_list = BorrowTransaction.objects.filter(user=request.user).annotate(
         status_priority=Case(
-            When(status='OVERDUE', then=Value(1)),   # Quá hạn lên top 1
-            When(status='BORROWED', then=Value(2)),  # Đang mượn top 2
-            When(status='PENDING', then=Value(3)),   # Chờ duyệt top 3
-            When(status='RETURNED', then=Value(4)),  # Đã trả xuống cuối
+            When(status='OVERDUE', then=Value(1)),   
+            When(status='BORROWED', then=Value(2)), 
+            When(status='PENDING', then=Value(3)),   
+            When(status='RETURNED', then=Value(4)),  
             default=Value(5),
             output_field=IntegerField(),
         )
-    ).order_by('status_priority', '-created_at')
+    ).order_by('status_priority', F('return_date').desc(nulls_last=True), '-created_at')
     
     # Phân trang: Mỗi lần tải 8 giao dịch
     paginator = Paginator(history_list, 8) 
@@ -234,41 +241,60 @@ def borrow_history(request):
         history = paginator.page(1)
         
     return render(request, 'core/user/borrow_history.html', {'history': history})
-
 # ==========================================
 # 3. NGHIỆP VỤ YÊU CẦU TRẢ SÁCH (Dành cho Sinh viên)
 # ==========================================
-
 @login_required(login_url='login')
 def return_book(request, transaction_id):
     # Chỉ lấy những giao dịch đang mượn (BORROWED) hoặc QUÁ HẠN (OVERDUE)
     borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, user=request.user, status__in=['BORROWED', 'OVERDUE'])
     
     try:
-        # Chuyển trạng thái sang Chờ xác nhận
+        # 1. Tính toán trễ hạn tạm tính
+        today = timezone.now().date()
+        late_info = ""
+        if today > borrow_record.due_date:
+            days_late = (today - borrow_record.due_date).days
+            estimated_fine = days_late * 5000  # Đơn giá 5000đ/ngày theo quy định staff_views
+            late_info = f" (CẢNH BÁO: Bạn đã trễ {days_late} ngày, phí phạt dự kiến là {estimated_fine:,.0f} VNĐ)"
+
+        # 2. Cập nhật trạng thái yêu cầu trả
         borrow_record.status = 'PENDING'
-        # ---> THÊM DÒNG NÀY: Gắn mác để phân biệt với đơn chờ mượn
         borrow_record.reason = 'YÊU CẦU TRẢ' 
         borrow_record.save()
         
-        messages.success(request, f"Yêu cầu trả cuốn '{borrow_record.book.title}' đã được gửi. Vui lòng mang sách đến quầy trong vòng 24h để Thủ thư xác nhận.")
+        msg = f"Yêu cầu trả cuốn '{borrow_record.book.title}' đã được gửi.{late_info} Vui lòng mang sách đến quầy trong vòng 24h(ca sáng - chiều) để Thủ thư xác nhận tình trạng vật lý và chốt phí phạt cuối cùng."
+        
+        # 3. Tạo thông báo vào Hộp thư cho user
+        Notification.objects.create(
+            user=request.user, 
+            message=msg, 
+            type='WARNING' if late_info else 'SYSTEM', 
+            status='UNREAD'
+        )
+        
+        # Hiển thị thông báo màu vàng nếu có phí phạt, màu xanh nếu trả đúng hạn
+        if late_info:
+            messages.warning(request, msg)
+        else:
+            messages.success(request, msg)
+
     except Exception as e:
         messages.error(request, f"Đã xảy ra lỗi: {str(e)}")
         
     return redirect('borrow_history')
-#Tạo thêm view để xử lý trả nhiều sách cùng lúc (nếu muốn)
+
+
 @login_required(login_url='login')
 def return_books_batch(request):
     """Xử lý yêu cầu trả nhiều sách cùng lúc"""
     if request.method == 'POST':
-        # Lấy danh sách các ID giao dịch được tick chọn
         transaction_ids = request.POST.getlist('transaction_ids')
         
         if not transaction_ids:
             messages.warning(request, "Bạn chưa chọn cuốn sách nào để trả.")
             return redirect('borrow_history')
 
-        # Lọc ra các giao dịch hợp lệ (của user này và đang mượn/quá hạn)
         records = BorrowTransaction.objects.filter(
             id__in=transaction_ids,
             user=request.user,
@@ -277,10 +303,86 @@ def return_books_batch(request):
 
         count = records.count()
         if count > 0:
-            # Chuyển đổi trạng thái hàng loạt
+            # 1. Tính toán tổng phí phạt dự kiến cho cả lô sách
+            today = timezone.now().date()
+            total_estimated_fine = 0
+            late_count = 0
+            
+            for r in records:
+                if today > r.due_date:
+                    days_late = (today - r.due_date).days
+                    total_estimated_fine += days_late * 5000
+                    late_count += 1
+            
+            late_info = ""
+            if total_estimated_fine > 0:
+                late_info = f" (Phát hiện {late_count} cuốn trễ hạn, tổng phí phạt dự kiến: {total_estimated_fine:,.0f} VNĐ)"
+
+            # 2. Cập nhật trạng thái hàng loạt
             records.update(status='PENDING', reason='YÊU CẦU TRẢ')
-            messages.success(request, f"Thành công! Đã gửi yêu cầu báo trả cho {count} cuốn sách. Vui lòng mang sách đến quầy thủ thư.")
+            
+            msg = f"Đã gửi yêu cầu báo trả cho {count} cuốn sách.{late_info} Vui lòng mang sách đến quầy trong vòng 24h(ca sáng - chiều) để Thủ thư kiểm tra."
+            
+            # 3. Tạo thông báo vào Hộp thư
+            Notification.objects.create(
+                user=request.user, 
+                message=msg, 
+                type='WARNING' if total_estimated_fine > 0 else 'SYSTEM', 
+                status='UNREAD'
+            )
+            
+            if total_estimated_fine > 0:
+                messages.warning(request, msg)
+            else:
+                messages.success(request, msg)
         else:
             messages.error(request, "Không có giao dịch nào hợp lệ để trả.")
+
+    return redirect('borrow_history')
+# ==========================================
+# 4. GIA HẠN SÁCH
+# ==========================================
+@login_required(login_url='login')
+def renew_book(request, transaction_id):
+    trans = get_object_or_404(BorrowTransaction, id=transaction_id, user=request.user)
+    today = timezone.now().date()
+
+    # 1. Check: Sách phải đang mượn
+    if trans.status != 'BORROWED':
+        messages.error(request, "Chỉ có thể gia hạn những cuốn sách đang trong thời gian mượn.")
+        return redirect('borrow_history')
+
+    # 2. Check: Không cho phép gia hạn sách trễ hạn
+    if today > trans.due_date:
+        messages.error(request, "Sách đã quá hạn! Không thể gia hạn, vui lòng trả sách và nộp phạt.")
+        return redirect('borrow_history')
+
+    # 3. Check: Số lần gia hạn tối đa (2 lần)
+    if trans.renewal_count >= 2:
+        messages.error(request, "Bạn đã sử dụng hết lượt gia hạn cho cuốn sách này (Tối đa 2 lần).")
+        return redirect('borrow_history')
+
+    # 4. Check: Chỉ cho phép gia hạn khi còn <= 2 ngày nữa là đến hạn
+    days_until_due = (trans.due_date - today).days
+    if days_until_due > 2:
+        messages.warning(request, f"Chưa thể gia hạn! Bạn chỉ được phép gia hạn trước ngày hết hạn 1-2 ngày (Hiện còn {days_until_due} ngày nữa).")
+        return redirect('borrow_history')
+
+    try:
+        # Xử lý gia hạn: Cộng thêm 7 ngày vào Hạn trả
+        trans.due_date = trans.due_date + timedelta(days=7)
+        trans.renewal_count += 1
+        trans.save()
+
+        msg = f"Gia hạn thành công! Hạn trả mới của cuốn '{trans.book.title}' là {trans.due_date.strftime('%d/%m/%Y')}. (Đã gia hạn {trans.renewal_count}/2 lần)."
+        
+        # Gửi thông báo vào hộp thư
+        Notification.objects.create(
+            user=request.user, message=msg, type='SYSTEM', status='UNREAD'
+        )
+        messages.success(request, msg)
+        
+    except Exception as e:
+        messages.error(request, f"Đã xảy ra lỗi: {str(e)}")
 
     return redirect('borrow_history')

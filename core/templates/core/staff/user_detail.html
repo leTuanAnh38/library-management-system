@@ -83,13 +83,57 @@
                                     
                                     <div class="timeline-simple">
                                         {% for item in borrow_history|slice:":5" %}
-                                        <div class="mb-4 position-relative ps-3 border-start border-2 border-primary animate__animated animate__fadeInUp">
+                                        
+                                        <div class="mb-4 position-relative ps-3 border-start border-3 {% if item.status == 'OVERDUE' or item.is_late %}border-danger{% elif item.status == 'RETURNED' %}border-success{% else %}border-primary{% endif %} animate__animated animate__fadeInUp">
+                                            
                                             <div class="fw-bold text-dark mb-1">{{ item.book.title }}</div>
-                                            <div class="d-flex justify-content-between align-items-center">
-                                                <small class="text-muted"><i class="far fa-calendar-alt me-1"></i> Hạn: {{ item.due_date|date:"d/m/Y" }}</small>
-                                                <span class="badge {% if item.status == 'BORROWED' %}bg-primary{% elif item.status == 'OVERDUE' %}bg-danger{% else %}bg-success{% endif %} rounded-pill px-2">
-                                                    {{ item.get_status_display }}
-                                                </span>
+                                            
+                                            <div class="d-flex justify-content-between align-items-start mt-2">
+                                                
+                                                <div class="d-flex flex-column gap-1">
+                                                    {% if item.status == 'PENDING' and item.reason != 'YÊU CẦU TRẢ' and item.pickup_date %}
+                                                        <small class="text-muted"><i class="far fa-calendar-alt me-1"></i> Hẹn lấy: <strong class="text-dark">{{ item.pickup_date|date:"d/m/Y" }}</strong></small>
+                                                    {% elif item.status == 'CANCELLED' %}
+                                                        <small class="text-muted"><i class="far fa-calendar-times me-1"></i> Đã hủy</small>
+                                                    {% else %}
+                                                        {% if item.borrow_date %}
+                                                            <small class="text-muted"><i class="far fa-calendar-check me-1"></i> Mượn: <strong class="text-dark">{{ item.borrow_date|date:"d/m/Y" }}</strong></small>
+                                                        {% endif %}
+                                                        
+                                                        <small class="text-muted"><i class="far fa-clock me-1"></i> Hạn: <strong class="{% if item.status == 'OVERDUE' %}text-danger{% else %}text-dark{% endif %}">{{ item.due_date|date:"d/m/Y"|default:"-" }}</strong></small>
+                                                        
+                                                        {% if item.status == 'RETURNED' %}
+                                                            <small class="{% if item.is_late %}text-danger{% else %}text-success{% endif %} fw-medium">
+                                                                <i class="fas fa-check-double me-1"></i> Đã trả: <strong>{{ item.return_date|date:"d/m/Y" }}</strong>
+                                                            </small>
+                                                        {% endif %}
+                                                    {% endif %}
+                                                </div>
+                                                
+                                                <div>
+                                                    {% if item.status == 'BORROWED' %}
+                                                        <span class="badge bg-primary rounded-pill px-3 py-1 shadow-sm">Đang mượn</span>
+                                                    {% elif item.status == 'OVERDUE' %}
+                                                        <span class="badge bg-danger rounded-pill px-3 py-1 shadow-sm">Quá hạn</span>
+                                                    {% elif item.status == 'PENDING' %}
+                                                        {% if item.reason == 'YÊU CẦU TRẢ' %}
+                                                            <span class="badge bg-warning text-dark rounded-pill px-3 py-1 shadow-sm">Chờ duyệt trả</span>
+                                                        {% else %}
+                                                            <span class="badge bg-info text-dark rounded-pill px-3 py-1 shadow-sm">Chờ đến lấy</span>
+                                                        {% endif %}
+                                                    {% elif item.status == 'CANCELLED' %}
+                                                        <span class="badge bg-secondary rounded-pill px-3 py-1 shadow-sm">Đã hủy</span>
+                                                    {% elif item.status == 'RETURNED' %}
+                                                        {% if item.is_late %}
+                                                            <span class="badge bg-danger rounded-pill px-3 py-1 shadow-sm">Trả trễ</span>
+                                                        {% else %}
+                                                            <span class="badge bg-success rounded-pill px-3 py-1 shadow-sm">Hoàn tất</span>
+                                                        {% endif %}
+                                                    {% else %}
+                                                        <span class="badge bg-success rounded-pill px-3 py-1 shadow-sm">Hoàn tất</span>
+                                                    {% endif %}
+                                                </div>
+
                                             </div>
                                         </div>
                                         {% empty %}

@@ -1487,5 +1487,12 @@ body.auth-page {
             z-index: 1;
         }
     }
-
+  /* CSS trang trí thêm cho Sự kiện */
+    .event-title-hover:hover {
+        color: #0d6efd !important;
+    }
+     .transition-hover-row { transition: all 0.2s ease; }
+    .transition-hover-row:hover { background-color: #f8faff !important; }
+    .transition-hover { transition: all 0.2s ease; }
+    .transition-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(13, 110, 253, 0.15) !important; }
     

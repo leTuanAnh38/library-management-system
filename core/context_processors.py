@@ -1,7 +1,7 @@
 from .models import BorrowTransaction, Wishlist, Category, Notification # Thêm Notification vào đây
 from django.db.models.functions import ExtractMonth
 from django.db.models import Count
-
+from core.models import Cart
 def dashboard_stats(request):
     # Lấy dữ liệu mượn sách theo tháng
     stats = BorrowTransaction.objects.annotate(month=ExtractMonth('borrow_date')) \
@@ -50,3 +50,10 @@ def show_borrow_info(request):
     except Exception:
         msg = ''
     return {'show_borrow_info_msg': msg}
+def cart_count(request):
+    if request.user.is_authenticated:
+        # Lấy giỏ hàng của user từ Database
+        user_cart = Cart.objects.filter(user=request.user).first()
+        if user_cart:
+            return {'global_cart_count': user_cart.items.count()}
+    return {'global_cart_count': 0}

@@ -315,7 +315,7 @@ def staff_borrow_management(request):
         'query': query,
         'today': today_date
     })
-
+# Xác nhận duyệt đơn mượn sách của sinh viên (Cả sách Free và có phí)
 @user_passes_test(is_staff, login_url='login')
 def staff_approve_borrow(request, transaction_id):
     # ---> ĐÃ SỬA: Bỏ điều kiện is_paid=False để Thủ thư có thể tìm và duyệt được cả sách Free
@@ -351,7 +351,7 @@ def staff_approve_borrow(request, transaction_id):
         messages.error(request, f"Lỗi hệ thống: {str(e)}")
         
     return redirect('staff_borrow_management')
-
+# xác nh thu tiền phạt và hoàn tất yêu cầu trả sách của sinh viên
 @user_passes_test(is_staff, login_url='login')
 def staff_confirm_return(request, transaction_id):
     borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, status__in=['BORROWED', 'PENDING'])
@@ -359,6 +359,8 @@ def staff_confirm_return(request, transaction_id):
     
     if request.method == 'POST':
         book_condition = request.POST.get('book_condition', 'NORMAL')
+        # ---> Lấy giá trị ô tick từ HTML
+        pay_now = request.POST.get('pay_now') == 'YES'
         
         try:
             with db_transaction.atomic():
@@ -383,34 +385,39 @@ def staff_confirm_return(request, transaction_id):
                 # 2. Xử lý phạt hư hỏng/mất sách
                 original_price = borrow_record.book.original_price or 0
                 if book_condition == 'LIGHT_DAMAGE':
-                    damage_fine = int(float(original_price) * 0.10) # Phạt 10%
+                    damage_fine = int(float(original_price) * 0.10) 
                     fine_amount += damage_fine
                     penalty_reasons.append(f"Hư hỏng nhẹ sách ({damage_fine:,.0f}đ)")
                 elif book_condition == 'LOST_OR_DESTROYED':
-                    damage_fine = int(original_price) # Đền 100%
+                    damage_fine = int(original_price) 
                     fine_amount += damage_fine
                     penalty_reasons.append(f"Mất/Hư hỏng nặng sách ({damage_fine:,.0f}đ)")
                     
                 # 3. Tạo phiếu phạt và thông báo
                 if fine_amount > 0:
                     reason_str = " + ".join(penalty_reasons)
+                    
+                    # ---> NẾU THỦ THƯ TICK ĐÃ THU TIỀN: Lưu status là PAID luôn
+                    penalty_status = 'PAID' if pay_now else 'UNPAID'
+                    
                     Penalty.objects.create(
                         user=user,
                         borrow_transaction=borrow_record,
                         amount=fine_amount,
                         reason=reason_str,
-                        status='UNPAID'
+                        status=penalty_status
                     )
-                    Notification.objects.create(
-                        user=user,
-                        message=f"CẢNH BÁO: Thủ thư đã thu hồi cuốn '{borrow_record.book.title}'. Hệ thống phạt {fine_amount:,.0f} VNĐ vì lý do: {reason_str}.",
-                        type='SYSTEM',
-                        status='UNREAD'
-                    )
+                    
+                    if pay_now:
+                        msg_noti = f"Thủ thư đã thu hồi cuốn '{borrow_record.book.title}'. Hệ thống ghi nhận bạn đã nộp trực tiếp {fine_amount:,.0f} VNĐ cho khoản phạt ({reason_str})."
+                    else:
+                        msg_noti = f"CẢNH BÁO: Thủ thư đã thu hồi cuốn '{borrow_record.book.title}'. Bạn bị phạt {fine_amount:,.0f} VNĐ ({reason_str}). Vui lòng vào Hồ sơ để thanh toán sau."
+                        
+                    Notification.objects.create(user=user, message=msg_noti, type='SYSTEM', status='UNREAD')
                 else:
                     Notification.objects.create(
                         user=user,
-                        message=f"Tuyệt vời! Thủ thư đã thu hồi cuốn '{borrow_record.book.title}' thành công. Bạn được cộng 10 điểm thưởng vì trả đúng hạn.",
+                        message=f"Tuyệt vời! Thủ thư đã thu hồi cuốn '{borrow_record.book.title}' thành công. Bạn được cộng 10 điểm thưởng vì trả đúng hạn và giữ sách tốt.",
                         type='SYSTEM',
                         status='UNREAD'
                     )
@@ -423,7 +430,7 @@ def staff_confirm_return(request, transaction_id):
                     book.quantity += 1
                 book.save()
                 
-                messages.success(request, f"Đã xác nhận thu hồi sách từ Sinh viên {user.msv}. Tình trạng: {book_condition}")
+                messages.success(request, f"Đã thu hồi sách từ Sinh viên {user.msv}. Tình trạng: {book_condition}. {'(ĐÃ THU XONG TIỀN PHẠT)' if fine_amount > 0 and pay_now else ''}")
         except Exception as e:
             messages.error(request, f"Lỗi hệ thống: {str(e)}")
             

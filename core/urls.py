@@ -65,6 +65,8 @@ urlpatterns = [
     path('return/<int:transaction_id>/', borrow_views.return_book, name='return_book'),
     # URL trả sách hàng loạt mới
     path('return-batch/', borrow_views.return_books_batch, name='return_books_batch'),
+    # Tìm chỗ chứa các url về mượn/trả sách và thêm dòng này vào:
+    path('renew/<int:transaction_id>/', borrow_views.renew_book, name='renew_book'),
 
     # ==========================================
     # 5. NHÓM NGHIỆP VỤ THỦ THƯ (STAFF DASHBOARD)

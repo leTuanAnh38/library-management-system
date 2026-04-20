@@ -63,11 +63,18 @@
                                         </div>
                                     </td>
                                     <td class="small text-secondary">{{ item.borrow_date|date:"d/m/Y"|default:"-" }}</td>
+                                    
                                     <td class="small">
                                         <span class="{% if item.status == 'BORROWED' or item.status == 'OVERDUE' %}text-primary fw-bold{% else %}text-secondary{% endif %}">
                                             {{ item.due_date|date:"d/m/Y"|default:"-" }}
                                         </span>
+                                        {% if item.renewal_count > 0 %}
+                                            <div class="mt-1" style="font-size: 0.7rem;">
+                                                <span class="badge bg-info text-dark rounded-1 opacity-75"><i class="fas fa-sync-alt me-1"></i>Gia hạn: {{ item.renewal_count }}/2</span>
+                                            </div>
+                                        {% endif %}
                                     </td>
+                                    
                                     <td class="small text-secondary">
                                         {% if item.return_date %}
                                             {{ item.return_date|date:"d/m/Y" }}
@@ -101,19 +108,31 @@
                                     </td>
                                     
                                     <td class="text-center">
-                                        {% if item.status == 'BORROWED' or item.status == 'OVERDUE' %}
-                                            <a href="{% url 'return_book' item.id %}"
-                                               class="btn btn-outline-primary btn-sm rounded-pill px-4 fw-bold transition-hover custom-confirm"
-                                               data-message="Bạn chắc chắn muốn báo trả cuốn sách [{{ item.book.title }}]? Vui lòng mang sách đến quầy sau khi xác nhận.">
-                                                Trả sách
-                                            </a>
-                                        {% elif item.status == 'PENDING' %}
-                                            <span class="text-warning small fw-medium"><i class="fas fa-spinner fa-spin me-1"></i>Chờ xử lý</span>
-                                        {% elif item.status == 'CANCELLED' %}
-                                            <span class="text-muted small opacity-75"><i class="fas fa-ban me-1"></i>Đã hủy</span>
-                                        {% else %}
-                                            <span class="text-success small fw-medium"><i class="fas fa-check-double me-1"></i>Hoàn tất</span>
-                                        {% endif %}
+                                        <div class="d-flex flex-column gap-2 align-items-center justify-content-center h-100">
+                                            {% if item.status == 'BORROWED' %}
+                                                <a href="{% url 'renew_book' item.id %}"
+                                                   class="btn btn-outline-info btn-sm rounded-pill px-3 fw-bold transition-hover custom-confirm"
+                                                   style="min-width: 110px;"
+                                                   data-message="Xác nhận gia hạn cuốn '{{ item.book.title }}' thêm 7 ngày? (Tối đa 2 lần, chỉ được phép gia hạn khi còn 2 ngày là đến hạn).">
+                                                    <i class="fas fa-calendar-plus me-1"></i> Gia hạn
+                                                </a>
+                                            {% endif %}
+
+                                            {% if item.status == 'BORROWED' or item.status == 'OVERDUE' %}
+                                                <a href="{% url 'return_book' item.id %}"
+                                                   class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold transition-hover custom-confirm"
+                                                   style="min-width: 110px;"
+                                                   data-message="Bạn chắc chắn muốn báo trả cuốn sách [{{ item.book.title }}]? Vui lòng mang sách đến quầy sau khi xác nhận.">
+                                                    Trả sách
+                                                </a>
+                                            {% elif item.status == 'PENDING' %}
+                                                <span class="text-warning small fw-medium"><i class="fas fa-spinner fa-spin me-1"></i>Chờ xử lý</span>
+                                            {% elif item.status == 'CANCELLED' %}
+                                                <span class="text-muted small opacity-75"><i class="fas fa-ban me-1"></i>Đã hủy</span>
+                                            {% else %}
+                                                <span class="text-success small fw-medium"><i class="fas fa-check-double me-1"></i>Hoàn tất</span>
+                                            {% endif %}
+                                        </div>
                                     </td>
                                 </tr>
                                 {% empty %}
@@ -155,11 +174,4 @@
         </div>
     </div>
 </div>
-
-<style>
-    .transition-hover-row { transition: all 0.2s ease; }
-    .transition-hover-row:hover { background-color: #f8faff !important; }
-    .transition-hover { transition: all 0.2s ease; }
-    .transition-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(13, 110, 253, 0.15) !important; }
-</style>
 {% endblock %}
