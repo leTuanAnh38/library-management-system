@@ -65,9 +65,9 @@
         
         <a href="{% url 'view_cart' %}" class="list-group-item list-group-item-action py-3 border-0 {% if request.resolver_match.url_name == 'view_cart' %}active bg-light text-primary fw-bold{% endif %}">
             <i class="fas fa-shopping-cart text-primary me-3 fa-fw"></i>Giỏ sách
-            {% if request.session.borrow_cart|length > 0 %}
-                <span class="badge bg-info rounded-pill float-end">{{ request.session.borrow_cart|length }}</span>
-            {% endif %}
+            <span class="badge bg-danger rounded-pill float-end" id="cart-badge" {% if not global_cart_count %}style="display: none;"{% endif %}>
+                {{ global_cart_count }}
+            </span>
         </a>
         
         <a href="{% url 'book_list' %}" class="list-group-item list-group-item-action py-3 border-0 {% if request.resolver_match.url_name == 'book_list' %}active bg-light text-primary fw-bold{% endif %}">

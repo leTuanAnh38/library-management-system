@@ -175,18 +175,17 @@ class BorrowTransaction(TimeStampedModel):
     
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='BORROWED')
     reason = models.CharField(max_length=255, null=True, blank=True)
-
     # ==========================================
     # [MỚI THÊM] Trường lưu thông tin hẹn lấy sách
     # ==========================================
     pickup_date = models.DateField(null=True, blank=True, verbose_name="Ngày hẹn lấy")
     pickup_shift = models.CharField(max_length=10, choices=SHIFT_CHOICES, null=True, blank=True, verbose_name="Ca hẹn lấy")
-
     # ==========================================
     # Trường lưu thông tin thanh toán
     # ==========================================
     payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default='FREE', verbose_name="Phương thức thanh toán")
     is_paid = models.BooleanField(default=False, verbose_name="Trạng thái thanh toán")
+    renewal_count = models.IntegerField(default=0, verbose_name="Số lần gia hạn")
 
     @property
     def is_late(self):
@@ -210,6 +209,21 @@ class BorrowTransaction(TimeStampedModel):
     class Meta:
         verbose_name = 'Giao dịch mượn'
         verbose_name_plural = 'Quản lý Mượn/Trả'
+        
+class Cart(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='cart')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Giỏ sách của {self.user.username}"
+
+class CartItem(models.Model):
+    cart = models.ForeignKey(Cart, on_delete=models.CASCADE, related_name='items')
+    book = models.ForeignKey(Book, on_delete=models.CASCADE)
+    added_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('cart', 'book') # Không cho phép thêm 1 cuốn sách 2 lần vào giỏ
 
 class Penalty(TimeStampedModel):
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='penalties')

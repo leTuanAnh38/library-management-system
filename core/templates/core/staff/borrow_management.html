@@ -90,10 +90,23 @@
                                     {% elif trans.status == 'CANCELLED' %}
                                         <span class="text-muted">-</span>
                                     {% else %}
-                                        <div class="text-muted small mb-1">Hạn trả:</div>
-                                        <div class="fw-semibold {% if trans.status == 'BORROWED' and trans.due_date < today %}text-danger{% else %}text-dark{% endif %}" style="font-size: 0.9rem;">
-                                            {{ trans.due_date|date:"d/m/Y"|default:"-" }}
+                                        {% if trans.borrow_date %}
+                                            <div class="text-muted small mb-1">Mượn: <span class="text-dark fw-medium">{{ trans.borrow_date|date:"d/m/Y" }}</span></div>
+                                        {% endif %}
+                                        
+                                        <div class="text-muted small mb-1">Hạn trả: 
+                                            <span class="fw-semibold {% if trans.status != 'RETURNED' and trans.due_date < today %}text-danger{% else %}text-dark{% endif %}" style="font-size: 0.9rem;">
+                                                {{ trans.due_date|date:"d/m/Y"|default:"-" }}
+                                            </span>
                                         </div>
+
+                                        {% if trans.status == 'RETURNED' %}
+                                            <div class="text-muted small mb-0">Đã trả: 
+                                                <span class="{% if trans.is_late %}text-danger{% else %}text-success{% endif %} fw-bold">
+                                                    {{ trans.return_date|date:"d/m/Y" }}
+                                                </span>
+                                            </div>
+                                        {% endif %}
                                     {% endif %}
                                 </td>
                                 
@@ -116,17 +129,14 @@
                                         <span class="text-danger fw-bold" style="font-size: 0.9rem;">
                                             <i class="fas fa-circle me-2" style="font-size: 8px;"></i>Đã hủy
                                         </span>
-                                        <div class="mt-1 text-muted fw-medium" style="font-size: 0.75rem; line-height: 1.4;">
-                                            Lý do: Không lấy sách<br>ca {% if trans.pickup_shift == 'SANG' %}Sáng (07:30 - 11:30){% else %}Chiều (13:00 - 17:00){% endif %} ({{ trans.pickup_date|date:"d/m/Y" }})
-                                        </div>
+                                    {% elif trans.status == 'RETURNED' %}
+                                        {% if trans.is_late %}
+                                            <span class="text-danger fw-bold" style="font-size: 0.9rem;"><i class="fas fa-circle me-2" style="font-size: 8px;"></i>Trả trễ</span>
+                                        {% else %}
+                                            <span class="text-success fw-medium" style="font-size: 0.9rem;"><i class="fas fa-circle me-2" style="font-size: 8px;"></i>Hoàn tất</span>
+                                        {% endif %}
                                     {% else %}
                                         <span class="text-success fw-medium" style="font-size: 0.9rem;"><i class="fas fa-circle me-2" style="font-size: 8px;"></i>Hoàn tất</span>
-                                    {% endif %}
-
-                                    {% if trans.payment_method != 'FREE' %}
-                                        <div class="mt-1 text-muted fw-medium" style="font-size: 0.75rem;">
-                                            {% if trans.payment_method == 'CASH' %}Thanh toán tiền mặt{% else %}Chuyển khoản (QR){% endif %}
-                                        </div>
                                     {% endif %}
                                 </td>
                                 
@@ -147,8 +157,6 @@
                                         <button type="button" class="btn btn-sm btn-light border px-3 fw-medium rounded-2 text-dark" data-bs-toggle="modal" data-bs-target="#returnModal{{ trans.id }}">
                                             Thu hồi
                                         </button>
-                                    {% elif trans.status == 'CANCELLED' %}
-                                        <span class="text-muted fw-medium small">Không có hành động</span>
                                     {% else %}
                                         <span class="text-muted fw-medium small">Không có hành động</span>
                                     {% endif %}
@@ -220,7 +228,6 @@
             <form method="POST" action="{% url 'staff_confirm_return' trans.id %}">
                 {% csrf_token %}
                 <div class="modal-body p-4">
-                    
                     <div class="d-flex align-items-center mb-4">
                         <img src="{{ trans.book.get_cover }}" class="rounded me-3 border" style="width: 45px; height: 65px; object-fit: cover;">
                         <div>
@@ -237,9 +244,14 @@
                             <option value="LIGHT_DAMAGE">Hư hỏng nhẹ (Phạt 10% giá gốc)</option>
                             <option value="LOST_OR_DESTROYED">Mất sách / Rách nát (Đền 100% giá gốc)</option>
                         </select>
-                        <p class="text-muted mt-2 mb-0" style="font-size: 0.8rem;">Nếu chọn "Mất sách", hệ thống sẽ trừ 1 vào tổng số lượng kho.</p>
                     </div>
-                    
+
+                    <div class="form-check mt-3 pt-3 border-top">
+                        <input class="form-check-input" type="checkbox" name="pay_now" value="YES" id="payNow{{ trans.id }}" style="transform: scale(1.2); cursor: pointer;">
+                        <label class="form-check-label fw-bold text-danger ms-1" for="payNow{{ trans.id }}" style="cursor: pointer;">
+                            <i class="fas fa-hand-holding-usd me-1"></i> Sinh viên đã nộp luôn tiền phạt tại quầy (nếu có)
+                        </label>
+                    </div>
                 </div>
                 <div class="modal-footer border-top p-3 bg-light rounded-bottom-3">
                     <button type="button" class="btn btn-light border text-dark fw-medium rounded-2 px-4 shadow-none" data-bs-dismiss="modal">Hủy</button>
@@ -250,5 +262,4 @@
     </div>
 </div>
 {% endfor %}
-
 {% endblock %}
