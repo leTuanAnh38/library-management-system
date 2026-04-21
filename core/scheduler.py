@@ -6,20 +6,31 @@ import logging
 logger = logging.getLogger(__name__)
 
 def check_overdue_job():
-    """Hàm này sẽ gọi cái lệnh check_overdue mà bạn vừa tạo"""
+    """Quét sách trễ hạn (Chạy 1 lần/ngày)"""
     try:
         print("Đang chạy kiểm tra sách trễ hạn tự động...")
-        # Gọi lệnh tự động y như lúc bạn gõ trên Terminal
         call_command('check_overdue') 
     except Exception as e:
         logger.error(f"Lỗi khi chạy lệnh check_overdue: {e}")
 
+def auto_cancel_job():
+    """Quét hủy đơn không đến lấy (Chạy liên tục)"""
+    try:
+        call_command('auto_cancel') 
+    except Exception as e:
+        logger.error(f"Lỗi khi chạy lệnh auto_cancel: {e}")
+
 def start():
     scheduler = BackgroundScheduler()
-    # Đặt lịch chạy: 8h00 sáng mỗi ngày
-    scheduler.add_job(check_overdue_job, 'cron', hour=8, minute=0)
-    # Nếu muốn test ngay, bạn có thể đổi thành: scheduler.add_job(check_overdue_job, 'interval', minutes=1)
     
+    # 1. Job cũ của bạn: Chạy lúc 8h sáng mỗi ngày
+    scheduler.add_job(check_overdue_job, 'cron', hour=8, minute=0)
+    
+    # 2. JOB MỚI: Cứ mỗi 1 giờ sẽ tự động chạy ngầm 1 lần
+    scheduler.add_job(auto_cancel_job, 'interval', hours=1) 
+    
+    # (Mẹo: Nếu lúc đang code bạn muốn test xem nó có chạy không, 
+    # hãy đổi 'interval', hours=1 thành 'interval', minutes=1 để nó chạy mỗi phút)
     
     scheduler.start()
-    print("⏳ Hệ thống đặt lịch tự động đã khởi động (Chạy lúc 8h sáng mỗi ngày).")
+    print("⏳ Hệ thống đặt lịch tự động đã khởi động (Có theo dõi đơn trễ giờ).")

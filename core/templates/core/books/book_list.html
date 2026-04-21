@@ -80,12 +80,4 @@
     </div>
 </div>
 
-<script>
-document.addEventListener("DOMContentLoaded", function() {
-    let today = new Date().toISOString().split('T')[0];
-    document.querySelectorAll('.date-picker-future').forEach(function(input) {
-        input.setAttribute('min', today);
-    });
-});
-</script>
 {% endblock %}
