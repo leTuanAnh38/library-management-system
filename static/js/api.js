@@ -128,7 +128,7 @@ function renderBookHTML(book, is_premium) {
     if (book.btn_status === 'PENDING') {
         actionBtn = `<button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-none disabled" style="opacity: 0.8;"><i class="fas fa-spinner fa-spin me-1"></i>CHỜ XÁC NHẬN</button>`;
     } else if (book.btn_status === 'BORROWED') {
-        actionBtn = `<button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 disabled shadow-none">ĐANG GIỮ SÁCH</button>`;
+        actionBtn = `<button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 disabled shadow-none">ĐANG MƯỢN</button>`;
     } else if (book.btn_status === 'OUT_OF_STOCK' || book.quantity <= 0) {
         actionBtn = `<button class="btn btn-light border rounded-pill fw-bold w-100 py-2 disabled text-muted">TẠM HẾT</button>`;
     } else { 

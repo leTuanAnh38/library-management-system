@@ -129,6 +129,9 @@
                                         <span class="text-danger fw-bold" style="font-size: 0.9rem;">
                                             <i class="fas fa-circle me-2" style="font-size: 8px;"></i>Đã hủy
                                         </span>
+                                        <div class="mt-1 text-muted fw-medium" style="font-size: 0.75rem; line-height: 1.4;">
+                                            Lý do: Không tới lấy sách<br>ca {% if trans.pickup_shift == 'SANG' %}Sáng (07:30 - 11:30){% else %}Chiều (13:00 - 17:00){% endif %} ngày {{ trans.pickup_date|date:"d/m/Y" }}
+                                        </div>
                                     {% elif trans.status == 'RETURNED' %}
                                         {% if trans.is_late %}
                                             <span class="text-danger fw-bold" style="font-size: 0.9rem;"><i class="fas fa-circle me-2" style="font-size: 8px;"></i>Trả trễ</span>
