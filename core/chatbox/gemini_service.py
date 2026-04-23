@@ -52,6 +52,21 @@ class GeminiChatService:
         categories = [b['book__category__name'] for b in borrows if b['book__category__name']]
         return list(set(categories))[:3]
     
+    def _is_book_valid(self, book):
+        """Kiểm tra xem sách có hợp lệ để gợi ý không (lọc sách có tên cục súc)"""
+        if not book.title:
+            return False
+        title_lower = book.title.lower()
+        # Lọc những cuốn có tên vô ý nghĩa, cục súc, hoặc spam
+        inappropriate_patterns = [
+            'con cu', 'lmao', 'haha', 'xxx', '123', 'test', 'spam',
+            'bla', 'foo', 'bar', 'aaa', 'bbb', 'ccc', '...'
+        ]
+        for pattern in inappropriate_patterns:
+            if pattern in title_lower:
+                return False
+        return True
+
     def get_dynamic_context(self, user, user_message):
         """Tự động rà soát database dựa trên câu chat của người dùng (Bao gồm xử lý sách Free)"""
         from core.models import Category
@@ -86,8 +101,8 @@ class GeminiChatService:
             for term in search_terms:
                 q_objects |= Q(title__icontains=term) | Q(author__icontains=term) | Q(category__name__icontains=term)
             
-            searched_books = query.filter(q_objects).distinct()[:5]
-            if searched_books.exists():
+            searched_books = [b for b in query.filter(q_objects).distinct()[:5] if self._is_book_valid(b)]
+            if searched_books:
                 book_list = "\n".join([
                     f"- '{b.title}' (Tác giả: {b.author or 'N/A'} | {('💰 ' + str(b.price) + ' VNĐ') if b.price and b.price > 0 else '✨ Miễn phí'})"
                     for b in searched_books
@@ -102,11 +117,12 @@ class GeminiChatService:
                 query = query_pref
             
         query = query.annotate(borrow_count=Count('borrow_records')).order_by('-borrow_count')
-        recs = [f"- {b.title} (Tác giả: {b.author or 'Đang cập nhật'} | {b.price if b.price and b.price > 0 else 'Miễn phí'})" for b in query[:3]]
+        recs = [f"- {b.title} (Tác giả: {b.author or 'Đang cập nhật'} | {b.price if b.price and b.price > 0 else 'Miễn phí'})" for b in query[:5] if self._is_book_valid(b)][:3]
         
         # 4. Luôn kẹp thêm 1-2 cuốn sách FREE vào cuối cùng để AI chủ động gợi ý (NẾU CHƯA TÌM)
         if not is_searching_free:
-            free_books = Book.objects.filter(Q(price=0) | Q(price__isnull=True), status='AVAILABLE', quantity__gt=0).exclude(borrow_records__user=user).order_by('?')[:2]
+            free_books_all = Book.objects.filter(Q(price=0) | Q(price__isnull=True), status='AVAILABLE', quantity__gt=0).exclude(borrow_records__user=user).order_by('?')[:10]
+            free_books = [b for b in free_books_all if self._is_book_valid(b)][:2]
             free_recs = [f"- {b.title} (Tác giả: {b.author or 'Đang cập nhật'} | Miễn phí)" for b in free_books]
             if free_recs:
                  return "Gợi ý sách hay thư viện đang có sẵn:\n" + "\n".join(recs) + "\n\nSách MIỄN PHÍ có thể gợi ý thêm:\n" + "\n".join(free_recs)
@@ -129,6 +145,10 @@ class GeminiChatService:
                 result = self._handle_book_selection(user, msg_stripped, request)
                 if result:
                     return result
+            elif msg_stripped.isdigit() and msg_stripped not in ['1', '2', '3']:
+                # User chọn số không hợp lệ (không phải 1, 2, 3)
+                logger.warning(f"[CHAT] Invalid selection: {msg_stripped}")
+                return "❌ Vui lòng chọn 1, 2 hoặc 3. Chọn sai số sẽ không được xử lý!"
             
             # ===== BƯỚC 0B: KIỂM TRA XEM USER CÓ ĐANG TRẢ LỜI NGÀY/GIỜ MƯỢN SÁCH (dùng cache) =====
             cache_key = f"pending_borrow_{user.id}"
@@ -215,6 +235,8 @@ class GeminiChatService:
                     cache_key = f"pending_borrow_{user.id}"
                     
                     # Lưu danh sách sách + intent (ngày/giờ) vào cache
+                    # Chỉ lưu tối đa 3 cuốn và lọc sách không hợp lệ
+                    valid_books = [b for b in books[:5] if self._is_book_valid(b)][:3]
                     books_data = [
                         {
                             'id': book.id,
@@ -222,7 +244,7 @@ class GeminiChatService:
                             'author': book.author or 'Tác giả không rõ',
                             'price': float(book.price) if book.price else 0
                         }
-                        for book in books
+                        for book in valid_books
                     ]
                     cache.set(cache_key, {
                         'books': books_data,
@@ -230,7 +252,7 @@ class GeminiChatService:
                         'waiting_for_selection': True
                     }, timeout=1800)
                     
-                    book_list = "\n".join([f"{i+1}. {handler.format_book_info(b)}" for i, b in enumerate(books)])
+                    book_list = "\n".join([f"{i+1}. {handler.format_book_info(b)}" for i, b in enumerate(valid_books)])
                     return f"Tôi tìm thấy vài cuốn sách phù hợp:\n{book_list}\n\nBạn muốn mượn cuốn nào? (Trả lời: 1, 2 hoặc 3)"
                 
                 # 1 cuốn nhưng thiếu ngày/giờ
@@ -573,6 +595,19 @@ NGUYÊN TẮC GIAO TIẾP:
                 logger.debug(f"[DATETIME RESPONSE] No date found - asking for clarification")
                 return "Bạn chưa nêu ngày (ví dụ: 21/04/2026 hoặc ngày mai). Vui lòng trả lời: ngày nào?"
             
+            # ===== KIỂM TRA NGÀY KHÔNG ĐƯỢC TRONG QUÁ KHỨ =====
+            from datetime import date as date_class
+            try:
+                pickup_date_obj = date_class.fromisoformat(pickup_date)
+                today = timezone.now().date()
+                
+                if pickup_date_obj < today:
+                    logger.warning(f"[DATETIME RESPONSE] Invalid date (in the past): {pickup_date} vs today {today}")
+                    return f"⚠️ Ngày {pickup_date} đã qua rồi! Bạn phải chọn ngày từ hôm nay ({today.strftime('%d/%m/%Y')}) trở đi. Vui lòng chọn lại."
+            except Exception as e:
+                logger.error(f"[DATETIME RESPONSE] Error parsing date: {str(e)}")
+                return "❌ Ngày không hợp lệ. Vui lòng chọn lại (ví dụ: 23/04/2026 hoặc ngày mai)."
+            
             logger.info(f"[DATETIME RESPONSE] Successfully parsed - Shift: {shift_code}, Date: {pickup_date}")
             
             # Tạo giao dịch mượn
@@ -593,8 +628,25 @@ NGUYÊN TẮC GIAO TIẾP:
         """
         from core.models import BorrowTransaction
         from django.db import transaction as db_transaction
+        from datetime import date as date_class
     
         try:
+            # ===== VALIDATE NGÀY =====
+            try:
+                pickup_date_obj = date_class.fromisoformat(pickup_date)
+                today = timezone.now().date()
+                if pickup_date_obj < today:
+                    return {
+                        'success': False,
+                        'message': f"⚠️ Ngày {pickup_date} đã qua rồi! Bạn phải chọn ngày từ hôm nay ({today.strftime('%d/%m/%Y')}) trở đi."
+                    }
+            except Exception as e:
+                logger.error(f"[CREATE TRANSACTION] Invalid pickup date: {str(e)}")
+                return {
+                    'success': False,
+                    'message': "❌ Ngày không hợp lệ. Vui lòng kiểm tra lại."
+                }
+            
             with db_transaction.atomic():
                 due_date = timezone.now().date() + timedelta(days=14)
                 is_premium = book.price and book.price > 0
