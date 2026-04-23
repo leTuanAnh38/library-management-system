@@ -1110,6 +1110,7 @@ $(document).ready(function() {
     }
 
 });
+
 // XỬ LÝ NÚT THAM GIA SỰ KIỆN
     $(document).on('click', '.btn-toggle-event', function(e) {
         e.preventDefault();

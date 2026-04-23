@@ -224,7 +224,7 @@ def contact_view(request):
                 recipient_list=['tuananhih271@gmail.com'], # <--- Email của Khanh nhận tin
                 fail_silently=False,
             )
-            messages.success(request, f'Cảm ơn {name}! Lời nhắn của bạn đã được gửi thành công đến ban quản trị.')
+            messages.success(request, f'Cảm ơn {name}! Tin nhắn của bạn đã được gửi thành công đến quản trị viên.')
         except Exception as e:
             messages.error(request, 'Có lỗi xảy ra khi gửi email. Vui lòng thử lại sau.')
 
@@ -247,7 +247,7 @@ def premium_book_list(request):
         books = paginator.page(paginator.num_pages)
     # ---------------------------------------------------------
 
-    # Khởi tạo các danh sách ID trống
+    # Khởi tạo ID các danh sách trống
     borrowed_book_ids = []
     pending_book_ids = []
     wishlist_book_ids = []
@@ -441,8 +441,8 @@ def book_detail(request, book_id):
         'pending_book_ids': list(pending_book_ids), # [MỚI] Truyền biến này ra template
         'user_has_reviewed': user_has_reviewed  
     })
-# core/views.py
 
+# core/views.py
 @login_required(login_url='login')
 def add_review(request, book_id):
     if request.method == 'POST':

@@ -75,7 +75,7 @@ class ChatBox {
         this.chatWindow = window;
     }
     
-    attachEvents() {
+        attachEvents() {
         this.bubble.addEventListener('click', () => this.toggleChat());
         document.getElementById('close-chat').addEventListener('click', () => this.toggleChat());
         document.getElementById('send-btn').addEventListener('click', () => this.sendMessage());
