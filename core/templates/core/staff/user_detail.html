@@ -122,7 +122,12 @@
                                                             <span class="badge bg-info text-dark rounded-pill px-3 py-1 shadow-sm">Chờ đến lấy</span>
                                                         {% endif %}
                                                     {% elif item.status == 'CANCELLED' %}
-                                                        <span class="badge bg-secondary rounded-pill px-3 py-1 shadow-sm">Đã hủy</span>
+                                                        <div class="text-end">
+                                                            <span class="badge bg-secondary rounded-pill px-3 py-1 shadow-sm">Đã hủy</span>
+                                                            <div class="mt-1 text-muted fw-medium" style="font-size: 0.7rem;">
+                                                                Lý do: Bỏ hẹn ca {% if item.pickup_shift == 'SANG' %}Sáng{% else %}Chiều{% endif %} ngày {{ item.pickup_date|date:"d/m/Y" }}
+                                                            </div>
+                                                        </div>
                                                     {% elif item.status == 'RETURNED' %}
                                                         {% if item.is_late %}
                                                             <span class="badge bg-danger rounded-pill px-3 py-1 shadow-sm">Trả trễ</span>

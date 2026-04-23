@@ -226,44 +226,11 @@ def staff_publisher_form(request, pk=None):
 
 @user_passes_test(is_staff, login_url='login')
 def staff_borrow_management(request):
-    # ========================================================
-    # 1. LOGIC TỰ ĐỘNG HỦY ĐƠN TRỄ HẸN LẤY SÁCH (CHO MƯỢN)
-    # ========================================================
-    # Lấy chính xác giờ trên đồng hồ máy tính để tránh lỗi múi giờ UTC
-    now = datetime.now() 
-    today_date = now.date()
-    current_hour = now.hour
-    # Lấy các đơn CHỜ DUYỆT (Loại trừ các đơn sinh viên đang yêu cầu trả)
-    pending_mmuon = BorrowTransaction.objects.filter(status='PENDING').exclude(reason='YÊU CẦU TRẢ')
-    
-    for t in pending_mmuon:
-        is_expired = False
-        if t.pickup_date:
-            # Nếu ngày hẹn đã qua hoặc là hôm nay nhưng đã quá ca trực
-            if t.pickup_date < today_date:
-                is_expired = True
-            elif t.pickup_date == today_date:
-                if t.pickup_shift == 'SANG' and current_hour >= 12: # Quá 12h trưa hủy ca Sáng
-                    is_expired = True
-                elif t.pickup_shift == 'CHIEU' and current_hour >= 18: # Quá 18h tối hủy ca Chiều
-                    is_expired = True
-
-        if is_expired:
-            with db_transaction.atomic():
-                t.status = 'CANCELLED'
-                t.reason = 'Hủy tự động do quá hạn thời gian đến nhận sách'
-                t.save()
-                # Hoàn lại số lượng sách vào kho
-                t.book.quantity += 1
-                t.book.save()
-                
-                # Gửi thông báo cho sinh viên
-                shift_text = "Sáng" if t.pickup_shift == 'SANG' else "Chiều"
-                cancel_msg = f"HỦY TỰ ĐỘNG: Đơn mượn sách '{t.book.title}' bị hủy do bạn không đến nhận đúng hẹn (Ca {shift_text} ngày {t.pickup_date.strftime('%d/%m/%Y')})."
-                Notification.objects.create(user=t.user, message=cancel_msg, type='SYSTEM', status='UNREAD')
+    # Lấy ngày hiện tại để dùng cho việc hiển thị ngoài HTML
+    today_date = timezone.now().date()
 
     # ========================================================
-    # 2. LOGIC TỰ ĐỘNG XỬ LÝ "YÊU CẦU TRẢ" ẢO (SAU 24 GIỜ)
+    # 1. LOGIC TỰ ĐỘNG XỬ LÝ "YÊU CẦU TRẢ" ẢO (SAU 24 GIỜ)
     # ========================================================
     # Nếu sinh viên bấm trả nhưng quá 24h không mang sách tới quầy, trả về trạng thái Đang mượn
     return_requests = BorrowTransaction.objects.filter(status='PENDING', reason='YÊU CẦU TRẢ')
@@ -280,7 +247,7 @@ def staff_borrow_management(request):
             )
 
     # ========================================================
-    # 3. LẤY DANH SÁCH & PHÂN TRANG
+    # 2. LẤY DANH SÁCH & PHÂN TRANG
     # ========================================================
     query = request.GET.get('search_query', '').strip()
     

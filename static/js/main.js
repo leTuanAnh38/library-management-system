@@ -480,3 +480,29 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 });
+
+   // Xử lý xem trước ảnh cực nhanh
+    document.getElementById('cover-file-upload').addEventListener('change', function(e) {
+        var file = e.target.files[0];
+        if (file) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('avatar-preview').src = e.target.result;
+            }
+            reader.readAsDataURL(file);
+            document.getElementById('cover-url-input').value = ''; 
+        }
+    });
+
+    document.getElementById('cover-url-input').addEventListener('input', function(e) {
+        if (this.value.trim() !== '') {
+            document.getElementById('avatar-preview').src = this.value;
+        }
+    });
+
+    document.addEventListener("DOMContentLoaded", function() {
+    let today = new Date().toISOString().split('T')[0];
+    document.querySelectorAll('.date-picker-future').forEach(function(input) {
+        input.setAttribute('min', today);
+    });
+});
