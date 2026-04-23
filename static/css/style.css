@@ -1495,4 +1495,128 @@ body.auth-page {
     .transition-hover-row:hover { background-color: #f8faff !important; }
     .transition-hover { transition: all 0.2s ease; }
     .transition-hover:hover { transform: translateY(-2px); box-shadow: 0 4px 10px rgba(13, 110, 253, 0.15) !important; }
+
+    /* Các style nền tảng cho giao diện */
+    .border-dashed { border-style: dashed !important; border-width: 2px !important; }
+    .transition-hover { transition: all 0.2s ease; }
+    .transition-hover:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
     
+    /* Thiết kế nút bấm chọn phương thức thanh toán và ca trực */
+    .btn-check:checked + .btn-outline-secondary { background-color: #f8f9fa; border-color: #0d6efd !important; border-style: solid !important; color: #0d6efd; }
+    .btn-check:checked + .btn-outline-info { background-color: #0dcaf0; color: white !important; border-color: #0dcaf0; }
+    .btn-check:checked + .btn-outline-warning { background-color: #ffc107; color: white !important; border-color: #ffc107; }
+
+    .transition-hover {
+        transition: all 0.2s ease;
+    }
+    .transition-hover:hover {
+        background-color: #f8f9fa !important;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.05) !important;
+    }
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.01) !important;
+    }
+    .btn-outline-danger:hover {
+        background-color: #dc3545 !important;
+        color: white !important;
+    }
+       /* Giới hạn hiển thị lý do phạt nếu quá dài */
+    .line-clamp-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;  
+        overflow: hidden;
+    }
+
+     /* Tổng thể Background thêm sách dự án */
+    body {
+        background-color: #f4f7f6;
+    }
+
+    /* Thiết kế Form Fields phong cách Apple/Stripe */
+    input.form-control, select.form-select, textarea.form-control {
+        border: 2px solid #f1f3f5 !important;
+        padding: 0.75rem 1rem !important;
+        font-size: 0.95rem !important;
+        background-color: #f8f9fa !important;
+        transition: all 0.25s ease !important;
+        border-radius: 12px !important;
+        color: #343a40 !important;
+    }
+
+    input.form-control:focus, select.form-select:focus {
+        background-color: #ffffff !important;
+        border-color: #0d6efd !important;
+        box-shadow: 0 8px 20px rgba(13, 110, 253, 0.1) !important;
+        transform: translateY(-1px);
+    }
+
+    /* Khung Preview Bìa sách */
+    .preview-frame {
+        transition: all 0.3s ease;
+    }
+    .preview-frame:hover {
+        transform: scale(1.02);
+    }
+
+    /* Custom bo góc cực lớn cho Card chính */
+    .rounded-5 {
+        border-radius: 2rem !important;
+    }
+
+    /* Nút bấm Hover */
+    .btn-primary {
+        background: linear-gradient(135deg, #0d6efd, #004dc2);
+        border: none;
+        transition: all 0.3s ease;
+    }
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 25px rgba(13, 110, 253, 0.3) !important;
+    }
+     /* CSS Đồng bộ Modern Dashboard chi tiết sách*/
+    .transition-hover { transition: all 0.3s ease; }
+    .transition-hover:hover { transform: translateY(-3px); box-shadow: 0 8px 20px rgba(0,0,0,0.08) !important; }
+    
+    .rounded-5 { border-radius: 2rem !important; }
+    .border-dashed { border-style: dashed !important; border-width: 2px !important; }
+    
+    /* Style Modal Chọn Ca */
+    .btn-check:checked + .btn-outline-info { background-color: #0dcaf0; color: white !important; border-color: #0dcaf0; }
+    .btn-check:checked + .btn-outline-warning { background-color: #ffc107; color: white !important; border-color: #ffc107; }
+    .btn-check:checked + .btn-outline-warning small, .btn-check:checked + .btn-outline-warning span { color: white !important; }
+    .btn-outline-info, .btn-outline-warning { background-color: #f8f9fa; border-color: #eee; }
+    
+    /* Style Nút Phương Thức Thanh Toán */
+    .btn-check:checked + .btn-outline-secondary {
+        background-color: #f8f9fa;
+        border-color: #0d6efd !important;
+        border-style: solid !important;
+        color: #0d6efd;
+    }
+
+     /* Hiệu ứng mượt mà book_cart */
+    .transition-hover { transition: all 0.3s ease; }
+    .transition-hover:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1) !important; }
+    .transition-zoom { transition: transform 0.5s ease; }
+    .bg-white:hover .transition-zoom { transform: scale(1.05); }
+    
+    /* Style cho Modal */
+    .rounded-5 { border-radius: 2rem !important; }
+    .border-dashed { border-style: dashed !important; }
+    
+    /* Tùy chỉnh các nút Radio ca trực */
+    .btn-check:checked + .btn-outline-info { background-color: #0dcaf0; color: white !important; border-color: #0dcaf0; }
+    .btn-check:checked + .btn-outline-warning { background-color: #ffc107; color: white !important; border-color: #ffc107; }
+    .btn-check:checked + .btn-outline-warning small, .btn-check:checked + .btn-outline-warning span { color: white !important; }
+    
+    .btn-outline-info, .btn-outline-warning { background-color: #f8f9fa; border-color: #eee; }
+    
+    /* Active state cho Phương thức thanh toán */
+    .btn-check:checked + .btn-outline-secondary {
+        background-color: #f8f9fa;
+        border-color: #0d6efd !important;
+        border-style: solid !important;
+        color: #0d6efd;
+    }
