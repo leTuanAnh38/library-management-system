@@ -298,8 +298,9 @@ def api_load_more_history(request):
             When(status='OVERDUE', then=Value(1)),   # Quá hạn lên top 1
             When(status='BORROWED', then=Value(2)),  # Đang mượn top 2
             When(status='PENDING', then=Value(3)),   # Chờ duyệt top 3
-            When(status='RETURNED', then=Value(4)),  # Đã trả xuống cuối
-            default=Value(5),
+            When(status='CANCELLED', then=Value(4)), # Đã hủy top 4
+            When(status='RETURNED', then=Value(5)),  # Đã trả xuống cuối
+            default=Value(6),
             output_field=IntegerField(),
         )
     ).order_by('status_priority', '-created_at')

@@ -77,11 +77,24 @@ def borrow_book(request, book_id):
         
         if not pickup_date or not pickup_shift:
             return respond('error', "Vui lòng chọn ngày và ca lấy sách!")
+        # ---------- THÊM ĐOẠN LOGIC CHẶN GIỜ NÀY ----------
+        pickup_date_obj = datetime.strptime(pickup_date, '%Y-%m-%d').date()
+        today = timezone.localtime().date()
+        current_hour = timezone.localtime().hour
+        
+        if pickup_date_obj == today:
+            # Nếu chọn ca Sáng hôm nay nhưng đã quá 11h trưa (hoặc đang là chiều/tối)
+            if pickup_shift == 'SANG' and current_hour >= 11:
+                return respond('error', "Ca Sáng hôm nay đã kết thúc. Vui lòng chọn ca Chiều hoặc ngày khác!")
+            # Nếu chọn ca Chiều hôm nay nhưng đã quá 17h chiều (đang là buổi tối)
+            if pickup_shift == 'CHIEU' and current_hour >= 17:
+                return respond('error', "Các ca nhận sách hôm nay đã kết thúc. Vui lòng chọn ngày khác!")
     else:
         # Chặn truy cập trực tiếp qua URL (GET request) vì phải dùng Modal để chọn ngày
         return respond('error', "Vui lòng sử dụng form đăng ký để chọn thời gian nhận sách.")
 
-    han_tra = timezone.now().date() + timedelta(days=14)
+    pickup_date_obj = datetime.strptime(pickup_date, '%Y-%m-%d').date()
+    han_tra = pickup_date_obj + timedelta(days=14)
     status = 'PENDING' 
     is_paid = False if is_premium else True
 
@@ -180,8 +193,35 @@ def checkout_cart(request):
         pickup_shift = request.POST.get('pickup_shift')
         payment_method = request.POST.get('payment_method', 'FREE')
         
+        # 1. Bắt lỗi nếu người dùng cố tình can thiệp HTML bỏ chọn ngày/ca
+        if not pickup_date or not pickup_shift:
+            messages.error(request, "Vui lòng chọn ngày và ca lấy sách!")
+            return redirect('view_cart')
+
+        try:
+            pickup_date_obj = datetime.strptime(pickup_date, '%Y-%m-%d').date()
+        except ValueError:
+            messages.error(request, "Định dạng ngày không hợp lệ!")
+            return redirect('view_cart')
+
+        # ---------- 2. LOGIC CHẶN GIỜ QUÁ HẠN ----------
+        today = timezone.localtime().date()
+        current_hour = timezone.localtime().hour
+        
+        if pickup_date_obj == today:
+            # Chọn ca Sáng hôm nay nhưng đã quá 11h trưa
+            if pickup_shift == 'SANG' and current_hour >= 11:
+                messages.error(request, "Ca Sáng hôm nay đã kết thúc. Vui lòng chọn ca Chiều hoặc ngày khác!")
+                return redirect('view_cart')
+            
+            # Chọn ca Chiều hôm nay nhưng đã quá 17h chiều (buổi tối)
+            if pickup_shift == 'CHIEU' and current_hour >= 17:
+                messages.error(request, "Các ca nhận sách hôm nay đã kết thúc. Vui lòng chọn ngày kế tiếp!")
+                return redirect('view_cart')
+        # ----------------------------------------------
+
         cart_items = user_cart.items.all()
-        han_tra = timezone.now().date() + timedelta(days=14)
+        han_tra = pickup_date_obj + timedelta(days=14)
         
         try:
             with db_transaction.atomic():
@@ -205,7 +245,10 @@ def checkout_cart(request):
                 cart_items.delete()
                 
                 shift_display = "Sáng" if pickup_shift == 'SANG' else "Chiều"
-                msg = f"Đăng ký {count} cuốn thành công! Nhớ đến lấy sách vào ca {shift_display} ngày {pickup_date}."
+                # Định dạng lại chuỗi ngày hiển thị trong thông báo cho đẹp (DD/MM/YYYY)
+                display_date = pickup_date_obj.strftime('%d/%m/%Y')
+                
+                msg = f"Đăng ký {count} cuốn thành công! Nhớ đến lấy sách vào ca {shift_display} ngày {display_date}."
                 Notification.objects.create(user=request.user, message=msg, type='SYSTEM', status='UNREAD')
                 
             messages.success(request, msg)
@@ -213,20 +256,22 @@ def checkout_cart(request):
         except Exception as e:
             messages.error(request, f"Lỗi hệ thống: {str(e)}")
             return redirect('view_cart')
+            
     return redirect('view_cart')
 # ==========================================
 # 2. LỊCH SỬ GIAO DỊCH
 # ==========================================
 @login_required(login_url='login')
 def borrow_history(request):
-    # ĐÃ SỬA: Thêm F('return_date').desc(nulls_last=True) để ưu tiên ngày trả gần nhất lên đầu
+    # ĐÃ SỬA: Thêm CANCELLED vào ưu tiên số 4, đẩy RETURNED xuống số 5
     history_list = BorrowTransaction.objects.filter(user=request.user).annotate(
         status_priority=Case(
             When(status='OVERDUE', then=Value(1)),   
             When(status='BORROWED', then=Value(2)), 
-            When(status='PENDING', then=Value(3)),   
-            When(status='RETURNED', then=Value(4)),  
-            default=Value(5),
+            When(status='PENDING', then=Value(3)),
+            When(status='CANCELLED', then=Value(4)), # <--- Mới thêm vào đây
+            When(status='RETURNED', then=Value(5)),  # <--- Đổi thành số 5
+            default=Value(6),
             output_field=IntegerField(),
         )
     ).order_by('status_priority', F('return_date').desc(nulls_last=True), '-created_at')
@@ -251,7 +296,7 @@ def return_book(request, transaction_id):
     
     try:
         # 1. Tính toán trễ hạn tạm tính
-        today = timezone.now().date()
+        today = timezone.localtime().date()
         late_info = ""
         if today > borrow_record.due_date:
             days_late = (today - borrow_record.due_date).days
@@ -304,7 +349,7 @@ def return_books_batch(request):
         count = records.count()
         if count > 0:
             # 1. Tính toán tổng phí phạt dự kiến cho cả lô sách
-            today = timezone.now().date()
+            today = timezone.localtime().date()
             total_estimated_fine = 0
             late_count = 0
             
@@ -345,7 +390,7 @@ def return_books_batch(request):
 @login_required(login_url='login')
 def renew_book(request, transaction_id):
     trans = get_object_or_404(BorrowTransaction, id=transaction_id, user=request.user)
-    today = timezone.now().date()
+    today = timezone.localtime().date()
 
     # 1. Check: Sách phải đang mượn
     if trans.status != 'BORROWED':
