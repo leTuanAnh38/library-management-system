@@ -15,18 +15,18 @@ from dotenv import load_dotenv
 import os
 
 
-# Xây dựng đường dẫn bên trong dự án như sau: BASE_DIR / 'subdir'.
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
 
-# Cài đặt khởi động nhanh - không phù hợp cho môi trường sản xuất
+# Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
-# CẢNH BÁO BẢO MẬT: Hãy giữ bí mật khóa bí mật được sử dụng trong môi trường sản xuất!
+# SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-g(p@77ai!yd-v%9sc^&!#@3^ndu=#f2w(y*fnii_r$fzjjim3o'
 
-# CẢNH BÁO AN NINH: Không nên chạy với chế độ gỡ lỗi được bật trong môi trường sản xuất!
+# SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
 ALLOWED_HOSTS = []
