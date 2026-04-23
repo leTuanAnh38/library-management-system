@@ -27,7 +27,7 @@ def start():
     scheduler.add_job(check_overdue_job, 'cron', hour=8, minute=0)
     
     # 2. JOB MỚI: Cứ mỗi 1 giờ sẽ tự động chạy ngầm 1 lần
-    scheduler.add_job(auto_cancel_job, 'interval', hours=1) 
+    scheduler.add_job(auto_cancel_job, 'interval', minutes=1) 
     
     # (Mẹo: Nếu lúc đang code bạn muốn test xem nó có chạy không, 
     # hãy đổi 'interval', hours=1 thành 'interval', minutes=1 để nó chạy mỗi phút)

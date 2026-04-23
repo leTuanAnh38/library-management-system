@@ -337,7 +337,56 @@ $(document).ready(function() {
             dateInput.attr('max', maxDateString);
         }
     });
+   // ====================================================================
+    // [ĐÃ SỬA] KHÓA NÚT CA SÁNG / CHIỀU DÙNG ĐƯỢC CHO CẢ MODAL VÀ GIỎ SÁCH
+    // ====================================================================
+    $(document).on('change', 'input[name="pickup_date"]', function() {
+        var selectedDate = $(this).val(); 
+        
+        // SỬA Ở ĐÂY: Đổi từ .modal-body thành form để hoạt động ở mọi nơi
+        var container = $(this).closest('form'); 
+        
+        var shiftSangRadio = container.find('input[value="SANG"]');
+        var shiftChieuRadio = container.find('input[value="CHIEU"]');
+        
+        var today = new Date();
+        var tzOffset = today.getTimezoneOffset() * 60000;
+        var todayString = new Date(Date.now() - tzOffset).toISOString().split('T')[0];
+        
+        var currentHour = today.getHours();
 
+        if (selectedDate === todayString) {
+            // NẾU CHỌN NGÀY HÔM NAY
+            if (currentHour >= 11) {
+                shiftSangRadio.prop('disabled', true).prop('checked', false);
+                shiftSangRadio.next('label').addClass('opacity-50 bg-light').css('cursor', 'not-allowed');
+                shiftSangRadio.next('label').find('small').text('Đã kết thúc');
+            } else {
+                shiftSangRadio.prop('disabled', false);
+                shiftSangRadio.next('label').removeClass('opacity-50 bg-light').css('cursor', 'pointer');
+                shiftSangRadio.next('label').find('small').text('07:30 - 11:30');
+            }
+
+            if (currentHour >= 17) {
+                shiftChieuRadio.prop('disabled', true).prop('checked', false);
+                shiftChieuRadio.next('label').addClass('opacity-50 bg-light').css('cursor', 'not-allowed');
+                shiftChieuRadio.next('label').find('small').text('Đã kết thúc');
+            } else {
+                shiftChieuRadio.prop('disabled', false);
+                shiftChieuRadio.next('label').removeClass('opacity-50 bg-light').css('cursor', 'pointer');
+                shiftChieuRadio.next('label').find('small').text('13:00 - 17:00');
+            }
+        } else {
+            // NẾU CHỌN NGÀY KHÁC -> MỞ KHÓA TẤT CẢ
+            shiftSangRadio.prop('disabled', false);
+            shiftSangRadio.next('label').removeClass('opacity-50 bg-light').css('cursor', 'pointer');
+            shiftSangRadio.next('label').find('small').text('07:30 - 11:30');
+
+            shiftChieuRadio.prop('disabled', false);
+            shiftChieuRadio.next('label').removeClass('opacity-50 bg-light').css('cursor', 'pointer');
+            shiftChieuRadio.next('label').find('small').text('13:00 - 17:00');
+        }
+    });
     // Đảm bảo main có chiều cao tối thiểu
     function adjustMainMinHeight() {
         try {
@@ -899,12 +948,12 @@ $(document).ready(function() {
                                 } else if (item.status === 'PENDING') {
                                     statusHtml = `<span class="badge bg-white border border-warning text-warning px-3 py-1 rounded-pill">Chờ duyệt</span>`;
                                 } else if (item.status === 'CANCELLED') {
-                                    // Xác định ca trực từ API (nếu API của bạn trả về trường pickup_shift)
-                                var shiftText = (item.pickup_shift === 'SANG') ? 'Sáng (07:30 - 11:30)' : 'Chiều (13:00 - 17:00)';
-    
+                                    var shiftText = (item.pickup_shift === 'SANG') ? 'Sáng 07:30 - 11:30' : 'Chiều 13:00 - 17:00';
+                                    var pickupDateStr = item.pickup_date || 'Không rõ';
+                                    
                                     statusHtml = `<span class="badge bg-light text-secondary border px-3 py-1 rounded-pill">Đã hủy</span>
                                                 <div class="mt-1 small text-muted fw-medium" style="font-size: 0.75rem;">
-                                                    <i class="fas fa-info-circle me-1"></i>Bỏ hẹn ca ${shiftText}
+                                                    <i class="fas fa-info-circle me-1"></i>Bỏ hẹn ngày ${pickupDateStr} <br>(Ca ${shiftText})
                                                 </div>`;
                                 } else {
                                     statusHtml = `<span class="badge bg-white border border-danger text-danger px-3 py-1 rounded-pill shadow-sm">Quá hạn</span>`;
@@ -922,7 +971,16 @@ $(document).ready(function() {
                                 
                                 var dateColor = (item.status === 'BORROWED' || item.status === 'OVERDUE') ? 'text-primary fw-bold' : 'text-secondary';
                                 var returnDateHtml = item.return_date ? item.return_date : `<span class="text-muted opacity-50">-</span>`;
-
+                               var borrowDateHtml = `<div class="mb-1" title="Ngày tạo đơn">${item.borrow_date || '-'}</div>`;
+                                // ĐÃ SỬA: Kiểm tra chặt chẽ xem ngày hẹn có thực sự tồn tại và khác dấu "-" không
+                                if (item.pickup_date && item.pickup_date !== '-' && item.pickup_date !== 'None' && item.pickup_date !== 'null') {
+                                    var shiftLabel = (item.pickup_shift === 'SANG') ? 'Sáng' : 'Chiều';
+                                    borrowDateHtml += `
+                                    <div class="mt-1 p-1 bg-light rounded border border-dashed" style="font-size: 0.75rem;">
+                                        <div class="text-primary fw-bold"><i class="fas fa-calendar-alt me-1"></i>Hẹn: ${item.pickup_date}</div>
+                                        <div class="text-muted"><i class="fas fa-clock me-1"></i>Ca ${shiftLabel}</div>
+                                    </div>`;
+                                }
                                 html += `
                                 <tr class="transition-hover-row animate__animated animate__fadeIn">
                                     <td class="ps-4 text-center">${checkboxHtml}</td>
@@ -935,7 +993,7 @@ $(document).ready(function() {
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="small text-secondary">${item.borrow_date || '-'}</td>
+                                    <td class="small text-secondary">${borrowDateHtml}</td>
                                     <td class="small"><span class="${dateColor}">${item.due_date || '-'}</span></td>
                                     <td class="small text-secondary">${returnDateHtml}</td>
                                     <td>${statusHtml}</td>
