@@ -20,18 +20,22 @@
                     <p class="text-muted small m-0 mt-1">Theo dõi phản hồi của độc giả về kho sách.</p>
                 </div>
                 
-                <div class="bg-white rounded-3 shadow-sm p-1 border">
-                    <form method="GET" action="{% url 'staff_review_management' %}" class="d-flex align-items-center m-0">
-                        <i class="fas fa-search text-muted ms-3"></i>
-                        <input type="text" name="search_query" class="form-control border-0 shadow-none bg-transparent px-3 py-2" 
-                               style="width: 300px; font-size: 0.95rem;"
-                               placeholder="Tìm tên sách hoặc tác giả..." 
-                               value="{{ query|default:'' }}">
-                        {% if query %}
-                            <a href="{% url 'staff_review_management' %}" class="btn btn-sm btn-light text-muted me-1 rounded-2 px-3">Xóa</a>
-                        {% endif %}
-                        <button class="btn btn-dark btn-sm px-4 rounded-2 fw-medium me-1" type="submit">Tìm</button>
-                    </form>
+                <div class="d-flex flex-column flex-md-row align-items-md-center gap-3">
+                    <div class="bg-white rounded-pill shadow-sm p-1 border">
+                        <form method="GET" action="{% url 'staff_review_management' %}" class="d-flex align-items-center m-0">
+                            <i class="fas fa-search text-muted ms-3"></i>
+                            <input type="text" name="search_query" class="form-control border-0 shadow-none bg-transparent px-3 py-1" 
+                                   style="width: 250px; font-size: 0.9rem;"
+                                   placeholder="Tìm tên sách hoặc tác giả..." 
+                                   value="{{ query|default:'' }}">
+                            {% if query %}
+                                <a href="{% url 'staff_review_management' %}" class="btn btn-sm btn-light text-muted me-1 rounded-circle" title="Xóa tìm kiếm">
+                                    <i class="fas fa-times"></i>
+                                </a>
+                            {% endif %}
+                            <button class="btn btn-dark btn-sm px-4 rounded-pill fw-medium me-1" type="submit">Tìm kiếm</button>
+                        </form>
+                    </div>
                 </div>
             </div>
 
@@ -50,7 +54,7 @@
                         
                         <tbody>
                             {% for book in books %}
-                            <tr class="border-bottom">
+                            <tr class="border-bottom animate__animated animate__fadeIn">
                                 <td class="ps-4 py-3">
                                     <div class="d-flex align-items-center">
                                         <img src="{{ book.get_cover }}" class="rounded me-3 border" style="width: 38px; height: 52px; object-fit: cover;">
