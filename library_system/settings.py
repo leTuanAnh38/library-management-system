@@ -77,6 +77,7 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
                 'core.context_processors.dashboard_stats',
+                'core.context_processors.global_counts',
                 'core.context_processors.notifications_count',
                 'core.context_processors.show_borrow_info',
                 'core.context_processors.cart_count',
