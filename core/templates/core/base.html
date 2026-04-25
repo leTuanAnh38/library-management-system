@@ -1,25 +1,29 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="vi">
+
 <head>
     <meta charset="utf-8">
     <title>{% block title %}Thư viện Alovu{% endblock %}</title>
     <meta content="width=device-width, initial-scale=1.0" name="viewport">
     <meta name="csrf-token" content="{{ csrf_token }}">
-    
+
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap"
+        rel="stylesheet">
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.15.4/css/all.css" />
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.carousel.min.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
+    <link rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/OwlCarousel2/2.3.4/assets/owl.theme.default.min.css">
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link href="{% static 'css/style.css' %}?v=3.3" rel="stylesheet">
-    
+
 </head>
 
 <body>
@@ -28,52 +32,65 @@
             <div class="row gx-0 align-items-center">
                 <div class="col-md-4 col-lg-3">
                     <a href="{% url 'home' %}" class="navbar-brand p-0">
-                        <img src="{% static 'img/logo.png' %}" alt="Logo Thư viện Alovu" class="img-fluid" style="max-height: 50px;">
+                        <img src="{% static 'img/logo.png' %}" alt="Logo Thư viện Alovu" class="img-fluid"
+                            style="max-height: 50px;">
                     </a>
                 </div>
-                
+
                 <div class="col-md-4 col-lg-6 position-relative search-container">
-                    <form action="{% url 'book_list' %}" method="GET" class="d-flex border rounded-pill bg-light shadow-sm overflow-hidden">
-                        <input id="live-search-input" data-url="{% url 'api_live_search' %}" class="form-control border-0 rounded-pill w-100 py-2 ps-4 bg-light" type="text" name="q" placeholder="Tìm kiếm tên sách, tác giả..." value="{{ request.GET.q }}" autocomplete="off">
-                        <button type="submit" class="btn btn-primary rounded-pill py-2 px-4 border-0"><i class="fas fa-search"></i></button>
+                    <form action="{% url 'book_list' %}" method="GET"
+                        class="d-flex border rounded-pill bg-light shadow-sm overflow-hidden">
+                        <input id="live-search-input" data-url="{% url 'api_live_search' %}"
+                            class="form-control border-0 rounded-pill w-100 py-2 ps-4 bg-light" type="text" name="q"
+                            placeholder="Tìm kiếm tên sách, tác giả..." value="{{ request.GET.q }}" autocomplete="off">
+                        <button type="submit" class="btn btn-primary rounded-pill py-2 px-4 border-0"><i
+                                class="fas fa-search"></i></button>
                     </form>
 
-                    <div id="search-results-box" class="position-absolute w-100 bg-white rounded-4 shadow-lg border mt-2 overflow-hidden animate__animated animate__fadeIn" style="display: none; z-index: 1050; max-height: 400px; overflow-y: auto; top: 100%;">
+                    <div id="search-results-box"
+                        class="position-absolute w-100 bg-white rounded-4 shadow-lg border mt-2 overflow-hidden animate__animated animate__fadeIn"
+                        style="display: none; z-index: 1050; max-height: 400px; overflow-y: auto; top: 100%;">
                     </div>
                 </div>
 
                 <div class="col-md-4 col-lg-3 text-end">
                     <div class="dropdown">
-                        <a href="#" class="dropdown-toggle text-dark fs-6 text-decoration-none fw-bold" 
-                              data-bs-toggle="dropdown" data-bs-display="static">
+                        <a href="#" class="dropdown-toggle text-dark fs-6 text-decoration-none fw-bold"
+                            data-bs-toggle="dropdown" data-bs-display="static">
                             <div class="position-relative d-inline-block me-2">
                                 {% if user.avatar %}
-                                    <img src="{{ user.avatar.url }}" class="rounded-circle border border-primary object-fit-cover" style="width: 30px; height: 30px;" alt="Avatar">
+                                <img src="{{ user.avatar.url }}"
+                                    class="rounded-circle border border-primary object-fit-cover"
+                                    style="width: 30px; height: 30px;" alt="Avatar">
                                 {% else %}
-                                    <i class="fa fa-user-circle fa-lg text-primary"></i>
+                                <i class="fa fa-user-circle fa-lg text-primary"></i>
                                 {% endif %}
-                                <span id="unread-count-header" 
-                                      class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle" 
-                                      style="display: none; width: 10px; height: 10px;">
+                                <span id="unread-count-header"
+                                    class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle"
+                                    style="display: none; width: 10px; height: 10px;">
                                 </span>
                             </div>
                             {% if user.is_authenticated %} {{ user.username }} {% else %} Tài khoản {% endif %}
                         </a>
-                        
-                        <div class="dropdown-menu dropdown-menu-end rounded-4 shadow mt-2 border-0 animate__animated animate__fadeIn">
+
+                        <div
+                            class="dropdown-menu dropdown-menu-end rounded-4 shadow mt-2 border-0 animate__animated animate__fadeIn">
                             {% if user.is_authenticated %}
-                                <a href="{% url 'notification_list' %}" class="dropdown-item py-2 d-flex justify-content-between align-items-center">
-                                    Thông báo <span id="badge-dropdown" class="badge bg-danger rounded-pill" style="display: none;">0</span>
-                                </a>
-                                <a href="{% url 'profile' %}" class="dropdown-item py-2">Quản lý hồ sơ</a>
-                                <a href="{% url 'change_password' %}" class="dropdown-item py-2">Đổi mật khẩu</a>
-                                <a href="{% url 'borrow_history' %}" class="dropdown-item py-2">Lịch sử mượn</a>
-                                <hr class="dropdown-divider">
-                                <a href="{% url 'logout' %}" class="dropdown-item text-danger fw-bold py-2 custom-confirm"  data-message="Bạn có chắc chắn muốn đăng xuất khỏi hệ thống không?">
+                            <a href="{% url 'notification_list' %}"
+                                class="dropdown-item py-2 d-flex justify-content-between align-items-center">
+                                Thông báo <span id="badge-dropdown" class="badge bg-danger rounded-pill"
+                                    style="display: none;">0</span>
+                            </a>
+                            <a href="{% url 'profile' %}" class="dropdown-item py-2">Quản lý hồ sơ</a>
+                            <a href="{% url 'change_password' %}" class="dropdown-item py-2">Đổi mật khẩu</a>
+                            <a href="{% url 'borrow_history' %}" class="dropdown-item py-2">Lịch sử mượn</a>
+                            <hr class="dropdown-divider">
+                            <a href="{% url 'logout' %}" class="dropdown-item text-danger fw-bold py-2 custom-confirm"
+                                data-message="Bạn có chắc chắn muốn đăng xuất khỏi hệ thống không?">
                                 Đăng xuất</a>
                             {% else %}
-                                <a href="{% url 'login' %}" class="dropdown-item py-2">Đăng nhập</a>
-                                <a href="{% url 'register' %}" class="dropdown-item py-2">Đăng ký</a>
+                            <a href="{% url 'login' %}" class="dropdown-item py-2">Đăng nhập</a>
+                            <a href="{% url 'register' %}" class="dropdown-item py-2">Đăng ký</a>
                             {% endif %}
                         </div>
                     </div>
@@ -82,61 +99,64 @@
         </div>
 
         {% if not user.is_staff and user.role != 'STAFF' and not user.is_superuser %}
-        <div class="container-fluid nav-bar p-0">
-            <div class="row gx-0 bg-primary px-lg-5 align-items-center">
+        <div class="container-fluid nav-bar p-0 shadow-sm">
+            <div class="row gx-0 bg-white px-lg-5 align-items-center">
                 <div class="col-lg-3 d-none d-lg-block">
                     <nav class="navbar navbar-light" style="width: 250px;">
-                        <button class="navbar-toggler border-0 fs-5 w-100 px-0 text-start text-white py-3" type="button" data-bs-toggle="collapse" data-bs-target="#allCat">
-                            <h5 class="m-0 text-white fw-bold"><i class="fa fa-bars me-2"></i>Danh mục sách</h5>
+                        <button class="navbar-toggler border-0 fs-5 w-100 px-0 text-start text-dark py-3" type="button" data-bs-toggle="collapse" data-bs-target="#allCat">
+                            <h5 class="m-0 text-dark fw-bold"><i class="fa fa-bars me-2 text-primary"></i>Danh mục sách</h5>
                         </button>
                         <div class="collapse navbar-collapse rounded-bottom" id="allCat">
                             <div class="navbar-nav ms-auto py-0 bg-white shadow-sm border-0 rounded-bottom">
                                 {% for cat in categories %}
-                                    <a href="{% url 'book_list' %}?category={{ cat.id }}" 
-                                       class="dropdown-item py-3 border-bottom small ajax-category-link" 
-                                       data-category="{{ cat.id }}">
-                                        <i class="fas fa-chevron-right me-2 text-primary" style="font-size: 0.7rem;"></i>{{ cat.name }}
-                                    </a>
+                                <a href="{% url 'book_list' %}?category={{ cat.id }}"
+                                    class="dropdown-item py-3 border-bottom small ajax-category-link"
+                                    data-category="{{ cat.id }}">
+                                    <i class="fas fa-chevron-right me-2 text-primary" style="font-size: 0.7rem;"></i>{{
+                                    cat.name }}
+                                </a>
                                 {% empty %}
-                                    <a href="#" class="dropdown-item py-2 text-muted">Chưa có danh mục</a>
+                                <a href="#" class="dropdown-item py-2 text-muted">Chưa có danh mục</a>
                                 {% endfor %}
                             </div>
                         </div>
                     </nav>
                 </div>
                 <div class="col-12 col-lg-9">
-                    <nav class="navbar navbar-expand-lg navbar-light bg-primary py-0">
+                    <nav class="navbar navbar-expand-lg navbar-light bg-white py-0">
                         <div class="navbar-nav ms-auto py-0">
-                            <a href="{% url 'home' %}" class="nav-item nav-link text-white py-4 px-4 {% block nav_home %}{% endblock %}">Trang chủ</a>
+                            <a href="{% url 'home' %}" class="nav-item nav-link text-dark py-4 px-4 {% block nav_home %}{% endblock %}">Trang chủ</a>
                             
-                            <a href="{% url 'book_list' %}" class="nav-item nav-link text-white py-4 px-4 {% block nav_book %}{% endblock %}">Kho sách</a>
+                            <a href="{% url 'book_list' %}" class="nav-item nav-link text-dark py-4 px-4 {% block nav_book %}{% endblock %}">Kho sách</a>
                             
-                            <a href="{% url 'premium_books' %}" class="nav-item nav-link text-white py-4 px-4 {% block nav_premium %}{% endblock %}">
-                                <i class="fas fa-crown"></i> Sách phiên bản giới hạn
+                            <a href="{% url 'premium_books' %}" class="nav-item nav-link text-dark py-4 px-4 {% block nav_premium %}{% endblock %}">
+                                <i class="fas fa-crown text-warning me-1"></i> Sách giới hạn
                             </a>
                             
-                            <a href="{% url 'event_list' %}" class="nav-item nav-link text-white py-4 px-4 {% block nav_event %}{% endblock %}">Sự kiện</a>
+                            <a href="{% url 'event_list' %}" class="nav-item nav-link text-dark py-4 px-4 {% block nav_event %}{% endblock %}">Sự kiện</a>
 
                             
-                            <a href="{% url 'guide' %}" class="nav-item nav-link text-white py-4 px-4 {% block nav_guide %}{% endblock %}">Hướng dẫn & quy định</a>
+                            <a href="{% url 'guide' %}" class="nav-item nav-link text-dark py-4 px-4 {% block nav_guide %}{% endblock %}">Hướng dẫn</a>
                             
-                            <a href="{% url 'contact' %}" class="nav-item nav-link text-white py-4 px-4 {% block nav_contact %}{% endblock %}">Liên hệ</a>
+                            <a href="{% url 'contact' %}" class="nav-item nav-link text-dark py-4 px-4 {% block nav_contact %}{% endblock %}">Liên hệ</a>
                         </div>
                     </nav>
                 </div>
             </div>
         </div>
         {% endif %}
-        </header>
+    </header>
 
-        {% if messages %}
+    {% if messages %}
     <div class="container-fluid px-lg-5 mt-3">
         {% for message in messages %}
-            <div class="alert django-flash alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-dismissible fade show shadow-sm border-0 rounded-3">
-                <i class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
+        <div
+            class="alert django-flash alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-dismissible fade show shadow-sm border-0 rounded-3">
+            <i
+                class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
         {% endfor %}
     </div>
     {% endif %}
@@ -150,16 +170,21 @@
             <div class="row g-5">
                 <div class="col-md-6 col-lg-4">
                     <a href="{% url 'home' %}" class="navbar-brand p-0">
-                        <h3 class="text-white m-0"><i class="fas fa-book-reader text-secondary me-2"></i>Alovu Library</h3>
+                        <h3 class="text-white m-0"><i class="fas fa-book-reader text-secondary me-2"></i>Alovu Library
+                        </h3>
                     </a>
                     <p class="mt-4 mb-4 lh-base text-white-50">
                         "Tri thức là sức mạnh. Hãy cùng Alovu khám phá thế giới qua từng trang sách."
                     </p>
                     <div class="d-flex social-icons mt-3">
-                        <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i class="fab fa-facebook-f"></i></a>
-                        <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i class="fab fa-github"></i></a>
-                        <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i class="fab fa-instagram"></i></a>
-                        <a href="#" class="btn btn-outline-light btn-square rounded-circle"><i class="fab fa-linkedin-in"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i
+                                class="fab fa-facebook-f"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i
+                                class="fab fa-github"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-square rounded-circle me-2"><i
+                                class="fab fa-instagram"></i></a>
+                        <a href="#" class="btn btn-outline-light btn-square rounded-circle"><i
+                                class="fab fa-linkedin-in"></i></a>
                     </div>
                 </div>
 
@@ -188,7 +213,8 @@
 
         <div class="container-fluid copyright-bar py-3 mt-5 text-center">
             <div class="container">
-                <span class="text-white-50 small">© 2026 <strong>Thư viện Alovu</strong>. Designed by <a href="#" class="text-primary fw-bold text-decoration-none">Lê Tuấn Anh</a>.</span>
+                <span class="text-white-50 small">© 2026 <strong>Thư viện Alovu</strong>. Designed by <a href="#"
+                        class="text-primary fw-bold text-decoration-none">Lê Tuấn Anh</a>.</span>
             </div>
         </div>
     </footer>
@@ -200,14 +226,16 @@
                     <div class="text-primary mb-3 mt-2">
                         <i class="fas fa-question-circle fa-4x opacity-75"></i>
                     </div>
-                    
+
                     <h6 class="fw-bold mb-4 text-dark lh-base" id="customConfirmMessage">
                         Bạn có chắc chắn muốn thực hiện hành động này?
                     </h6>
-                    
+
                     <div class="d-flex justify-content-center gap-2 mb-2">
-                        <button type="button" class="btn btn-light rounded-pill px-4 fw-bold border" data-bs-dismiss="modal">Hủy</button>
-                        <a href="#" id="customConfirmBtn" class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">Đồng ý</a>
+                        <button type="button" class="btn btn-light rounded-pill px-4 fw-bold border"
+                            data-bs-dismiss="modal">Hủy</button>
+                        <a href="#" id="customConfirmBtn"
+                            class="btn btn-primary rounded-pill px-4 fw-bold shadow-sm">Đồng ý</a>
                     </div>
                 </div>
             </div>
@@ -221,13 +249,14 @@
     <script src="{% static 'js/api.js' %}?v=1001"></script>
     <script src="{% static 'js/api_staff.js' %}?v=1002"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
-    
+
     {% load static %}
     <script src="{% static 'js/axios_client.js' %}"></script>
 
     {% if user.is_authenticated %}
-        <script src="{% static 'js/chatbox.js' %}"></script>
+    <script src="{% static 'js/chatbox.js' %}"></script>
     {% endif %}
 
 </body>
+
 </html>
