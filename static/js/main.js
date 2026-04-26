@@ -10,7 +10,7 @@
         }, 1);
     };
     spinner();
-    
+
     // 2. Khởi tạo hiệu ứng WOW.js
     new WOW().init();
 
@@ -32,15 +32,15 @@
         dots: false,
         loop: true,
         margin: 25,
-        nav : true,
-        navText : [
+        nav: true,
+        navText: [
             '<i class="bi bi-arrow-left"></i>',
             '<i class="bi bi-arrow-right"></i>'
         ],
         responsive: {
-            0:{ items:1 },      // Màn hình nhỏ hiện 1 cuốn
-            768:{ items:2 },    // Màn hình vừa hiện 2 cuốn
-            992:{ items:3 }     // Màn hình lớn hiện 3 cuốn (cuốn giữa sẽ nổi bật nhất)
+            0: { items: 1 },      // Màn hình nhỏ hiện 1 cuốn
+            768: { items: 2 },    // Màn hình vừa hiện 2 cuốn
+            992: { items: 3 }     // Màn hình lớn hiện 3 cuốn (cuốn giữa sẽ nổi bật nhất)
         }
     });
 
@@ -51,17 +51,17 @@
         dots: false,
         loop: true,
         margin: 25,
-        nav : true,
-        navText : [
+        nav: true,
+        navText: [
             '<i class="fas fa-chevron-left"></i>',
             '<i class="fas fa-chevron-right"></i>'
         ],
         responsive: {
-            0:{ items:1 },
-            576:{ items:1 },
-            768:{ items:2 },
-            992:{ items:3 },
-            1200:{ items:4 }
+            0: { items: 1 },
+            576: { items: 1 },
+            768: { items: 2 },
+            992: { items: 3 },
+            1200: { items: 4 }
         }
     });
 
@@ -73,8 +73,8 @@
         dotsData: true,
         loop: true,
         items: 1,
-        nav : true,
-        navText : [
+        nav: true,
+        navText: [
             '<i class="bi bi-arrow-left"></i>',
             '<i class="bi bi-arrow-right"></i>'
         ]
@@ -102,16 +102,16 @@
         }
     });
     $('.back-to-top').click(function () {
-        $('html, body').animate({scrollTop: 0}, 1500, 'easeInOutExpo');
+        $('html, body').animate({ scrollTop: 0 }, 1500, 'easeInOutExpo');
         return false;
     });
 
-   
+
 })(jQuery);
 /* ==========================================
    QUẢN LÝ HỒ SƠ (PROFILE PAGE - FULL: PREVIEW, LOADING, DRAG & DROP)
    ========================================== */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // 1. CHUYỂN ĐỔI GIỮA CHẾ ĐỘ XEM VÀ SỬA
     const btnEditToggle = document.getElementById('btn-edit-toggle');
     const btnCancelEdit = document.getElementById('btn-cancel-edit');
@@ -119,11 +119,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const editMode = document.getElementById('profile-edit-mode');
 
     if (btnEditToggle && btnCancelEdit && viewMode && editMode) {
-        btnEditToggle.addEventListener('click', function() {
+        btnEditToggle.addEventListener('click', function () {
             viewMode.classList.add('d-none');
             editMode.classList.remove('d-none');
         });
-        btnCancelEdit.addEventListener('click', function() {
+        btnCancelEdit.addEventListener('click', function () {
             editMode.classList.add('d-none');
             viewMode.classList.remove('d-none');
             // Reset lại ảnh preview về ảnh cũ nếu người dùng hủy bỏ
@@ -143,20 +143,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const profileDragZone = document.getElementById('profile-drag-zone');
 
     if (avatarInput && avatarPreview) {
-        avatarInput.addEventListener('change', function(e) {
+        avatarInput.addEventListener('change', function (e) {
             const file = e.target.files[0];
-            
+
             if (file) {
                 // Ràng buộc dung lượng tối đa 2MB
                 if (file.size > 2 * 1024 * 1024) {
                     alert('Ảnh hơi nặng! Vui lòng chọn ảnh dưới 2MB nhé.');
-                    this.value = ''; 
+                    this.value = '';
                     return;
                 }
 
                 // Dùng FileReader để đọc ảnh và gán vào thẻ img
                 const reader = new FileReader();
-                reader.onload = function(event) {
+                reader.onload = function (event) {
                     avatarPreview.src = event.target.result;
                 }
                 reader.readAsDataURL(file);
@@ -184,7 +184,7 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Xử lý khi thả file vào vùng chỉ định
-        profileDragZone.addEventListener('drop', function(e) {
+        profileDragZone.addEventListener('drop', function (e) {
             const dt = e.dataTransfer;
             const files = dt.files;
 
@@ -199,11 +199,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 4. HIỆU ỨNG LOADING KHI BẤM LƯU
     if (profileForm && btnSave) {
-        profileForm.addEventListener('submit', function() {
+        profileForm.addEventListener('submit', function () {
             btnSave.disabled = true;
             const btnText = btnSave.querySelector('.btn-text');
             const spinner = btnSave.querySelector('.spinner-border');
-            
+
             if (btnText) btnText.textContent = 'Đang tải lên...';
             if (spinner) spinner.classList.remove('d-none');
         });
@@ -212,7 +212,7 @@ document.addEventListener('DOMContentLoaded', function() {
 /* ==========================================
    XỬ LÝ ẢNH BÌA SÁCH (BOOK FORM - FULL: UPLOAD, LINK, DRAG & DROP)
    ========================================== */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const coverFileInput = document.getElementById('cover-file-upload');
     const coverUrlInput = document.getElementById('cover-url-input');
     const bookCoverPreview = document.getElementById('avatar-preview');
@@ -220,18 +220,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 1. LOGIC XEM TRƯỚC (PREVIEW) KHI CHỌN FILE
     if (coverFileInput && bookCoverPreview) {
-        coverFileInput.addEventListener('change', function(e) {
+        coverFileInput.addEventListener('change', function (e) {
             const file = e.target.files[0];
             if (file) {
                 // Kiểm tra dung lượng (Tối đa 2MB)
                 if (file.size > 2 * 1024 * 1024) {
                     alert('Ảnh hơi nặng! Vui lòng chọn ảnh dưới 2MB nhé.');
-                    this.value = ''; 
+                    this.value = '';
                     return;
                 }
 
                 const reader = new FileReader();
-                reader.onload = function(event) {
+                reader.onload = function (event) {
                     bookCoverPreview.src = event.target.result;
                 }
                 reader.readAsDataURL(file);
@@ -248,7 +248,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // 2. LOGIC XEM TRƯỚC KHI DÁN LINK MẠNG (URL)
     if (coverUrlInput && bookCoverPreview) {
-        coverUrlInput.addEventListener('input', function() {
+        coverUrlInput.addEventListener('input', function () {
             // Chỉ cập nhật từ link nếu người dùng CHƯA chọn file vật lý từ máy
             if (!coverFileInput || !coverFileInput.value) {
                 if (this.value) {
@@ -280,14 +280,14 @@ document.addEventListener('DOMContentLoaded', function() {
         });
 
         // Xử lý khi thả file vào
-        dropZone.addEventListener('drop', function(e) {
+        dropZone.addEventListener('drop', function (e) {
             const dt = e.dataTransfer;
             const files = dt.files;
 
             if (files.length > 0) {
                 // Gán file vừa thả vào thẻ input file
                 coverFileInput.files = files;
-                
+
                 // Kích hoạt sự kiện 'change' để chạy logic Xem trước (Mục 1)
                 coverFileInput.dispatchEvent(new Event('change'));
             }
@@ -298,7 +298,7 @@ document.addEventListener('DOMContentLoaded', function() {
 /* ==========================================
    XỬ LÝ CUSTOM CONFIRM MODAL (Thay thế Alert/Confirm)
    ========================================== */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     const confirmModalElement = document.getElementById('customConfirmModal');
     if (!confirmModalElement) return;
 
@@ -311,12 +311,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const confirmTriggers = document.querySelectorAll('.custom-confirm');
 
     confirmTriggers.forEach(trigger => {
-        trigger.addEventListener('click', function(e) {
+        trigger.addEventListener('click', function (e) {
             e.preventDefault(); // Chặn hành động chuyển trang hoặc submit mặc định
-            
+
             // 1. Lấy câu thông báo từ data-message (nếu không có thì dùng câu mặc định)
             const message = this.getAttribute('data-message') || 'Bạn có chắc chắn muốn thực hiện hành động này?';
-            
+
             // 2. Lấy link thực tế của nút bấm đó
             const targetUrl = this.getAttribute('href');
 
@@ -328,25 +328,25 @@ document.addEventListener('DOMContentLoaded', function() {
             confirmModal.show();
         });
     });
-        // 4. XỬ LÝ CUSTOM CONFIRM MODAL (DELEGATED)
-        document.addEventListener('click', function(e) {
-            const trigger = e.target.closest('.custom-confirm');
-            if (!trigger) return;
+    // 4. XỬ LÝ CUSTOM CONFIRM MODAL (DELEGATED)
+    document.addEventListener('click', function (e) {
+        const trigger = e.target.closest('.custom-confirm');
+        if (!trigger) return;
 
-            // Nếu nút này là nút mượn dạng AJAX hoặc đường dẫn chứa 'borrow', bỏ qua để handler AJAX xử lý
-            const href = trigger.getAttribute && trigger.getAttribute('href');
-            if (trigger.classList.contains('ajax-borrow-btn') || (href && href.includes('borrow'))) {
-                return;
-            }
+        // Nếu nút này là nút mượn dạng AJAX hoặc đường dẫn chứa 'borrow', bỏ qua để handler AJAX xử lý
+        const href = trigger.getAttribute && trigger.getAttribute('href');
+        if (trigger.classList.contains('ajax-borrow-btn') || (href && href.includes('borrow'))) {
+            return;
+        }
 
-            e.preventDefault();
-            const message = trigger.getAttribute('data-message') || 'Bạn có chắc chắn muốn thực hiện hành động này?';
-            const targetUrl = href || '#';
+        e.preventDefault();
+        const message = trigger.getAttribute('data-message') || 'Bạn có chắc chắn muốn thực hiện hành động này?';
+        const targetUrl = href || '#';
 
-            confirmMessageEl.textContent = message;
-            confirmBtnEl.href = targetUrl;
-            confirmModal.show();
-        });
+        confirmMessageEl.textContent = message;
+        confirmBtnEl.href = targetUrl;
+        confirmModal.show();
+    });
 });
 //THÊM SÁCH VÀO GIỎ (AJAX + LOADING)
 // Hàm chuẩn của Django để lấy mã CSRF Token bảo mật từ trình duyệt
@@ -407,14 +407,14 @@ function showModernToast(message, type = 'success') {
 }
 
 // 3. Xử lý nút Thêm vào giỏ
-document.addEventListener("DOMContentLoaded", function() {
-    document.body.addEventListener('click', function(e) {
+document.addEventListener("DOMContentLoaded", function () {
+    document.body.addEventListener('click', function (e) {
         let btn = e.target.closest('.btn-add-to-cart');
         if (!btn) return;
 
         e.preventDefault();
         let url = btn.getAttribute('data-url');
-        
+
         let originalHTML = btn.innerHTML;
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
         btn.disabled = true;
@@ -428,52 +428,52 @@ document.addEventListener("DOMContentLoaded", function() {
                 'Content-Type': 'application/json'
             }
         })
-        .then(res => res.json())
-        .then(data => {
-            btn.innerHTML = originalHTML;
-            btn.disabled = false;
-            
-            if(data.success) {
-                // Gọi Toast xanh báo thành công
-                showModernToast(`<b>${data.message}</b><br><small class="text-muted">Hiện có ${data.cart_count} cuốn trong giỏ.</small>`, 'success');
-                
-                // Cập nhật số vòng tròn đỏ trên Sidebar tự động
-                let badge = document.querySelector('a[href*="/cart/"] .badge');
-                if (badge) {
-                    badge.innerText = data.cart_count;
-                } else {
-                    let cartLink = document.querySelector('a[href*="/cart/"]');
-                    if (cartLink) {
-                        cartLink.innerHTML += ` <span class="badge bg-info rounded-pill float-end">${data.cart_count}</span>`;
+            .then(res => res.json())
+            .then(data => {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+
+                if (data.success) {
+                    // Gọi Toast xanh báo thành công
+                    showModernToast(`<b>${data.message}</b><br><small class="text-muted">Hiện có ${data.cart_count} cuốn trong giỏ.</small>`, 'success');
+
+                    // Cập nhật số vòng tròn đỏ trên Sidebar tự động
+                    let badge = document.querySelector('a[href*="/cart/"] .badge');
+                    if (badge) {
+                        badge.innerText = data.cart_count;
+                    } else {
+                        let cartLink = document.querySelector('a[href*="/cart/"]');
+                        if (cartLink) {
+                            cartLink.innerHTML += ` <span class="badge bg-info rounded-pill float-end">${data.cart_count}</span>`;
+                        }
                     }
+                } else {
+                    // Gọi Toast đỏ báo lỗi (ví dụ: quá 4 cuốn)
+                    showModernToast(`<b>Từ chối:</b> ${data.message}`, 'error');
                 }
-            } else {
-                // Gọi Toast đỏ báo lỗi (ví dụ: quá 4 cuốn)
-                showModernToast(`<b>Từ chối:</b> ${data.message}`, 'error');
-            }
-        })
-        .catch(error => {
-            btn.innerHTML = originalHTML;
-            btn.disabled = false;
-            showModernToast('<b>Lỗi mạng:</b> Vui lòng kiểm tra kết nối và thử lại!', 'error');
-        });
+            })
+            .catch(error => {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+                showModernToast('<b>Lỗi mạng:</b> Vui lòng kiểm tra kết nối và thử lại!', 'error');
+            });
     });
 });
 
 /* ==========================================
    GIỚI HẠN CHỌN NGÀY TỐI ĐA 7 NGÀY (FORM MƯỢN SÁCH)
    ========================================== */
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Tìm tất cả các ô chọn ngày trên giao diện
     const dateInputs = document.querySelectorAll('input[name="pickup_date"]');
-    
+
     if (dateInputs.length > 0) {
         // Tính ngày tối đa (Hôm nay + 7 ngày)
         const tzOffset = (new Date()).getTimezoneOffset() * 60000;
         const maxDate = new Date();
         maxDate.setDate(maxDate.getDate() + 7);
         const maxDateString = new Date(maxDate.getTime() - tzOffset).toISOString().split('T')[0];
-        
+
         // Gắn thuộc tính 'max' vào các ô input
         dateInputs.forEach(input => {
             input.setAttribute('max', maxDateString);
@@ -481,28 +481,28 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
-   // Xử lý xem trước ảnh cực nhanh
-    document.getElementById('cover-file-upload').addEventListener('change', function(e) {
-        var file = e.target.files[0];
-        if (file) {
-            var reader = new FileReader();
-            reader.onload = function(e) {
-                document.getElementById('avatar-preview').src = e.target.result;
-            }
-            reader.readAsDataURL(file);
-            document.getElementById('cover-url-input').value = ''; 
+// Xử lý xem trước ảnh cực nhanh
+document.getElementById('cover-file-upload').addEventListener('change', function (e) {
+    var file = e.target.files[0];
+    if (file) {
+        var reader = new FileReader();
+        reader.onload = function (e) {
+            document.getElementById('avatar-preview').src = e.target.result;
         }
-    });
+        reader.readAsDataURL(file);
+        document.getElementById('cover-url-input').value = '';
+    }
+});
 
-    document.getElementById('cover-url-input').addEventListener('input', function(e) {
-        if (this.value.trim() !== '') {
-            document.getElementById('avatar-preview').src = this.value;
-        }
-    });
+document.getElementById('cover-url-input').addEventListener('input', function (e) {
+    if (this.value.trim() !== '') {
+        document.getElementById('avatar-preview').src = this.value;
+    }
+});
 
-    document.addEventListener("DOMContentLoaded", function() {
+document.addEventListener("DOMContentLoaded", function () {
     let today = new Date().toISOString().split('T')[0];
-    document.querySelectorAll('.date-picker-future').forEach(function(input) {
+    document.querySelectorAll('.date-picker-future').forEach(function (input) {
         input.setAttribute('min', today);
     });
 });

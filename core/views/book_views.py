@@ -236,6 +236,7 @@ def book_detail(request, book_id):
 
     borrowed_book_ids = []
     pending_book_ids = [] 
+    wishlist_book_ids = []
     
     if request.user.is_authenticated:
         borrowed_book_ids = BorrowTransaction.objects.filter(
@@ -247,6 +248,10 @@ def book_detail(request, book_id):
             user=request.user, 
             status='PENDING'
         ).values_list('book_id', flat=True)
+
+        wishlist_book_ids = Wishlist.objects.filter(
+            user=request.user
+        ).values_list('book_id', flat=True)
     
     return render(request, 'core/books/book_detail.html', {
         'book': book,
@@ -254,6 +259,7 @@ def book_detail(request, book_id):
         'recommended_books': recommended_books, 
         'borrowed_book_ids': list(borrowed_book_ids),
         'pending_book_ids': list(pending_book_ids), 
+        'wishlist_book_ids': list(wishlist_book_ids),
         'user_has_reviewed': user_has_reviewed  
     })
 
