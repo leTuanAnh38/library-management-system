@@ -63,8 +63,7 @@
                     {% endfor %}
                 </div>
 
-                {% if books.has_next %}
-                <div class="text-center mt-5 mb-3" id="load-more-section">
+                <div class="text-center mt-5 mb-3" id="load-more-section" {% if not books.has_next %}style="display: none;"{% endif %}>
                     <button id="btn-load-more" class="btn btn-outline-primary rounded-pill px-5 py-2 fw-bold shadow-sm"
                             data-url="{% url 'api_load_more_books' %}" 
                             data-page="2" 
@@ -74,7 +73,6 @@
                         <i class="fas fa-arrow-down me-2"></i>Xem thêm sách
                     </button>
                 </div>
-                {% endif %}
             </div>
         </div>
     </div>
