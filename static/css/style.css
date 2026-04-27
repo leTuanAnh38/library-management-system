@@ -2128,3 +2128,40 @@ select.form-select:focus {
     background: var(--glass-bg);
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
+
+    .stats-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        cursor: default;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
+    }
+    .stats-icon {
+        width: 54px;
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+    }
+    .stats-card:hover .stats-icon {
+        transform: scale(1.1);
+    }
+    .table-container {
+        border-radius: 1rem;
+        overflow: hidden;
+    }
+    .custom-confirm {
+        transition: all 0.2s ease;
+    }
+    .custom-confirm:hover {
+        transform: scale(1.05);
+        filter: brightness(1.1);
+    }
+    /* Fix for Bootstrap 5.0.0 opacity issues */
+    .bg-soft-primary { background-color: rgba(13, 110, 253, 0.1) !important; }
+    .bg-soft-success { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .bg-soft-danger { background-color: rgba(220, 53, 69, 0.1) !important; }
+    .bg-soft-info { background-color: rgba(13, 202, 240, 0.1) !important; }
+    .rounded-4 { border-radius: 1rem !important; }
