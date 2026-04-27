@@ -60,6 +60,7 @@ def staff_book_list(request):
     query = request.GET.get('search_staff', '')
     books = Book.objects.all() 
 
+    # 1. Xử lý tìm kiếm
     if query:
         books = books.filter(
             Q(title__icontains=query) | 
@@ -67,20 +68,30 @@ def staff_book_list(request):
             Q(location__icontains=query) 
         )
 
-    books = books.order_by('-created_at')
-    
-    # 1. Bắt lấy tham số 'page' trên thanh địa chỉ URL (mặc định là 1 nếu không có)
+    # 2. Xử lý sắp xếp
+    sort_by = request.GET.get('sort_by', 'newest')
+    if sort_by == 'stock_desc':
+        books = books.order_by('-quantity', '-created_at')
+    elif sort_by == 'stock_asc':
+        books = books.order_by('quantity', '-created_at')
+    else: # newest
+        books = books.order_by('-created_at')
+
+    # 3. Tính toán thống kê
+    total_books_count = books.count() # Số lượng đầu sách (sau khi filter)
+    total_physical_books = books.aggregate(total=Sum('initial_quantity'))['total'] or 0
+
+    # 4. Phân trang
     page_number = request.GET.get('page', 1) 
-    
-    # 2. Phân trang (10 cuốn / 1 lần tải)
     paginator = Paginator(books, 10) 
-    
-    # 3. Đưa biến page_number vào thay vì gán cứng số 1
     page_obj = paginator.get_page(page_number) 
 
     return render(request, 'core/staff/book_list.html', {
-        'books': page_obj, # HTML đang dùng for book in books, nên nó sẽ lặp qua page_obj này
-        'query': query
+        'books': page_obj,
+        'query': query,
+        'sort_by': sort_by,
+        'total_books_count': total_books_count,
+        'total_physical_books': total_physical_books
     })
 @user_passes_test(is_staff)
 def add_book(request):
@@ -433,11 +444,12 @@ def staff_penalty_management(request):
 
     penalties = penalties.order_by('status_priority', '-created_at')
 
-    # 3. Tính tổng số tiền cần thu (Chỉ cộng dồn những đơn UNPAID và PROCESSING)
-    unpaid_penalties = Penalty.objects.filter(status__in=['UNPAID', 'PROCESSING'])
-    total_pending_fines = unpaid_penalties.aggregate(total=Sum('amount'))['total'] or 0
+    # 4. Tính toán thống kê tổng quát
+    total_pending_fines = Penalty.objects.filter(status__in=['UNPAID', 'PROCESSING']).aggregate(total=Sum('amount'))['total'] or 0
+    total_penalty_count = Penalty.objects.count()
+    total_collected_amount = Penalty.objects.filter(status='PAID').aggregate(total=Sum('amount'))['total'] or 0
 
-    # 4. Phân trang (10 giao dịch / trang)
+    # 5. Phân trang (10 giao dịch / trang)
     page_number = request.GET.get('page', 1) 
     paginator = Paginator(penalties, 10)
     page_obj = paginator.get_page(page_number) 
@@ -445,7 +457,9 @@ def staff_penalty_management(request):
     return render(request, 'core/staff/penalty_management.html', {
         'penalties': page_obj,  
         'query': query,
-        'total_pending_fines': total_pending_fines
+        'total_pending_fines': total_pending_fines,
+        'total_penalty_count': total_penalty_count,
+        'total_collected_amount': total_collected_amount
     })
 
 # Hàm dưới này của bạn đã quá chuẩn, cứ giữ nguyên nhé!
@@ -535,9 +549,15 @@ def staff_review_management(request):
     paginator = Paginator(books, 10)
     page_obj = paginator.get_page(page_number)
 
+    # 5. Tính toán thống kê tổng quát
+    total_reviews = Review.objects.count()
+    total_reviewers = Review.objects.values('user').distinct().count()
+
     return render(request, 'core/staff/review_management.html', {
-        'books': page_obj,  # Truyền page_obj thay cho toàn bộ books
-        'query': query      # Truyền query để giữ text ở thanh tìm kiếm
+        'books': page_obj,
+        'query': query,
+        'total_reviews': total_reviews,
+        'total_reviewers': total_reviewers
     })
 # ==========================================
 # 4. QUẢN LÝ SỰ KIỆN & TIN TỨC (DÀNH CHO THỦ THƯ)
