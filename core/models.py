@@ -176,12 +176,12 @@ class BorrowTransaction(TimeStampedModel):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='BORROWED')
     reason = models.CharField(max_length=255, null=True, blank=True)
     # ==========================================
-    # [MỚI THÊM] Trường lưu thông tin hẹn lấy sách
+    # [MỚI THÊM] Các trường mới để hỗ trợ tính năng hẹn lấy sách và quản lý giao dịch mượn trả tốt hơn
     # ==========================================
     pickup_date = models.DateField(null=True, blank=True, verbose_name="Ngày hẹn lấy")
     pickup_shift = models.CharField(max_length=10, choices=SHIFT_CHOICES, null=True, blank=True, verbose_name="Ca hẹn lấy")
     # ==========================================
-    # Trường lưu thông tin thanh toán
+    # [MỚI THÊM] Trường lưu thông tin phương thức thanh toán và trạng thái thanh toán
     # ==========================================
     payment_method = models.CharField(max_length=20, choices=PAYMENT_CHOICES, default='FREE', verbose_name="Phương thức thanh toán")
     is_paid = models.BooleanField(default=False, verbose_name="Trạng thái thanh toán")
@@ -293,8 +293,8 @@ class Membership(TimeStampedModel):
     level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='STANDARD')
     points = models.IntegerField(default=0)
     class Meta:
-        verbose_name = 'Hạng thành viên'
-        verbose_name_plural = 'Quản lý Hạng thành viên'
+        verbose_name = 'Xếp hạng thành viên'
+        verbose_name_plural = 'Quản lý xếp hạng thành viên'
 
 # 12. Bảng NOTIFICATIONS
 class Notification(TimeStampedModel):
