@@ -21,9 +21,21 @@
                 </div>
                 
                 <div class="d-flex flex-column flex-md-row align-items-md-center gap-3">
-                    <div class="text-end me-md-3 d-none d-md-block">
-                        <div class="text-muted small text-uppercase fw-semibold mb-1" style="letter-spacing: 1px;">Tổng nợ cần thu</div>
-                        <h4 class="fw-bold text-danger m-0">{{ total_pending_fines|default:0|floatformat:0 }} <small style="font-size: 0.9rem;">VNĐ</small></h4>
+                    <div class="bg-white px-4 py-2 rounded-pill shadow-sm border d-none d-md-flex align-items-center gap-3">
+                        <div class="d-flex align-items-center">
+                            <span class="text-muted small me-2">Tổng vụ:</span>
+                            <span class="fw-bold text-dark">{{ total_penalty_count }}</span>
+                        </div>
+                        <div class="vr text-muted opacity-25" style="height: 15px;"></div>
+                        <div class="d-flex align-items-center">
+                            <span class="text-muted small me-2">Đã thu:</span>
+                            <span class="fw-bold text-success">{{ total_collected_amount|floatformat:0 }}đ</span>
+                        </div>
+                        <div class="vr text-muted opacity-25" style="height: 15px;"></div>
+                        <div class="d-flex align-items-center">
+                            <span class="text-muted small me-2">Cần thu:</span>
+                            <span class="fw-bold text-danger">{{ total_pending_fines|floatformat:0 }}đ</span>
+                        </div>
                     </div>
                     
                     <div class="bg-white rounded-pill shadow-sm p-1 border">

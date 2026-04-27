@@ -17,7 +17,17 @@
             <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
                 <div>
                     <h3 class="fw-bold m-0 text-dark">Thống kê Đánh giá</h3>
-                    <p class="text-muted small m-0 mt-1">Theo dõi phản hồi của độc giả về kho sách.</p>
+                    <div class="d-flex align-items-center gap-3 mt-2">
+                        <div class="text-muted small">
+                            <i class="fas fa-comments me-1"></i> 
+                            <span class="fw-bold text-dark">{{ total_reviews }}</span> lượt đánh giá
+                        </div>
+                        <div class="vr text-muted opacity-25"></div>
+                        <div class="text-muted small">
+                            <i class="fas fa-users me-1"></i> 
+                            <span class="fw-bold text-dark">{{ total_reviewers }}</span> người đã đánh giá
+                        </div>
+                    </div>
                 </div>
                 
                 <div class="d-flex flex-column flex-md-row align-items-md-center gap-3">
