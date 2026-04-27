@@ -141,6 +141,7 @@ def book_list(request):
         'query': query,
         'current_sort': sort,        
         'current_category': category_id, 
+        'category_obj': Category.objects.filter(id=category_id).first() if category_id else None,
         'wishlist_book_ids': list(wishlist_book_ids),
         'borrowed_book_ids': list(borrowed_book_ids),
         'pending_book_ids': list(pending_book_ids) 
@@ -205,6 +206,7 @@ def premium_book_list(request):
         'query': query,
         'current_sort': sort,        
         'current_category': category_id,
+        'category_obj': Category.objects.filter(id=category_id).first() if category_id else None,
         'borrowed_book_ids': list(borrowed_book_ids),
         'pending_book_ids': list(pending_book_ids),
         'wishlist_book_ids': list(wishlist_book_ids)

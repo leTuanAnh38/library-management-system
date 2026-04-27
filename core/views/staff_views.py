@@ -176,7 +176,8 @@ def staff_category_list(request):
     
     return render(request, 'core/staff/category_list.html', {
         'categories': page_obj,  # Truyền danh sách đã phân trang ra HTML
-        'query': query           # Truyền lại biến q để giữ text trên thanh tìm kiếm
+        'query': query,           # Truyền lại biến q để giữ text trên thanh tìm kiếm
+        'total_categories': Category.objects.count()
     })
 
 def staff_category_form(request, pk=None):
@@ -217,7 +218,8 @@ def staff_publisher_list(request):
     
     return render(request, 'core/staff/publisher_list.html', {
         'publishers': page_obj, # Truyền biến đã phân trang ra giao diện
-        'query': query          # Truyền lại từ khóa để thanh search không bị mất chữ
+        'query': query,          # Truyền lại từ khóa để thanh search không bị mất chữ
+        'total_publishers': Publisher.objects.count()
     })
 
 def staff_publisher_form(request, pk=None):
@@ -504,6 +506,7 @@ def staff_user_management(request):
     
     return render(request, 'core/staff/user_management.html', {
         'readers': page_obj,  # Truyền page_obj ra HTML để các nút 1,2,3 hoạt động
+        'total_readers': readers.count() # Tính tổng số người đọc (sau khi filter)
     })
 
 @user_passes_test(is_staff, login_url='login')
