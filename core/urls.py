@@ -59,13 +59,11 @@ urlpatterns = [
     path('api/cart/add/<int:book_id>/', borrow_views.add_to_cart, name='api_add_to_cart'),
     path('cart/remove/<int:book_id>/', borrow_views.remove_from_cart, name='remove_from_cart'),
     path('cart/checkout/', borrow_views.checkout_cart, name='checkout_cart'),
-
+    # xử lý mượn trả gia hạn sách
     path('borrow/<int:book_id>/', borrow_views.borrow_book, name='borrow_book'),
     path('borrow-history/', borrow_views.borrow_history, name='borrow_history'),
     path('return/<int:transaction_id>/', borrow_views.return_book, name='return_book'),
-    # URL trả sách hàng loạt mới
     path('return-batch/', borrow_views.return_books_batch, name='return_books_batch'),
-    # Tìm chỗ chứa các url về mượn/trả sách và thêm dòng này vào:
     path('renew/<int:transaction_id>/', borrow_views.renew_book, name='renew_book'),
 
     # ==========================================
@@ -90,11 +88,13 @@ urlpatterns = [
     path('staff/categories/', staff_views.staff_category_list, name='staff_category_list'),
     path('staff/categories/add/', staff_views.staff_category_form, name='staff_category_add'),
     path('staff/categories/edit/<int:pk>/', staff_views.staff_category_form, name='staff_category_edit'),
+    path('staff/categories/delete/<int:pk>/', staff_views.staff_category_delete, name='staff_category_delete'),
 
     # --- QUẢN LÝ NHÀ XUẤT BẢN (PUBLISHER) ---
     path('staff/publishers/', staff_views.staff_publisher_list, name='staff_publisher_list'),
     path('staff/publishers/add/', staff_views.staff_publisher_form, name='staff_publisher_add'),
     path('staff/publishers/edit/<int:pk>/', staff_views.staff_publisher_form, name='staff_publisher_edit'),
+    path('staff/publishers/delete/<int:pk>/', staff_views.staff_publisher_delete, name='staff_publisher_delete'),
 
     path('staff/reviews/', staff_views.staff_review_management, name='staff_review_management'),
     # ==========================================

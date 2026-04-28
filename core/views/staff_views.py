@@ -195,6 +195,14 @@ def staff_category_form(request, pk=None):
     # Sửa từ 'staff/category_form.html' thành 'core/staff/category_form.html'
     return render(request, 'core/staff/category_form.html', {'form': form, 'title': title})
 
+@user_passes_test(is_staff, login_url='login')
+def staff_category_delete(request, pk):
+    category = get_object_or_404(Category, pk=pk)
+    name = category.name
+    category.delete()
+    messages.success(request, f"Đã xóa danh mục '{name}' thành công!")
+    return redirect('staff_category_list')
+
 # --- QUẢN LÝ NHÀ XUẤT BẢN ---
 @user_passes_test(is_staff, login_url='login')
 def staff_publisher_list(request):
@@ -236,6 +244,14 @@ def staff_publisher_form(request, pk=None):
     title = "Chỉnh sửa nhà xuất bản" if pk else "Thêm nhà xuất bản mới"
     # Sửa từ 'staff/category_form.html' thành 'core/staff/category_form.html'
     return render(request, 'core/staff/category_form.html', {'form': form, 'title': title})
+
+@user_passes_test(is_staff, login_url='login')
+def staff_publisher_delete(request, pk):
+    publisher = get_object_or_404(Publisher, pk=pk)
+    name = publisher.name
+    publisher.delete()
+    messages.success(request, f"Đã xóa nhà xuất bản '{name}' thành công!")
+    return redirect('staff_publisher_list')
 
 @user_passes_test(is_staff, login_url='login')
 def staff_borrow_management(request):

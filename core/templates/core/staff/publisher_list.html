@@ -69,8 +69,7 @@
                                 <th class="border-0 py-3 text-muted small text-uppercase fw-bold">Thông tin nhà xuất bản
                                 </th>
                                 <th class="border-0 py-3 text-muted small text-uppercase fw-bold">Địa chỉ trụ sở</th>
-                                <th class="border-0 py-3 text-end pe-4 text-muted small text-uppercase fw-bold"
-                                    width="120">Thao tác</th>
+                                <th class="border-0 py-3 text-end pe-4 text-muted small text-uppercase fw-bold">Thao tác</th>
                             </tr>
                         </thead>
 
@@ -100,10 +99,18 @@
                                 </td>
 
                                 <td class="text-end pe-4">
-                                    <a href="{% url 'staff_publisher_edit' item.pk %}"
-                                        class="btn btn-sm btn-light border rounded-pill px-3 fw-medium text-dark shadow-none transition-hover">
-                                        <i class="far fa-edit me-1"></i>Sửa
-                                    </a>
+                                    <div class="d-flex justify-content-end gap-2">
+                                        <a href="{% url 'staff_publisher_edit' item.pk %}"
+                                            class="btn btn-sm btn-light border rounded-pill px-3 fw-medium text-dark shadow-none transition-hover text-nowrap">
+                                            <i class="far fa-edit me-1"></i>Sửa
+                                        </a>
+                                        <a href="{% url 'staff_publisher_delete' item.pk %}" 
+                                            class="btn btn-sm btn-outline-danger border rounded-circle d-flex align-items-center justify-content-center custom-confirm shadow-none transition-hover"
+                                            style="width: 32px; height: 32px;"
+                                            data-message="Xác nhận xóa nhà xuất bản [{{ item.name }}] khỏi hệ thống? Các sách của nhà xuất bản này sẽ bị chuyển về trạng thái [Chưa có nhà xuất bản].">
+                                            <i class="fas fa-trash-alt" style="font-size: 0.8rem;"></i>
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                             {% empty %}
