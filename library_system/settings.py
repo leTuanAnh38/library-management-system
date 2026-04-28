@@ -163,12 +163,11 @@ JAZZMIN_SETTINGS = {
     "site_title": "Admin Alovu",
     "site_header": "Alovu Library",
     "site_brand": "Thư viện Alovu",
-    "welcome_sign": "Chào mừng Khanh đến với hệ thống quản trị",
+    "welcome_sign": "Chào mừng bạn đến với hệ thống quản trị",
     "copyright": "Alovu Library",
     "search_model": ["core.Book", "core.User"], 
     "custom_js": "js/admin_chart.js",
-
-    
+    "custom_css": "css/admin_custom_v1.css",
     "topmenu_links": [
         {"name": "Trang chủ", "url": "admin:index", "permissions": ["core.view_user"]},
         {"name": "Thoát hệ thống", "url": "/logout/", "icon": "fas fa-sign-out-alt", "new_window": False},
@@ -204,7 +203,9 @@ JAZZMIN_SETTINGS = {
         "core.Review": "fas fa-star",
         "core.Notification": "fas fa-bell",
         "core.ChatRoom": "fas fa-comments",
-        "core.Chat": "fas fa-comment-dots"
+        "core.Chat": "fas fa-comment-dots",
+        "core.Event": "fas fa-calendar-alt",          
+        "core.EventRegistration": "fas fa-ticket-alt",  
     },
     
     # Icon mặc định nếu bảng nào chưa được gắn
@@ -214,31 +215,31 @@ JAZZMIN_SETTINGS = {
     "changeform_format": "vertical_tabs", 
     "default_theme_mode": "light", 
     "show_ui_builder": False,
+    # Ẩn các bảng phụ khỏi menu chính để đỡ rối
+    "hide_models": [
+        "core.BookImage", 
+        "core.Cart", 
+        "core.CartItem",
+        "core.EventRegistration", # Quản lý đăng ký bên trong chi tiết Event sẽ hợp lý hơn
+        "core.ChatMessage",
+        "core.ChatRoom", 
+        "core.Chat",
+        "core.ChatMessage", # Bạn nên ẩn luôn cả ChatMessage nếu không dùng trực tiếp
+    ],
+    "hide_apps": ["auth"],
 }
 
-# (Đoạn JAZZMIN_UI_TWEAKS của bạn giữ nguyên, màu cam rất đẹp rồi)
 JAZZMIN_UI_TWEAKS = {
-    "navbar": "navbar-white navbar-light", 
-    "brand_colour": "navbar-orange",
-    "accent": "accent-orange",
+    "navbar": "navbar-white navbar-light",
+    "theme": "flatly", # Theme phẳng, màu sắc hiện đại, nhẹ nhàng hơn
     "sidebar": "sidebar-dark-primary",
-    
-    "navbar_small_text": False,
-    "footer_small_text": False,
-    "body_small_text": False,
-    "brand_small_text": False,
-    "no_navbar_border": False,
-    "navbar_fixed": False,
-    "layout_boxed": False,
-    "footer_fixed": False,
-    "sidebar_fixed": False,
-    "sidebar_nav_small_text": False,
-    "sidebar_disable_expand": False,
-    "sidebar_nav_child_indent": False,
-    "sidebar_nav_compact_style": False,
+    "sidebar_nav_compact_style": True, # Thu gọn khoảng cách giữa các dòng menu bên trái
     "sidebar_nav_legacy_style": False,
-    "sidebar_nav_flat_style": False,
-    "theme": "default",
+    "sidebar_nav_flat_style": True,    # Bỏ viền bo cong của menu, trông cứng cáp hơn
+    "sidebar_disable_expand": False,
+    "layout_boxed": False,
+    "sidebar_fixed": True,             # Cố định thanh menu bên trái khi cuộn chuột
+    "navbar_fixed": True,              # Cố định thanh điều hướng phía trên
     
     "button_classes": {
         "primary": "btn-primary",

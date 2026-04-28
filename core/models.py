@@ -206,6 +206,9 @@ class BorrowTransaction(TimeStampedModel):
             penalty = self.penalties.first()
             return penalty.amount if penalty else 0
 
+    def __str__(self):
+        return f"{self.user.username} mượn '{self.book.title}'"
+
     class Meta:
         verbose_name = 'Giao dịch mượn'
         verbose_name_plural = 'Quản lý Mượn/Trả'
@@ -237,7 +240,6 @@ class Penalty(TimeStampedModel):
     )
     # ... các trường cũ (user, amount, reason...) ...
     payment_method = models.CharField(max_length=20, choices=PAYMENT_METHODS, null=True, blank=True)
-    status = models.CharField(max_length=20, default='UNPAID') # UNPAID, PROCESSING, PAID
     # --- THÊM PHẦN NÀY VÀO ---
     STATUS_CHOICES = [
         ('UNPAID', 'Chưa thanh toán'),
@@ -344,28 +346,31 @@ class Event(models.Model):
     is_active = models.BooleanField(default=True, verbose_name="Đang mở")
     created_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        ordering = ['-start_date']
-
     def __str__(self):
         return self.title
 
     def registered_count(self):
         return self.eventregistration_set.count()
+        
+    class Meta:
+        ordering = ['-start_date']
+        verbose_name = "Sự kiện"
+        verbose_name_plural = "Danh sách Sự kiện"
 
 class EventRegistration(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     event = models.ForeignKey(Event, on_delete=models.CASCADE)
     registered_at = models.DateTimeField(auto_now_add=True)
 
-    class Meta:
-        unique_together = ('user', 'event') # Mỗi người chỉ được đăng ký 1 lần/sự kiện
-
     def __str__(self):
         return f"{self.user.username} - {self.event.title}"
 
-# core/models.py
+    class Meta:
+        unique_together = ('user', 'event') # Khôi phục lại chốt chặn chống đăng ký trùng
+        verbose_name = "Đăng ký sự kiện"
+        verbose_name_plural = "Danh sách Đăng ký Sự kiện"
 
+# core/models.py
 @receiver(post_save, sender=Book)
 def notify_new_book(sender, instance, created, **kwargs):
     if created:
