@@ -4,6 +4,7 @@ from django.core.management import call_command
 class CoreConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'core'
+    verbose_name = 'Quản lý Thư viện'
 
     def ready(self):
         # Mẹo nhỏ: Dùng 'RUN_MAIN' để ngăn Django chạy code 2 lần (do tính năng tự động reload code của runserver)

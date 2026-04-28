@@ -2165,3 +2165,17 @@ select.form-select:focus {
     .bg-soft-danger { background-color: rgba(220, 53, 69, 0.1) !important; }
     .bg-soft-info { background-color: rgba(13, 202, 240, 0.1) !important; }
     .rounded-4 { border-radius: 1rem !important; }
+    
+    /* Drag & Drop Feedback */
+    .drag-over .preview-frame, .drag-over#drag-drop-area {
+        border: 3px dashed var(--bs-primary) !important;
+        background-color: rgba(13, 110, 253, 0.05) !important;
+        transform: scale(1.02);
+        transition: all 0.3s ease;
+    }
+    .border-dashed {
+        border-style: dashed !important;
+    }
+    .transition-hover {
+        transition: all 0.3s ease;
+    }
