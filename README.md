@@ -77,3 +77,5 @@ Sau khi chạy lệnh trên, truy cập `http://127.0.0.1:8000/` để xem trang
 
 ---
 *Dự án được phát triển nhằm mục đích phục vụ đồ án môn học và tối ưu hóa trải nghiệm mượn trả tài liệu tại thư viện.*
+ cài thêm 
+ pip install django-simpleui

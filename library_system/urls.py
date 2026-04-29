@@ -19,7 +19,18 @@ from django.urls import path, include
 from django.conf import settings # THÊM DÒNG NÀY
 from django.conf.urls.static import static
 
+# urlpatterns = [
+#     path('admin/', admin.site.urls),
+#     path('', include('core.urls')), 
+# ]
+
+# 1. Import cái View dashboard bạn vừa tạo ở core
+from core.views.admin_views import admin_dashboard_view 
+
 urlpatterns = [
+    # 2. Đặt link dashboard ở ngay ĐÂY, bắt buộc phải nằm TRÊN admin/
+    path('admin/dashboard/', admin_dashboard_view, name='admin_dashboard'),
+    
     path('admin/', admin.site.urls),
     path('', include('core.urls')), 
 ]

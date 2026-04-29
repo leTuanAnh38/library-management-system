@@ -74,32 +74,18 @@ def api_delete_book(request, book_id):
 
 @login_required 
 def admin_chart_data(request):
-    # Cho phép nếu là superuser HOẶC có role STAFF/ADMIN
-    is_authorized = request.user.is_superuser or \
-                    request.user.is_staff or \
-                    getattr(request.user, 'role', '') in ['STAFF', 'ADMIN']
+    is_admin = request.user.is_superuser or getattr(request.user, 'role', '') == 'ADMIN'
+    is_staff_user = getattr(request.user, 'role', '') == 'STAFF'
 
-    if is_authorized:
-        # 1. Thống kê trạng thái mượn sách
+    if is_admin or is_staff_user:
         borrowed = BorrowTransaction.objects.filter(status='BORROWED').count()
         pending = BorrowTransaction.objects.filter(status='PENDING').count()
         returned = BorrowTransaction.objects.filter(status='RETURNED').count()
         overdue = BorrowTransaction.objects.filter(status='OVERDUE').count()
 
-        # 2. Thống kê sách mượn nhiều nhất
-        from django.db.models import Count
-        top_books = Book.objects.annotate(
-            borrow_count=Count('borrow_records')
-        ).filter(borrow_count__gt=0).order_by('-borrow_count')[:5]
-        
-        top_labels = [book.title[:20] + '...' if len(book.title) > 20 else book.title for book in top_books]
-        top_data = [book.borrow_count for book in top_books]
-
         return JsonResponse({
-            'status_labels': ['Đang mượn', 'Chờ duyệt', 'Đã trả', 'Quá hạn'],
-            'status_data': [borrowed, pending, returned, overdue],
-            'top_labels': top_labels,
-            'top_data': top_data
+            'labels': ['Đang mượn', 'Chờ xác nhận', 'Đã trả', 'Quá hạn'],
+            'data': [borrowed, pending, returned, overdue]
         })
     
     return JsonResponse({'error': 'Bạn không có quyền xem dữ liệu này!'}, status=403)

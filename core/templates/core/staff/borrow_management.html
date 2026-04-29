@@ -20,22 +20,18 @@
                     <p class="text-muted small m-0 mt-1">Tổng cộng <strong>{{ transactions.paginator.count }}</strong> giao dịch trong hệ thống.</p>
                 </div>
                 
-                <div class="d-flex flex-column flex-md-row align-items-md-center gap-3">
-                    <div class="bg-white rounded-pill shadow-sm p-1 border">
-                        <form method="GET" action="{% url 'staff_borrow_management' %}" class="d-flex align-items-center m-0">
-                            <i class="fas fa-search text-muted ms-3"></i>
-                            <input type="text" name="search_query" class="form-control border-0 shadow-none bg-transparent px-3 py-1" 
-                                   style="width: 250px; font-size: 0.9rem;"
-                                   placeholder="Tìm mã SV, Tên SV hoặc sách..." 
-                                   value="{{ query|default:'' }}">
-                            {% if query %}
-                                <a href="{% url 'staff_borrow_management' %}" class="btn btn-sm btn-light text-muted me-1 rounded-circle" title="Xóa tìm kiếm">
-                                    <i class="fas fa-times"></i>
-                                </a>
-                            {% endif %}
-                            <button class="btn btn-dark btn-sm px-4 rounded-pill fw-medium me-1" type="submit">Tìm kiếm</button>
-                        </form>
-                    </div>
+                <div class="bg-white rounded-3 shadow-sm p-1 border">
+                    <form method="GET" action="{% url 'staff_borrow_management' %}" class="d-flex align-items-center m-0">
+                        <i class="fas fa-search text-muted ms-3"></i>
+                        <input type="text" name="search_query" class="form-control border-0 shadow-none bg-transparent px-3 py-2" 
+                               style="width: 300px; font-size: 0.95rem;"
+                               placeholder="Tìm mã SV, Tên SV hoặc Tên sách..." 
+                               value="{{ query|default:'' }}">
+                        {% if query %}
+                            <a href="{% url 'staff_borrow_management' %}" class="btn btn-sm btn-light text-muted me-1 rounded-2 px-3">Xóa</a>
+                        {% endif %}
+                        <button class="btn btn-dark btn-sm px-4 rounded-2 fw-medium me-1" type="submit">Tìm</button>
+                    </form>
                 </div>
             </div>
 
@@ -54,7 +50,7 @@
                         
                         <tbody>
                             {% for trans in transactions %}
-                            <tr class="border-bottom animate__animated animate__fadeIn">
+                            <tr class="border-bottom">
                                 <td class="ps-4 py-3">
                                     <div class="fw-bold text-dark" style="font-size: 0.95rem;">{{ trans.user.get_full_name|default:trans.user.username }}</div>
                                     <div class="text-muted small font-monospace mt-1">{{ trans.user.msv }}</div>
@@ -103,12 +99,6 @@
                                                 {{ trans.due_date|date:"d/m/Y"|default:"-" }}
                                             </span>
                                         </div>
-
-                                        {% if trans.renewal_count > 0 %}
-                                            <div class="text-info small fw-bold mt-1" style="font-size: 0.75rem;">
-                                                <i class="fas fa-sync-alt fa-spin-hover me-1"></i>Gia hạn: {{ trans.renewal_count }} lần
-                                            </div>
-                                        {% endif %}
 
                                         {% if trans.status == 'RETURNED' %}
                                             <div class="text-muted small mb-0">Đã trả: 
@@ -162,7 +152,7 @@
                                         {% else %}
                                             <a href="{% url 'staff_approve_borrow' trans.id %}" 
                                                class="btn btn-sm btn-dark px-3 fw-medium rounded-2 custom-confirm"
-                                               data-message="{% if trans.days_early > 0 %}⚠️ CHÚ Ý: Sinh viên tới nhận sách SỚM HƠN {{ trans.days_early }} NGÀY so với lịch hẹn ({{ trans.pickup_date|date:'d/m/Y' }}). Bạn có xác nhận sinh viên ĐÃ TỚI QUẦY và đồng ý giao sách ngay bây giờ không?{% else %}Xác nhận sinh viên đã ĐẾN QUẦY và nhận sách?{% endif %}">
+                                               data-message="Xác nhận sinh viên đã ĐẾN QUẦY và nhận sách?">
                                                 Giao sách
                                             </a>
                                         {% endif %}
@@ -241,119 +231,38 @@
             <form method="POST" action="{% url 'staff_confirm_return' trans.id %}">
                 {% csrf_token %}
                 <div class="modal-body p-4">
-                    <div class="d-flex align-items-center mb-4 p-3 bg-light rounded-3 border">
-                        <img src="{{ trans.book.get_cover }}" class="rounded me-3 shadow-sm border" style="width: 50px; height: 75px; object-fit: cover;">
+                    <div class="d-flex align-items-center mb-4">
+                        <img src="{{ trans.book.get_cover }}" class="rounded me-3 border" style="width: 45px; height: 65px; object-fit: cover;">
                         <div>
                             <h6 class="fw-bold text-dark mb-1">{{ trans.book.title }}</h6>
-                            <p class="text-muted small mb-1">SV: <strong>{{ trans.user.get_full_name|default:trans.user.username }}</strong> ({{ trans.user.msv }})</p>
-                            <p class="text-secondary small mb-0">Hạn trả: <span class="fw-bold {% if trans.due_date < today %}text-danger{% endif %}">{{ trans.due_date|date:"d/m/Y" }}</span></p>
+                            <p class="text-muted small mb-1">SV: {{ trans.user.get_full_name|default:trans.user.username }} ({{ trans.user.msv }})</p>
+                            <p class="text-danger small mb-0 fw-medium">Giá tham chiếu: {{ trans.book.original_price|default:0|floatformat:0 }} VNĐ</p>
                         </div>
                     </div>
                     
-                    <div class="mb-4">
-                        <label class="fw-bold mb-2 text-dark small text-uppercase" style="letter-spacing: 0.5px;">Tình trạng sách thực tế:</label>
-                        <select name="book_condition" class="form-select rounded-2 shadow-none border-2 condition-selector" 
-                                data-transaction-id="{{ trans.id }}"
-                                data-original-price="{{ trans.book.original_price|default:0 }}"
-                                data-due-date="{{ trans.due_date|date:'Y-m-d' }}"
-                                required>
-                            <option value="NORMAL" selected>Bình thường (Chỉ tính phí trễ hạn nếu có)</option>
+                    <div>
+                        <label class="fw-medium mb-2 text-dark small">Đánh giá tình trạng sách lúc nhận:</label>
+                        <select name="book_condition" class="form-select rounded-2 shadow-none border" required>
+                            <option value="NORMAL" selected>Bình thường </option>
                             <option value="LIGHT_DAMAGE">Hư hỏng nhẹ (Phạt 10% giá gốc)</option>
-                            <option value="LOST_OR_DESTROYED">Mất sách / Rách nát (Phạt 100% giá gốc)</option>
+                            <option value="LOST_OR_DESTROYED">Mất sách / Rách nát (Đền 100% giá gốc)</option>
                         </select>
                     </div>
 
-                    <!-- PHẦN HIỂN THỊ PHÍ PHẠT DỰ KIẾN -->
-                    <div class="penalty-summary p-3 rounded-3 mb-4 bg-light border-dashed border-2" id="penaltySummary{{ trans.id }}">
-                        <h6 class="fw-bold text-dark mb-3 small text-uppercase"><i class="fas fa-calculator me-2"></i>Phí phạt dự kiến:</h6>
-                        
-                        <div class="d-flex justify-content-between mb-2 small">
-                            <span class="text-muted">Phí trễ hạn:</span>
-                            <span class="fw-bold text-dark" id="lateFine{{ trans.id }}">0 VNĐ</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2 small">
-                            <span class="text-muted">Phí tình trạng:</span>
-                            <span class="fw-bold text-dark" id="damageFine{{ trans.id }}">0 VNĐ</span>
-                        </div>
-                        <hr class="my-2">
-                        <div class="d-flex justify-content-between">
-                            <span class="fw-bold text-dark">TỔNG CỘNG:</span>
-                            <span class="fw-bold text-danger fs-5" id="totalFine{{ trans.id }}">0 VNĐ</span>
-                        </div>
-                    </div>
-
-                    <div class="form-check p-3 rounded-3 border-danger bg-light border" id="payNowContainer{{ trans.id }}" style="display: none;">
-                        <input class="form-check-input ms-0" type="checkbox" name="pay_now" value="YES" id="payNow{{ trans.id }}" style="transform: scale(1.3); cursor: pointer;">
-                        <label class="form-check-label fw-bold text-danger ms-2" for="payNow{{ trans.id }}" style="cursor: pointer;">
-                            <i class="fas fa-hand-holding-usd me-1"></i> Xác nhận: Sinh viên ĐÃ NỘP TIỀN tại quầy
+                    <div class="form-check mt-3 pt-3 border-top">
+                        <input class="form-check-input" type="checkbox" name="pay_now" value="YES" id="payNow{{ trans.id }}" style="transform: scale(1.2); cursor: pointer;">
+                        <label class="form-check-label fw-bold text-danger ms-1" for="payNow{{ trans.id }}" style="cursor: pointer;">
+                            <i class="fas fa-hand-holding-usd me-1"></i> Sinh viên đã nộp luôn tiền phạt tại quầy (nếu có)
                         </label>
                     </div>
                 </div>
                 <div class="modal-footer border-top p-3 bg-light rounded-bottom-3">
-                    <button type="button" class="btn btn-light border text-dark fw-medium rounded-2 px-4" data-bs-dismiss="modal">Hủy</button>
-                    <button type="submit" class="btn btn-dark fw-medium rounded-2 px-4 shadow-sm">Xác nhận hoàn tất</button>
+                    <button type="button" class="btn btn-light border text-dark fw-medium rounded-2 px-4 shadow-none" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" class="btn btn-dark fw-medium rounded-2 px-4 shadow-none">Xác nhận thu hồi</button>
                 </div>
             </form>
         </div>
     </div>
 </div>
 {% endfor %}
-
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    const conditionSelectors = document.querySelectorAll('.condition-selector');
-    
-    conditionSelectors.forEach(select => {
-        const updateFines = () => {
-            const transId = select.dataset.transactionId;
-            const originalPrice = parseFloat(select.dataset.originalPrice) || 0;
-            const dueDate = new Date(select.dataset.dueDate);
-            const condition = select.value;
-
-            // 1. Tính phí trễ hạn (5000đ/ngày)
-            let lateFine = 0;
-            if (today > dueDate) {
-                const diffTime = Math.abs(today - dueDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                lateFine = diffDays * 5000;
-            }
-
-            // 2. Tính phí hư hỏng
-            let damageFine = 0;
-            if (condition === 'LIGHT_DAMAGE') {
-                damage_fine = originalPrice * 0.10;
-                damageFine = Math.floor(damage_fine);
-            } else if (condition === 'LOST_OR_DESTROYED') {
-                damageFine = Math.floor(originalPrice);
-            }
-
-            const totalFine = lateFine + damageFine;
-
-            // 3. Cập nhật giao diện
-            document.getElementById(`lateFine${transId}`).innerText = lateFine.toLocaleString('vi-VN') + ' VNĐ';
-            document.getElementById(`damageFine${transId}`).innerText = damageFine.toLocaleString('vi-VN') + ' VNĐ';
-            document.getElementById(`totalFine${transId}`).innerText = totalFine.toLocaleString('vi-VN') + ' VNĐ';
-
-            // 4. Hiển thị checkbox "Đã nộp tiền" nếu có phí phạt
-            const payNowContainer = document.getElementById(`payNowContainer${transId}`);
-            if (totalFine > 0) {
-                payNowContainer.style.display = 'block';
-                document.getElementById(`penaltySummary${transId}`).classList.add('bg-warning-subtle', 'border-warning');
-                document.getElementById(`penaltySummary${transId}`).classList.remove('bg-light');
-            } else {
-                payNowContainer.style.display = 'none';
-                document.getElementById(`penaltySummary${transId}`).classList.remove('bg-warning-subtle', 'border-warning');
-                document.getElementById(`penaltySummary${transId}`).classList.add('bg-light');
-            }
-        };
-
-        select.addEventListener('change', updateFines);
-        // Chạy lần đầu khi modal mở (trong trường hợp quá hạn sẵn)
-        updateFines();
-    });
-});
-</script>
 {% endblock %}

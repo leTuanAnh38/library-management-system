@@ -9,9 +9,10 @@
     <div class="row g-0 min-vh-100">
         
         <div class="col-lg-6 d-none d-lg-flex align-items-center justify-content-center position-relative overflow-hidden bg-auth-image">
+            <div class="position-absolute w-100 h-100" style="background: linear-gradient(135deg, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.4) 100%); z-index: 1;"></div>
             <div class="text-center text-white p-5 position-relative" style="z-index: 2; max-width: 600px;">
                 <i class="fas fa-user-plus fa-5x text-white mb-4 animate__animated animate__backInLeft"></i>
-                <h1 class="display-4 fw-bold mb-3" style="text-shadow: 2px 4px 10px rgba(0,0,0,0.8); color: #ffffff !important;">Gia nhập ALOVU</h1>
+                <h1 class="display-4 fw-bold mb-3">Gia nhập ALOVU</h1>
                 <p class="lead fst-italic opacity-90 mb-4">"Mở ra cánh cửa đến với thế giới kiến thức vô tận."</p>
                 <div class="divider bg-white mx-auto mb-4" style="height: 3px; width: 60px; opacity: 0.8;"></div>
                 <p class="mb-4 opacity-100 lh-lg fw-medium">
@@ -54,7 +55,7 @@
                                 <div class="{% if field.name in 'last_name,first_name,username,email,msv,lop' %}col-md-6{% else %}col-12{% endif %}">
                                     <div class="form-floating mb-3 position-relative">
                                         {{ field }}
-                                        <label class="text-muted">{{ field.label }}</label>
+                                        <label class="ps-4 text-muted">{{ field.label }}</label>
                                         
                                         {% if 'pass' in field.name.lower %}
                                             <i class="fas fa-lock position-absolute top-50 end-0 translate-middle-y me-4 text-secondary opacity-50"></i>
