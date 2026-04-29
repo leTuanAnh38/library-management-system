@@ -104,6 +104,12 @@
                                             </span>
                                         </div>
 
+                                        {% if trans.renewal_count > 0 %}
+                                            <div class="text-info small fw-bold mt-1" style="font-size: 0.75rem;">
+                                                <i class="fas fa-sync-alt fa-spin-hover me-1"></i>Gia hạn: {{ trans.renewal_count }} lần
+                                            </div>
+                                        {% endif %}
+
                                         {% if trans.status == 'RETURNED' %}
                                             <div class="text-muted small mb-0">Đã trả: 
                                                 <span class="{% if trans.is_late %}text-danger{% else %}text-success{% endif %} fw-bold">
@@ -156,7 +162,7 @@
                                         {% else %}
                                             <a href="{% url 'staff_approve_borrow' trans.id %}" 
                                                class="btn btn-sm btn-dark px-3 fw-medium rounded-2 custom-confirm"
-                                               data-message="Xác nhận sinh viên đã ĐẾN QUẦY và nhận sách?">
+                                               data-message="{% if trans.days_early > 0 %}⚠️ CHÚ Ý: Sinh viên tới nhận sách SỚM HƠN {{ trans.days_early }} NGÀY so với lịch hẹn ({{ trans.pickup_date|date:'d/m/Y' }}). Bạn có xác nhận sinh viên ĐÃ TỚI QUẦY và đồng ý giao sách ngay bây giờ không?{% else %}Xác nhận sinh viên đã ĐẾN QUẦY và nhận sách?{% endif %}">
                                                 Giao sách
                                             </a>
                                         {% endif %}

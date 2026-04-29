@@ -305,6 +305,13 @@ def staff_borrow_management(request):
     page_number = request.GET.get('page', 1) 
     paginator = Paginator(transactions, 10)
     page_obj = paginator.get_page(page_number) 
+
+    # Tính toán số ngày đến sớm cho các đơn chờ lấy
+    for trans in page_obj:
+        if trans.status == 'PENDING' and trans.pickup_date and trans.pickup_date > today_date:
+            trans.days_early = (trans.pickup_date - today_date).days
+        else:
+            trans.days_early = 0
     
     return render(request, 'core/staff/borrow_management.html', {
         'transactions': page_obj, 
@@ -589,7 +596,7 @@ def is_staff_member(user):
 def staff_event_list(request):
     """Trang danh sách sự kiện dành riêng cho Thủ thư"""
     query = request.GET.get('search_query', '').strip()
-    events = Event.objects.all().order_by('-created_at')
+    events = Event.objects.all().prefetch_related('eventregistration_set__user').order_by('-created_at')
     
     # Tìm kiếm theo tên hoặc địa điểm
     if query:
