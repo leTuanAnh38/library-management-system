@@ -123,6 +123,29 @@ html {
     overflow-y: scroll;
 }
 
+/* Prevent padding-right jump when modal opens */
+body.modal-open {
+    padding-right: 0 !important;
+}
+
+body.modal-open .sticky-top,
+body.modal-open .fixed-top {
+    padding-right: 0 !important;
+    z-index: 1030 !important; /* Ensure header stays above backdrop if needed, or stays visible */
+}
+
+/* Fix for WOW.js/Animate.css: ensure elements stay visible when scroll is locked */
+body.modal-open .wow {
+    visibility: visible !important;
+    animation-name: none !important; /* Stop animation to keep it visible */
+}
+
+/* Prevent main content from collapsing or disappearing */
+body.modal-open main {
+    display: block !important;
+    min-height: 50vh !important;
+}
+
 
 /*** Navbar ***/
 .nav-bar .categories-bars .categories-bars-item {

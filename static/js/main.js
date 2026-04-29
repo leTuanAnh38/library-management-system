@@ -14,14 +14,14 @@
     // 2. Khởi tạo hiệu ứng WOW.js
     new WOW().init();
 
-    // 3. Navbar cố định khi cuộn trang
-    $(window).scroll(function () {
-        if ($(this).scrollTop() > 45) {
-            $('.nav-bar').addClass('sticky-top shadow-sm');
-        } else {
-            $('.nav-bar').removeClass('sticky-top shadow-sm');
-        }
-    });
+    // 3. Navbar cố định khi cuộn trang (Đã xử lý qua class sticky-top của Bootstrap trên tag <header>)
+    // $(window).scroll(function () {
+    //     if ($(this).scrollTop() > 45) {
+    //         $('.nav-bar').addClass('sticky-top shadow-sm');
+    //     } else {
+    //         $('.nav-bar').removeClass('sticky-top shadow-sm');
+    //     }
+    // });
 
     // 4. Banner Sách Nổi Bật (Header Carousel)
     // Đã gộp và tối ưu hiệu ứng "Center" để cuốn ở giữa to hơn

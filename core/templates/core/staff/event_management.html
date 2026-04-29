@@ -114,64 +114,6 @@
                 </div>
             </div>
 
-            <!-- Modal danh sách người tham gia (Chuyển ra ngoài table để tránh lỗi giao diện) -->
-            {% for event in events %}
-            <div class="modal fade" id="participantsModal{{ event.id }}" tabindex="-1" aria-hidden="true">
-                <div class="modal-dialog modal-dialog-centered">
-                    <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
-                        <div class="modal-header border-bottom bg-light p-4">
-                            <h5 class="modal-title fw-bold text-dark">
-                                <i class="fas fa-users me-2 text-primary"></i>Danh sách đăng ký
-                            </h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                        </div>
-                        <div class="modal-body p-0">
-                            <div class="p-4 bg-primary text-white">
-                                <h6 class="fw-bold mb-1">{{ event.title }}</h6>
-                                <div class="small opacity-75"><i class="fas fa-map-marker-alt me-1"></i>{{ event.location }}</div>
-                            </div>
-                            
-                            <div style="max-height: 400px; overflow-y: auto;">
-                                <div class="table-responsive">
-                                    <table class="table table-hover align-middle mb-0">
-                                        <thead class="bg-light sticky-top">
-                                            <tr>
-                                                <th class="ps-4 py-2 small text-uppercase text-muted fw-bold">Sinh viên</th>
-                                                <th class="py-2 small text-uppercase text-muted fw-bold">Mã SV</th>
-                                                <th class="pe-4 py-2 small text-uppercase text-muted fw-bold text-end">Ngày ĐK</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {% for reg in event.eventregistration_set.all %}
-                                            <tr>
-                                                <td class="ps-4">
-                                                    <div class="fw-bold text-dark" style="font-size: 0.9rem;">{{ reg.user.get_full_name|default:reg.user.username }}</div>
-                                                    <div class="text-muted small">{{ reg.user.email|default:"" }}</div>
-                                                </td>
-                                                <td class="font-monospace small">{{ reg.user.msv|default:"-" }}</td>
-                                                <td class="pe-4 text-end small text-muted">{{ reg.registered_at|date:"d/m/Y" }}</td>
-                                            </tr>
-                                            {% empty %}
-                                            <tr>
-                                                <td colspan="3" class="text-center py-5">
-                                                    <i class="fas fa-user-slash fa-2x text-muted opacity-25 mb-2"></i>
-                                                    <p class="text-muted small mb-0">Chưa có ai đăng ký tham gia</p>
-                                                </td>
-                                            </tr>
-                                            {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="modal-footer border-top p-3 bg-light">
-                            <button type="button" class="btn btn-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Đóng</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-            
             {% if events.has_other_pages %}
             <div class="d-flex justify-content-center mt-4">
                 <nav aria-label="Page navigation">
@@ -196,4 +138,93 @@
         </div>
     </div>
 </div>
+
+<!-- Participants Modals Moved Here to Avoid Backdrop Issue -->
+{% for event in events %}
+<div class="modal fade" id="participantsModal{{ event.id }}" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+            <div class="modal-header border-0 bg-white p-4 pb-0">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="fas fa-users-cog me-2 text-primary"></i>Quản lý Đăng ký
+                </h5>
+                <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0">
+                <!-- Event Header Info (Lightened Background) -->
+                <div class="mx-4 my-3 p-4 rounded-4 text-white d-flex justify-content-between align-items-center shadow-sm" 
+                     style="background: linear-gradient(135deg, #4b6cb7 0%, #182848 100%);">
+                    <div>
+                        <h5 class="fw-bold mb-1 text-white">{{ event.title }}</h5>
+                        <div class="small opacity-75 d-flex align-items-center">
+                            <i class="fas fa-map-marker-alt me-2 text-warning"></i>{{ event.location }}
+                            <span class="mx-2 opacity-50">|</span>
+                            <i class="far fa-calendar-check me-2"></i>{{ event.start_date|date:"d/m/Y" }}
+                        </div>
+                    </div>
+                    <div class="text-end">
+                        <div class="h4 fw-bold mb-0 text-warning">{{ event.registered_count }}</div>
+                        <div class="small opacity-75">Tham gia</div>
+                    </div>
+                </div>
+                
+                <div class="px-4 pb-4">
+                    <div class="table-responsive rounded-3 border">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="bg-light">
+                                <tr>
+                                    <th class="ps-4 py-3 small text-uppercase text-muted fw-bold border-0" style="width: 50%;">Thông tin Sinh viên</th>
+                                    <th class="py-3 small text-uppercase text-muted fw-bold border-0">Mã sinh viên</th>
+                                    <th class="pe-4 py-3 small text-uppercase text-muted fw-bold text-end border-0">Ngày đăng ký</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for reg in event.eventregistration_set.all %}
+                                <tr>
+                                    <td class="ps-4 py-3 border-0">
+                                        <div class="d-flex align-items-center">
+                                            <div class="rounded-circle d-flex align-items-center justify-content-center me-3 shadow-sm bg-primary bg-opacity-10" 
+                                                 style="width: 40px; height: 40px; border: 1px solid rgba(13, 110, 253, 0.1);">
+                                                {% if reg.user.avatar %}
+                                                    <img src="{{ reg.user.avatar.url }}" class="rounded-circle object-fit-cover w-100 h-100">
+                                                {% else %}
+                                                    <span class="fw-bold text-primary small">{{ reg.user.username|slice:":1"|upper }}</span>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold text-dark mb-0" style="font-size: 0.95rem;">{{ reg.user.get_full_name|default:reg.user.username }}</div>
+                                                <div class="text-muted small text-break" style="max-width: 250px;">{{ reg.user.email|default:"Chưa có email" }}</div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="border-0">
+                                        <span class="badge bg-light text-dark border px-2 py-1 fw-medium font-monospace">{{ reg.user.msv|default:"-" }}</span>
+                                    </td>
+                                    <td class="pe-4 text-end border-0">
+                                        <div class="fw-semibold text-dark small">{{ reg.registered_at|date:"d/m/Y" }}</div>
+                                        <div class="text-muted" style="font-size: 0.7rem;">{{ reg.registered_at|date:"H:i" }}</div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="3" class="text-center py-5">
+                                        <div class="opacity-25">
+                                            <i class="fas fa-user-slash fa-3x mb-3"></i>
+                                        </div>
+                                        <p class="text-muted mb-0">Hiện chưa có sinh viên nào đăng ký tham gia sự kiện này.</p>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-top bg-light p-3 px-4">
+                <button type="button" class="btn btn-dark rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Đóng cửa sổ</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}
