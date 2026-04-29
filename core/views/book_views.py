@@ -141,7 +141,6 @@ def book_list(request):
         'query': query,
         'current_sort': sort,        
         'current_category': category_id, 
-        'category_obj': Category.objects.filter(id=category_id).first() if category_id else None,
         'wishlist_book_ids': list(wishlist_book_ids),
         'borrowed_book_ids': list(borrowed_book_ids),
         'pending_book_ids': list(pending_book_ids) 
@@ -150,30 +149,8 @@ def book_list(request):
 
 
 def premium_book_list(request):
-    query = request.GET.get('q', '')
-    sort = request.GET.get('sort', 'newest')  
-    category_id = request.GET.get('category', '') 
+    books_list = Book.objects.filter(price__gt=0).order_by('-created_at')
     
-    books_list = Book.objects.filter(price__gt=0)
-    categories = Category.objects.all()
-
-    if category_id:
-        books_list = books_list.filter(category_id=category_id)
-
-    if query:
-        books_list = books_list.filter(
-            Q(title__icontains=query) |          
-            Q(author__icontains=query) |         
-            Q(category__name__icontains=query)   
-        ).distinct()
-
-    if sort == 'title':
-        books_list = books_list.order_by('title') 
-    elif sort == 'oldest':
-        books_list = books_list.order_by('created_at') 
-    else:
-        books_list = books_list.order_by('-created_at') 
-
     paginator = Paginator(books_list, 6) 
     page = request.GET.get('page')
     try:
@@ -202,11 +179,6 @@ def premium_book_list(request):
         
     return render(request, 'core/books/premium_books.html', {
         'books': books, 
-        'categories': categories,
-        'query': query,
-        'current_sort': sort,        
-        'current_category': category_id,
-        'category_obj': Category.objects.filter(id=category_id).first() if category_id else None,
         'borrowed_book_ids': list(borrowed_book_ids),
         'pending_book_ids': list(pending_book_ids),
         'wishlist_book_ids': list(wishlist_book_ids)
@@ -238,7 +210,6 @@ def book_detail(request, book_id):
 
     borrowed_book_ids = []
     pending_book_ids = [] 
-    wishlist_book_ids = []
     
     if request.user.is_authenticated:
         borrowed_book_ids = BorrowTransaction.objects.filter(
@@ -250,10 +221,6 @@ def book_detail(request, book_id):
             user=request.user, 
             status='PENDING'
         ).values_list('book_id', flat=True)
-
-        wishlist_book_ids = Wishlist.objects.filter(
-            user=request.user
-        ).values_list('book_id', flat=True)
     
     return render(request, 'core/books/book_detail.html', {
         'book': book,
@@ -261,7 +228,6 @@ def book_detail(request, book_id):
         'recommended_books': recommended_books, 
         'borrowed_book_ids': list(borrowed_book_ids),
         'pending_book_ids': list(pending_book_ids), 
-        'wishlist_book_ids': list(wishlist_book_ids),
         'user_has_reviewed': user_has_reviewed  
     })
 
