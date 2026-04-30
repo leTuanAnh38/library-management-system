@@ -505,4 +505,10 @@ document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll('.date-picker-future').forEach(function (input) {
         input.setAttribute('min', today);
     });
+    
+    // Fix layout collapse by moving all borrow modals to the body
+    // This prevents Bootstrap's modal-open class and CSS transforms from breaking the menu layout
+    document.querySelectorAll('.borrow-modal').forEach(function(modal) {
+        document.body.appendChild(modal);
+    });
 });
