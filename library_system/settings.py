@@ -35,7 +35,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'jazzmin',
+    'simpleui',
+    #'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -159,97 +160,167 @@ STATICFILES_DIRS = [
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
-JAZZMIN_SETTINGS = {
-    "site_title": "Admin Alovu",
-    "site_header": "Alovu Library",
-    "site_brand": "Thư viện Alovu",
-    "welcome_sign": "Chào mừng bạn đến với hệ thống quản trị",
-    "copyright": "Alovu Library",
-    "search_model": ["core.Book", "core.User"], 
-    "custom_js": "js/admin_chart.js",
-    "custom_css": "css/admin_custom_v1.css",
-    "topmenu_links": [
-        {"name": "Trang chủ", "url": "admin:index", "permissions": ["core.view_user"]},
-        {"name": "Thoát hệ thống", "url": "/logout/", "icon": "fas fa-sign-out-alt", "new_window": False},
-        {"model": "core.User"},
-    ],
+# JAZZMIN_SETTINGS = {
+#     "site_title": "Admin Alovu",
+#     "site_header": "Alovu Library",
+#     "site_brand": "Thư viện Alovu",
+#     "welcome_sign": "Chào mừng bạn đến với hệ thống quản trị",
+#     "copyright": "Alovu Library",
+#     "search_model": ["core.Book", "core.User"], 
+#     "custom_js": "js/admin_chart.js",
+#     "custom_css": "css/admin_custom_v1.css",
+#     "topmenu_links": [
+#         {"name": "Trang chủ", "url": "admin:index", "permissions": ["core.view_user"]},
+#         {"name": "Thoát hệ thống", "url": "/logout/", "icon": "fas fa-sign-out-alt", "new_window": False},
+#         {"model": "core.User"},
+#     ],
     
-    "user_menu_links": [
-        {"name": "Thoát", "url": "/logout/", "icon": "fas fa-power-off text-danger"},
-    ],
+#     "user_menu_links": [
+#         {"name": "Thoát", "url": "/logout/", "icon": "fas fa-power-off text-danger"},
+#     ],
     
-    "order_with_respect_to": [
-        "core.Book", "core.Category", "core.Publisher", "core.BookImage",
-        "core.BorrowTransaction", "core.Penalty", 
-        "core.User", "core.Membership", "core.Wishlist", "core.Recommendation",
-        "core.Review", "core.Notification", "core.ChatRoom", "core.Chat"
-    ],
+#     "order_with_respect_to": [
+#         "core.Book", "core.Category", "core.Publisher", "core.BookImage",
+#         "core.BorrowTransaction", "core.Penalty", 
+#         "core.User", "core.Membership", "core.Wishlist", "core.Recommendation",
+#         "core.Review", "core.Notification", "core.ChatRoom", "core.Chat"
+#     ],
 
-    # [BỔ SUNG] GẮN ICON CHO TỪNG BẢNG ĐỂ MENU BÊN TRÁI ĐẸP HƠN
-    "icons": {
-        "auth": "fas fa-users-cog",
-        "auth.user": "fas fa-user",
-        "auth.Group": "fas fa-users",
-        "core.Book": "fas fa-book",
-        "core.Category": "fas fa-tags",
-        "core.Publisher": "fas fa-building",
-        "core.BookImage": "fas fa-images",
-        "core.BorrowTransaction": "fas fa-exchange-alt",
-        "core.Penalty": "fas fa-money-bill-wave",
-        "core.User": "fas fa-user-graduate",
-        "core.Membership": "fas fa-medal",
-        "core.Wishlist": "fas fa-heart",
-        "core.Recommendation": "fas fa-thumbs-up",
-        "core.Review": "fas fa-star",
-        "core.Notification": "fas fa-bell",
-        "core.ChatRoom": "fas fa-comments",
-        "core.Chat": "fas fa-comment-dots",
-        "core.Event": "fas fa-calendar-alt",          
-        "core.EventRegistration": "fas fa-ticket-alt",  
-    },
+#     # [BỔ SUNG] GẮN ICON CHO TỪNG BẢNG ĐỂ MENU BÊN TRÁI ĐẸP HƠN
+#     "icons": {
+#         "auth": "fas fa-users-cog",
+#         "auth.user": "fas fa-user",
+#         "auth.Group": "fas fa-users",
+#         "core.Book": "fas fa-book",
+#         "core.Category": "fas fa-tags",
+#         "core.Publisher": "fas fa-building",
+#         "core.BookImage": "fas fa-images",
+#         "core.BorrowTransaction": "fas fa-exchange-alt",
+#         "core.Penalty": "fas fa-money-bill-wave",
+#         "core.User": "fas fa-user-graduate",
+#         "core.Membership": "fas fa-medal",
+#         "core.Wishlist": "fas fa-heart",
+#         "core.Recommendation": "fas fa-thumbs-up",
+#         "core.Review": "fas fa-star",
+#         "core.Notification": "fas fa-bell",
+#         "core.ChatRoom": "fas fa-comments",
+#         "core.Chat": "fas fa-comment-dots",
+#         "core.Event": "fas fa-calendar-alt",          
+#         "core.EventRegistration": "fas fa-ticket-alt",  
+#     },
     
-    # Icon mặc định nếu bảng nào chưa được gắn
-    "default_icon_parents": "fas fa-folder",
-    "default_icon_children": "fas fa-circle",
+#     # Icon mặc định nếu bảng nào chưa được gắn
+#     "default_icon_parents": "fas fa-folder",
+#     "default_icon_children": "fas fa-circle",
     
-    "changeform_format": "vertical_tabs", 
-    "default_theme_mode": "light", 
-    "show_ui_builder": False,
-    # Ẩn các bảng phụ khỏi menu chính để đỡ rối
-    "hide_models": [
-        "core.BookImage", 
-        "core.Cart", 
-        "core.CartItem",
-        "core.EventRegistration", # Quản lý đăng ký bên trong chi tiết Event sẽ hợp lý hơn
-        "core.ChatMessage",
-        "core.ChatRoom", 
-        "core.Chat",
-        "core.ChatMessage", # Bạn nên ẩn luôn cả ChatMessage nếu không dùng trực tiếp
-    ],
-    "hide_apps": ["auth"],
+#     "changeform_format": "vertical_tabs", 
+#     "default_theme_mode": "light", 
+#     "show_ui_builder": False,
+#     # Ẩn các bảng phụ khỏi menu chính để đỡ rối
+#     "hide_models": [
+#         "core.BookImage", 
+#         "core.Cart", 
+#         "core.CartItem",
+#         "core.EventRegistration", # Quản lý đăng ký bên trong chi tiết Event sẽ hợp lý hơn
+#         "core.ChatMessage",
+#         "core.ChatRoom", 
+#         "core.Chat",
+#         "core.ChatMessage", # Bạn nên ẩn luôn cả ChatMessage nếu không dùng trực tiếp
+#     ],
+#     "hide_apps": ["auth"],
+# }
+
+# JAZZMIN_UI_TWEAKS = {
+#     "navbar": "navbar-white navbar-light",
+#     "theme": "flatly", # Theme phẳng, màu sắc hiện đại, nhẹ nhàng hơn
+#     "sidebar": "sidebar-dark-primary",
+#     "sidebar_nav_compact_style": True, # Thu gọn khoảng cách giữa các dòng menu bên trái
+#     "sidebar_nav_legacy_style": False,
+#     "sidebar_nav_flat_style": True,    # Bỏ viền bo cong của menu, trông cứng cáp hơn
+#     "sidebar_disable_expand": False,
+#     "layout_boxed": False,
+#     "sidebar_fixed": True,             # Cố định thanh menu bên trái khi cuộn chuột
+#     "navbar_fixed": True,              # Cố định thanh điều hướng phía trên
+    
+#     "button_classes": {
+#         "primary": "btn-primary",
+#         "secondary": "btn-secondary",
+#         "info": "btn-info",
+#         "warning": "btn-warning",
+#         "danger": "btn-danger",
+#         "success": "btn-success"
+#     }
+# }
+
+# --- CẤU HÌNH CƠ BẢN SIMPLEUI ---
+SIMPLEUI_HOME_INFO = False
+SIMPLEUI_HOME_QUICK = True 
+SIMPLEUI_ANALYSIS = False
+
+SIMPLEUI_LOGO = 'https://i1.sndcdn.com/artworks-Qzpeh3004ZyWPcgz-SW4Qhg-t500x500.png'
+
+# Tương đương site_title, site_header, welcome_sign của Jazzmin
+SIMPLEUI_HOME_TITLE = 'Alovu Library' 
+SIMPLEUI_HOME_PAGE_NAME = 'Bàn Làm Việc' # Thay chữ "Trang chủ" mặc định
+SIMPLEUI_HOME_ICON = 'fas fa-home'
+
+# --- TỐI ƯU GIAO DIỆN & TỐC ĐỘ ---
+SIMPLEUI_STATIC_OFFLINE = True # Tải file tĩnh nội bộ (Giúp load nhanh hơn)
+SIMPLEUI_LOADING = True        # Hiện loading khi chuyển tab cho mượt
+SIMPLEUI_DEFAULT_THEME = 'admin.lte.css' # Hoặc 'ant.design.css' - Theme phẳng, hiện đại giống 'flatly' của Jazzmin
+
+# --- CẤU HÌNH MENU SIMPLEUI ---
+SIMPLEUI_CONFIG = {
+    # Tắt menu mặc định của Django, chỉ dùng menu tự định nghĩa phía dưới
+    # Đây là cách TỐT NHẤT để ẩn 'auth', 'BookImage', 'Cart', 'ChatRoom'... như bạn muốn bên Jazzmin
+    'system_keep': False, 
+    'dynamic': False,     
+    
+    # Khai báo cấu trúc Menu
+    'menus': [
+        {
+            'name': 'Quản lý Kho Sách',
+            'icon': 'fas fa-book-reader',
+            'models': [
+                {'name': 'Kho Sách', 'url': 'core/book/', 'icon': 'fas fa-book'},
+                {'name': 'Danh mục sách', 'url': 'core/category/', 'icon': 'fas fa-tags'},
+                {'name': 'Nhà xuất bản', 'url': 'core/publisher/', 'icon': 'fas fa-building'},
+            ]
+        },
+        {
+            'name': 'Mượn Trả & Dịch Vụ',
+            'icon': 'fas fa-exchange-alt',
+            'models': [
+                {'name': 'Giao dịch mượn sách', 'url': 'core/borrowtransaction/', 'icon': 'fas fa-hand-holding'},
+                {'name': 'Quản lý Phạt', 'url': 'core/penalty/', 'icon': 'fas fa-money-bill-wave'},
+                {'name': 'Sự kiện (Events)', 'url': 'core/event/', 'icon': 'fas fa-calendar-alt'},
+            ]
+        },
+        {
+            'name': 'Tương tác Bạn đọc',
+            'icon': 'fas fa-users-cog',
+            'models': [
+                {'name': 'Đánh giá (Reviews)', 'url': 'core/review/', 'icon': 'fas fa-star'},
+                {'name': 'Sách yêu thích', 'url': 'core/wishlist/', 'icon': 'fas fa-heart'},
+                {'name': 'Gợi ý sách', 'url': 'core/recommendation/', 'icon': 'fas fa-thumbs-up'},
+            ]
+        },
+        {
+            'name': 'Hệ Thống & Người Dùng',
+            'icon': 'fas fa-cogs',
+            'models': [
+                {'name': 'Học viên / Người dùng', 'url': 'core/user/', 'icon': 'fas fa-user-graduate'},
+                {'name': 'Thẻ Thành viên', 'url': 'core/membership/', 'icon': 'fas fa-medal'},
+                {'name': 'Thông báo', 'url': 'core/notification/', 'icon': 'fas fa-bell'},
+                # Link thoát hệ thống giống topmenu_links của Jazzmin
+                {'name': 'Thoát hệ thống', 'url': '/admin/logout/', 'icon': 'fas fa-sign-out-alt'} 
+            ]
+        }
+    ]
 }
 
-JAZZMIN_UI_TWEAKS = {
-    "navbar": "navbar-white navbar-light",
-    "theme": "flatly", # Theme phẳng, màu sắc hiện đại, nhẹ nhàng hơn
-    "sidebar": "sidebar-dark-primary",
-    "sidebar_nav_compact_style": True, # Thu gọn khoảng cách giữa các dòng menu bên trái
-    "sidebar_nav_legacy_style": False,
-    "sidebar_nav_flat_style": True,    # Bỏ viền bo cong của menu, trông cứng cáp hơn
-    "sidebar_disable_expand": False,
-    "layout_boxed": False,
-    "sidebar_fixed": True,             # Cố định thanh menu bên trái khi cuộn chuột
-    "navbar_fixed": True,              # Cố định thanh điều hướng phía trên
-    
-    "button_classes": {
-        "primary": "btn-primary",
-        "secondary": "btn-secondary",
-        "info": "btn-info",
-        "warning": "btn-warning",
-        "danger": "btn-danger",
-        "success": "btn-success"
-    }
-}
+SIMPLEUI_INDEX = '/admin-dashboard/'
+
 # Khi gọi hàm logout, hệ thống sẽ tự tìm đến URL có name='login'
 LOGOUT_REDIRECT_URL = 'login'
 
