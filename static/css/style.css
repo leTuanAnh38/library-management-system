@@ -2202,3 +2202,24 @@ select.form-select:focus {
     .transition-hover {
         transition: all 0.3s ease;
     }
+
+/* --- Cart Checkout Form Styles --- */
+.cart-radio-card {
+    border: 2px solid #e9ecef;
+    background-color: #fff;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+.cart-radio-card:hover {
+    border-color: #dee2e6;
+    background-color: #f8f9fa;
+    transform: translateY(-2px);
+}
+.btn-check:checked + .cart-radio-card {
+    border-color: var(--bs-primary);
+    background-color: #f8f9fa;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+.btn-check:checked + .cart-radio-card .shift-icon {
+    color: var(--bs-primary) !important;
+}

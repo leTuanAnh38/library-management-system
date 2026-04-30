@@ -126,15 +126,15 @@ function renderBookHTML(book, is_premium) {
     var maxDateString = new Date(maxDate.getTime() - tzOffset).toISOString().split('T')[0];
 
     if (book.btn_status === 'PENDING') {
-        actionBtn = `<button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-none disabled" style="opacity: 0.8;"><i class="fas fa-spinner fa-spin me-1"></i>CHỜ XÁC NHẬN</button>`;
+        actionBtn = `<button class="btn btn-warning text-dark rounded-pill fw-bold px-4 py-2 shadow-none disabled" style="opacity: 0.8;"><i class="fas fa-clock me-1"></i>Chờ duyệt</button>`;
     } else if (book.btn_status === 'BORROWED') {
-        actionBtn = `<button class="btn btn-secondary rounded-pill fw-bold w-100 py-2 disabled shadow-none">ĐANG MƯỢN</button>`;
+        actionBtn = `<button class="btn btn-secondary rounded-pill fw-bold px-4 py-2 disabled shadow-none"><i class="fas fa-book-reader me-1"></i>Đang mượn</button>`;
     } else if (book.btn_status === 'OUT_OF_STOCK' || book.quantity <= 0) {
-        actionBtn = `<button class="btn btn-light border rounded-pill fw-bold w-100 py-2 disabled text-muted">TẠM HẾT</button>`;
+        actionBtn = `<button class="btn btn-light border rounded-pill fw-bold w-100 py-2 disabled text-muted"><i class="fas fa-times-circle me-1"></i>TẠM HẾT</button>`;
     } else { 
         // TRƯỜNG HỢP CÒN SÁCH -> TẠO 2 NÚT & BẬT MODAL
         actionBtn = `
-        <div class="d-flex gap-2">
+        <div class="w-100 d-flex gap-2">
             <button type="button" class="btn btn-outline-primary fw-bold rounded-pill shadow-sm py-2 btn-add-to-cart transition-hover w-50" data-url="/api/cart/add/${book.id}/" title="Thêm vào giỏ sách">
                 <i class="fas fa-cart-plus"></i> Giỏ
             </button>
@@ -154,17 +154,29 @@ function renderBookHTML(book, is_premium) {
                         <span class="h5 fw-bold text-danger mb-0">${safePrice} VNĐ</span>
                     </div>
                     
-                    <div class="payment-methods">
-                        <div class="form-check p-0 mb-2">
+                    <div class="payment-methods row g-3">
+                        <div class="col-12">
                             <input class="btn-check" type="radio" name="payment_method" id="payCashJS${book.id}" value="CASH" checked onchange="document.getElementById('qrCodeSectionJS${book.id}').style.display='none'">
-                            <label class="btn btn-outline-secondary border-dashed w-100 text-start p-3 rounded-3" for="payCashJS${book.id}">
-                                <i class="fas fa-wallet me-2 text-success"></i> Tiền mặt tại quầy
+                            <label class="w-100 text-start p-3 rounded-4 cart-radio-card shadow-sm d-flex align-items-center" for="payCashJS${book.id}">
+                                <div class="p-2 rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background-color: rgba(25, 135, 84, 0.1);">
+                                    <i class="fas fa-wallet text-success fs-5"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">Tiền mặt tại quầy</div>
+                                    <div class="small text-muted" style="font-size: 0.75rem;">Thanh toán khi nhận sách</div>
+                                </div>
                             </label>
                         </div>
-                        <div class="form-check p-0">
+                        <div class="col-12">
                             <input class="btn-check" type="radio" name="payment_method" id="payBankJS${book.id}" value="BANK" onchange="document.getElementById('qrCodeSectionJS${book.id}').style.display='block'">
-                            <label class="btn btn-outline-secondary border-dashed w-100 text-start p-3 rounded-3" for="payBankJS${book.id}">
-                                <i class="fas fa-qrcode me-2 text-primary"></i> Chuyển khoản QR
+                            <label class="w-100 text-start p-3 rounded-4 cart-radio-card shadow-sm d-flex align-items-center" for="payBankJS${book.id}">
+                                <div class="p-2 rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background-color: rgba(13, 110, 253, 0.1);">
+                                    <i class="fas fa-qrcode text-primary fs-5"></i>
+                                </div>
+                                <div>
+                                    <div class="fw-bold text-dark">Chuyển khoản QR</div>
+                                    <div class="small text-muted" style="font-size: 0.75rem;">Quét mã thanh toán nhanh chóng</div>
+                                </div>
                             </label>
                         </div>
                     </div>
@@ -205,30 +217,30 @@ function renderBookHTML(book, is_premium) {
                             </div>
                             
                             <div class="mb-4">
-                                <label class="form-label small fw-bold text-muted text-uppercase">1. Chọn ngày đến quầy</label>
-                                <div class="input-group shadow-sm rounded-3">
-                                    <span class="input-group-text bg-white border-end-0 rounded-start-3"><i class="far fa-calendar-check text-primary"></i></span>
-                                   <input type="date" name="pickup_date" class="form-control border-start-0 rounded-end-3 py-2" min="${todayString}" max="${maxDateString}" required>
+                                <label class="form-label small fw-bold text-muted text-uppercase mb-2"><i class="far fa-calendar-alt me-2 text-primary"></i>1. Chọn ngày đến quầy</label>
+                                <div class="input-group shadow-sm rounded-3 transition-hover">
+                                    <span class="input-group-text bg-light border-end-0 rounded-start-3"><i class="far fa-calendar-check text-primary"></i></span>
+                                   <input type="date" name="pickup_date" class="form-control border-start-0 bg-light rounded-end-3 py-2 px-3 fw-medium" style="box-shadow: none;" min="${todayString}" max="${maxDateString}" required>
                                 </div>
                             </div>
 
                             <div class="mb-4">
-                                <label class="form-label small fw-bold text-muted text-uppercase">2. Chọn buổi (Ca trực)</label>
+                                <label class="form-label small fw-bold text-muted text-uppercase mb-2"><i class="far fa-clock me-2 text-primary"></i>2. Chọn buổi (Ca trực)</label>
                                 <div class="row g-3">
                                     <div class="col-6">
                                         <input type="radio" class="btn-check" name="pickup_shift" id="shiftSangJS${book.id}" value="SANG" required>
-                                        <label class="btn btn-outline-info w-100 py-3 rounded-4 border-2 d-flex flex-column align-items-center" for="shiftSangJS${book.id}">
-                                            <i class="fas fa-sun mb-2 fs-4"></i>
-                                            <span class="fw-bold">Ca Sáng</span>
-                                            <small class="opacity-75">07:30 - 11:30</small>
+                                        <label class="w-100 py-3 rounded-4 cart-radio-card d-flex flex-column align-items-center shadow-sm" for="shiftSangJS${book.id}">
+                                            <i class="fas fa-sun mb-2 fs-4 text-warning shift-icon"></i>
+                                            <span class="fw-bold text-dark">Ca Sáng</span>
+                                            <small class="text-muted" style="font-size: 0.75rem;">07:30 - 11:30</small>
                                         </label>
                                     </div>
                                     <div class="col-6">
                                         <input type="radio" class="btn-check" name="pickup_shift" id="shiftChieuJS${book.id}" value="CHIEU" required>
-                                        <label class="btn btn-outline-warning w-100 py-3 rounded-4 border-2 d-flex flex-column align-items-center" for="shiftChieuJS${book.id}">
-                                            <i class="fas fa-cloud-sun mb-2 fs-4"></i>
+                                        <label class="w-100 py-3 rounded-4 cart-radio-card d-flex flex-column align-items-center shadow-sm" for="shiftChieuJS${book.id}">
+                                            <i class="fas fa-cloud-sun mb-2 fs-4 text-info shift-icon"></i>
                                             <span class="fw-bold text-dark">Ca Chiều</span>
-                                            <small class="text-dark opacity-75">13:00 - 17:00</small>
+                                            <small class="text-muted" style="font-size: 0.75rem;">13:00 - 17:00</small>
                                         </label>
                                     </div>
                                 </div>
@@ -287,7 +299,7 @@ function renderBookHTML(book, is_premium) {
                         <div class="small">${stockHtml}</div>
                     </div>
                     
-                    <div class="w-100">${actionBtn}</div>
+                    <div class="w-100 d-flex justify-content-center">${actionBtn}</div>
                     
                     <div class="mt-3">
                         <button type="button" class="btn btn-link btn-sm p-0 text-decoration-none text-muted btn-toggle-wishlist" data-url="${book.wishlist_api_url}" data-book-id="${book.id}">
