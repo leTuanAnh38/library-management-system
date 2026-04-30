@@ -110,8 +110,7 @@
                                 <a href="{% url 'book_list' %}?category={{ cat.id }}"
                                     class="dropdown-item py-3 border-bottom small ajax-category-link"
                                     data-category="{{ cat.id }}">
-                                    <i class="fas fa-chevron-right me-2 text-primary" style="font-size: 0.7rem;"></i>{{
-                                    cat.name }}
+                                    <i class="fas fa-chevron-right me-2 text-primary" style="font-size: 0.7rem;"></i>{{ cat.name }}
                                 </a>
                                 {% empty %}
                                 <a href="#" class="dropdown-item py-2 text-muted">Chưa có danh mục</a>
