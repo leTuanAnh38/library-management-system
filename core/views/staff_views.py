@@ -259,24 +259,7 @@ def staff_borrow_management(request):
     today_date = timezone.now().date()
 
     # ========================================================
-    # 1. LOGIC TỰ ĐỘNG XỬ LÝ "YÊU CẦU TRẢ" ẢO (SAU 24 GIỜ)
-    # ========================================================
-    # Nếu sinh viên bấm trả nhưng quá 24h không mang sách tới quầy, trả về trạng thái Đang mượn
-    return_requests = BorrowTransaction.objects.filter(status='PENDING', reason='YÊU CẦU TRẢ')
-    for r in return_requests:
-        if r.updated_at < timezone.now() - timedelta(days=1):
-            r.status = 'BORROWED'
-            r.reason = '' # Xóa nhãn yêu cầu trả
-            r.save()
-            
-            Notification.objects.create(
-                user=r.user,
-                message=f"Yêu cầu trả sách '{r.book.title}' bị hủy do bạn không mang sách tới quầy. Vui lòng thực hiện lại khi sẵn sàng.",
-                type='SYSTEM', status='UNREAD'
-            )
-
-    # ========================================================
-    # 2. LẤY DANH SÁCH & PHÂN TRANG
+    # LẤY DANH SÁCH GIAO DỊCH & XỬ LÝ TÌM KIẾM
     # ========================================================
     query = request.GET.get('search_query', '').strip()
     
@@ -302,6 +285,9 @@ def staff_borrow_management(request):
         
     transactions = transactions.order_by('status_priority', '-created_at')
     
+    # ========================================================
+    # PHÂN TRANG & TÍNH TOÁN DỮ LIỆU PHỤ TRỢ
+    # ========================================================
     page_number = request.GET.get('page', 1) 
     paginator = Paginator(transactions, 10)
     page_obj = paginator.get_page(page_number) 
