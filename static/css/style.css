@@ -993,9 +993,9 @@ main {
     .sticky-sidebar {
         position: -webkit-sticky;
         position: sticky;
-        top: 90px;
-        /* Đã fix lỗi bị menu che */
+        top: 100px;
         z-index: 10;
+        margin-top: 10px;
     }
 }
 
@@ -1256,15 +1256,7 @@ main {
 /* =========================================
    CSS RIÊNG CHO TỪNG TRANG
    ========================================= */
-/* Fix thanh Sidebar trượt mượt mà (Trang Profile) */
-@media (min-width: 992px) {
-    .sticky-sidebar {
-        position: -webkit-sticky !important;
-        position: sticky !important;
-        top: 160px !important;
-        z-index: 10 !important;
-    }
-}
+
 
 /* Chỉnh mũi tên cho thanh Breadcrumb (Trang Chi tiết sách) */
 .breadcrumb-item+.breadcrumb-item::before {
@@ -1418,24 +1410,13 @@ main {
     color: #ff4d6d !important;
 }
 
-.sticky-sidebar {
-    position: sticky;
-    top: 120px;
-    z-index: 10;
-}
+
 
 .rounded-4 {
     border-radius: 1rem !important;
 }
 
-.sticky-sidebar {
-    position: sticky;
-    /* Tăng giá trị này lên để Sidebar lùi xuống dưới Navbar */
-    top: 160px;
-    z-index: 10;
-    /* Thêm một chút margin để lúc bình thường nó không dính sát lên trên */
-    margin-top: 10px;
-}
+
 
 /* ==========================================
    GIAO DIỆN ĐĂNG NHẬP / ĐĂNG KÝ (AUTH PAGES)
@@ -1566,10 +1547,7 @@ body.auth-page {
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
 }
 
-.sticky-sidebar {
-    position: sticky;
-    top: 100px;
-}
+
 
 .hover-zoom {
     transition: transform 0.4s ease;
