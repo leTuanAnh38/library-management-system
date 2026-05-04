@@ -40,15 +40,19 @@
                                  class="card-img-top w-100" style="height: 200px; object-fit: cover;" alt="{{ event.title }}">
                             
                             <div class="position-absolute top-0 end-0 m-3 z-2">
-                                {% if event.start_date > now %}
-                                    <span class="badge bg-white text-success border border-success px-3 py-2 rounded-pill fw-bold shadow-sm">
-                                        <i class="fas fa-calendar-plus me-1"></i> Sắp diễn ra
-                                    </span>
-                                {% else %}
-                                    <span class="badge bg-white text-warning border border-warning px-3 py-2 rounded-pill fw-bold shadow-sm">
-                                        <i class="fas fa-fire me-1"></i> Đang diễn ra
-                                    </span>
-                                {% endif %}
+                                    {% if event.end_date and event.end_date < now %}
+                                        <span class="badge bg-white text-secondary border border-secondary px-3 py-2 rounded-pill fw-bold shadow-sm">
+                                            <i class="fas fa-calendar-times me-1"></i> Đã kết thúc
+                                        </span>
+                                    {% elif event.start_date > now %}
+                                        <span class="badge bg-white text-success border border-success px-3 py-2 rounded-pill fw-bold shadow-sm">
+                                            <i class="fas fa-calendar-plus me-1"></i> Sắp diễn ra
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-white text-warning border border-warning px-3 py-2 rounded-pill fw-bold shadow-sm">
+                                            <i class="fas fa-fire me-1"></i> Đang diễn ra
+                                        </span>
+                                    {% endif %}
                             </div>
 
                             <div class="position-absolute bottom-0 start-0 m-3 bg-white rounded-4 shadow text-center overflow-hidden border" style="min-width: 60px; z-index: 2;">
@@ -88,16 +92,22 @@
                                     </span>
                                 </div>
                                 
-                                <button type="button" 
-                                        class="btn btn-toggle-event w-100 rounded-pill py-2 fw-bold transition-hover shadow-sm {% if event.id in registered_event_ids %}btn-success{% else %}btn-outline-primary{% endif %}" 
-                                        data-url="{% url 'api_toggle_event_registration' event.id %}" 
-                                        data-id="{{ event.id }}">
-                                    {% if event.id in registered_event_ids %}
-                                        <i class="fas fa-check-circle me-1"></i> Đã tham gia
-                                    {% else %}
-                                        <i class="fas fa-ticket-alt me-1"></i> Đăng ký tham gia
-                                    {% endif %}
-                                </button>
+                                {% if event.end_date and event.end_date < now %}
+                                    <button type="button" class="btn btn-secondary w-100 rounded-pill py-2 fw-bold opacity-75 shadow-none" disabled>
+                                        <i class="fas fa-calendar-times me-1"></i> Sự kiện đã kết thúc
+                                    </button>
+                                {% else %}
+                                    <button type="button" 
+                                            class="btn btn-toggle-event w-100 rounded-pill py-2 fw-bold transition-hover shadow-sm {% if event.id in registered_event_ids %}btn-success{% else %}btn-outline-primary{% endif %}" 
+                                            data-url="{% url 'api_toggle_event_registration' event.id %}" 
+                                            data-id="{{ event.id }}">
+                                        {% if event.id in registered_event_ids %}
+                                            <i class="fas fa-check-circle me-1"></i> Đã tham gia
+                                        {% else %}
+                                            <i class="fas fa-ticket-alt me-1"></i> Đăng ký tham gia
+                                        {% endif %}
+                                    </button>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
@@ -115,7 +125,11 @@
                                 
                                 <div class="p-4 p-md-5">
                                     <div class="d-flex align-items-center flex-wrap gap-2 mb-3">
-                                        {% if event.start_date > now %}
+                                        {% if event.end_date and event.end_date < now %}
+                                            <span class="badge bg-white text-secondary border border-secondary px-3 py-2 rounded-pill fw-bold shadow-sm">
+                                                <i class="fas fa-calendar-times me-1"></i> Đã kết thúc
+                                            </span>
+                                        {% elif event.start_date > now %}
                                             <span class="badge bg-white text-success border border-success px-3 py-2 rounded-pill fw-bold shadow-sm">
                                                 <i class="fas fa-calendar-plus me-1"></i> Sắp diễn ra
                                             </span>

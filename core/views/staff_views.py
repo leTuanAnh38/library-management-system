@@ -582,7 +582,16 @@ def is_staff_member(user):
 def staff_event_list(request):
     """Trang danh sách sự kiện dành riêng cho Thủ thư"""
     query = request.GET.get('search_query', '').strip()
-    events = Event.objects.all().prefetch_related('eventregistration_set__user').order_by('-created_at')
+    now = timezone.now()
+    
+    # Ưu tiên sự kiện chưa kết thúc lên đầu, đã kết thúc xuống cuối
+    events = Event.objects.all().prefetch_related('eventregistration_set__user').annotate(
+        is_ended=Case(
+            When(end_date__lt=now, then=Value(1)),
+            default=Value(0),
+            output_field=IntegerField(),
+        )
+    ).order_by('is_ended', '-start_date')
     
     # Tìm kiếm theo tên hoặc địa điểm
     if query:
@@ -598,7 +607,8 @@ def staff_event_list(request):
     
     return render(request, 'core/staff/event_management.html', {
         'events': page_obj,
-        'query': query
+        'query': query,
+        'now': now
     })
 
 @user_passes_test(is_staff_member)

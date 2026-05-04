@@ -55,10 +55,10 @@
                         </thead>
                         <tbody>
                             {% for event in events %}
-                            <tr class="border-bottom transition-hover-row animate__animated animate__fadeIn">
+                            <tr class="border-bottom transition-hover-row animate__animated animate__fadeIn {% if event.end_date < now %}opacity-75 bg-light{% endif %}">
                                 <td class="ps-4 py-3">
                                     <div class="d-flex align-items-center">
-                                        <img src="{% if event.cover_image %}{{ event.cover_image.url }}{% else %}https://placehold.co/100x100?text=Event{% endif %}" class="rounded border shadow-sm me-3" style="width: 60px; height: 60px; object-fit: cover;">
+                                        <img src="{% if event.cover_image %}{{ event.cover_image.url }}{% else %}https://placehold.co/100x100?text=Event{% endif %}" class="rounded border shadow-sm me-3" style="width: 60px; height: 60px; object-fit: cover; {% if event.end_date < now %}filter: grayscale(1);{% endif %}">
                                         <div>
                                             <div class="fw-bold text-dark text-truncate" style="max-width: 200px; font-size: 0.95rem;" title="{{ event.title }}">{{ event.title }}</div>
                                             <div class="text-muted small mt-1"><i class="far fa-clock me-1"></i>Tạo lúc: {{ event.created_at|date:"d/m/Y" }}</div>
@@ -84,7 +84,9 @@
                                     </button>
                                 </td>
                                 <td class="text-center">
-                                    {% if event.is_active %}
+                                    {% if event.end_date < now %}
+                                        <span class="badge bg-white border border-danger text-danger px-3 py-1 rounded-pill">Đã kết thúc</span>
+                                    {% elif event.is_active %}
                                         <span class="badge bg-white border border-success text-success px-3 py-1 rounded-pill">Đang mở</span>
                                     {% else %}
                                         <span class="badge bg-white border border-secondary text-secondary px-3 py-1 rounded-pill">Đã đóng</span>

@@ -402,6 +402,11 @@ def api_load_more_wishlist(request):
 @require_POST
 def api_toggle_event_registration(request, event_id):
     event = get_object_or_404(Event, id=event_id)
+    
+    # Kiểm tra sự kiện đã kết thúc chưa
+    if event.end_date and event.end_date < timezone.now():
+        return JsonResponse({'status': 'error', 'message': 'Sự kiện này đã kết thúc!'})
+        
     registration = EventRegistration.objects.filter(user=request.user, event=event).first()
     
     if registration:
