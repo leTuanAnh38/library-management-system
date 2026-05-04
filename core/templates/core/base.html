@@ -81,19 +81,7 @@
                 </div>
             </header>
 
-            {% if messages and not user.is_staff and user.role != 'STAFF' and not user.is_superuser %}
-            <div class="px-4 mt-3">
-                {% for message in messages %}
-                <div
-                    class="alert alert-{% if message.tags == 'error' %}danger{% else %}success{% endif %} alert-dismissible fade show shadow-sm border-0 rounded-3">
-                    <i
-                        class="fas {% if message.tags == 'error' %}fa-exclamation-circle{% else %}fa-check-circle{% endif %} me-2"></i>
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-                {% endfor %}
-            </div>
-            {% endif %}
+
 
             {% else %}
             <!-- USER LAYOUT START -->
@@ -332,7 +320,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/wow/1.1.2/wow.min.js"></script>
     <script src="{% static 'js/main.js' %}?v=10034"></script>
     <script src="{% static 'js/api.js' %}?v=1006"></script>
-    <script src="{% static 'js/api_staff.js' %}?v=1002"></script>
+    <script src="{% static 'js/api_staff.js' %}?v=1005"></script>
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
 
     {% load static %}
@@ -363,7 +351,7 @@
                 showConfirmButton: false,
                 timer: 4000,
                 timerProgressBar: true,
-                didOpen: function(toast) {
+                didOpen: function (toast) {
                     toast.addEventListener('mouseenter', Swal.stopTimer)
                     toast.addEventListener('mouseleave', Swal.resumeTimer)
                 }
@@ -373,7 +361,7 @@
             const dataElement = document.getElementById('django-messages-data');
             if (dataElement) {
                 const djangoMessages = JSON.parse(dataElement.textContent);
-                djangoMessages.forEach(function(msg) {
+                djangoMessages.forEach(function (msg) {
                     Toast.fire({
                         icon: msg.tags === 'error' ? 'error' : 'success',
                         title: msg.text
