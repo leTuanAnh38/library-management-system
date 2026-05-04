@@ -12,6 +12,7 @@
 <div class="container-fluid px-lg-5 py-4">
     <div class="row g-4">
         
+        {% if not user.is_staff and user.role != 'STAFF' and not user.is_superuser %}
         <div class="col-lg-3">
              <div class="sticky-sidebar">
                 <div class="card border shadow-sm rounded-4 overflow-hidden mb-0">
@@ -19,8 +20,9 @@
                 </div>
             </div>
         </div>
+        {% endif %}
 
-        <div class="col-lg-9">
+        <div class="{% if user.is_staff or user.role == 'STAFF' or user.is_superuser %}col-lg-12{% else %}col-lg-9{% endif %}">
             <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
                 <div class="card-body p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4 border-start border-4 border-primary ps-3">

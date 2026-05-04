@@ -346,6 +346,12 @@ class Event(models.Model):
     is_active = models.BooleanField(default=True, verbose_name="Đang mở")
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def get_cover(self):
+        """Trả về URL ảnh bìa hoặc ảnh mặc định nếu không có"""
+        if self.cover_image and hasattr(self.cover_image, 'url'):
+            return self.cover_image.url
+        return "https://placehold.co/150x150?text=Event"
+
     def __str__(self):
         return self.title
 

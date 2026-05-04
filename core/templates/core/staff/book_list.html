@@ -3,26 +3,20 @@
 
 {% block title %}Quản lý kho sách - Admin Alovu{% endblock %}
 
+{% block staff_title %}Quản lý Kho Sách{% endblock %}
+{% block nav_staff_book %}active{% endblock %}
+
 {% block content %}
-<div class="container-fluid px-lg-5 py-5 mt-4">
-    <div class="row g-4">
-        <div class="col-lg-3">
-            <div class="sticky-sidebar">
-                {% include 'core/includes/sidebar.html' %}
+<div class="p-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <h3 class="fw-bold text-dark m-0">Quản lý Kho Sách</h3>
+            <div class="d-flex align-items-center gap-3 mt-1">
+                <span class="text-muted small"><i class="fas fa-book me-1"></i> <strong>{{ total_books_count }}</strong> đầu sách</span>
+                <div class="vr text-muted opacity-25" style="height: 12px;"></div>
+                <span class="text-muted small"><i class="fas fa-copy me-1"></i> <strong>{{ total_physical_books }}</strong> bản sao</span>
             </div>
         </div>
-
-        <div class="col-lg-9">
-            
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-                <div>
-                    <h3 class="fw-bold text-dark m-0">Quản lý Kho Sách</h3>
-                    <div class="d-flex align-items-center gap-3 mt-1">
-                        <span class="text-muted small"><i class="fas fa-book me-1"></i> <strong>{{ total_books_count }}</strong> đầu sách</span>
-                        <div class="vr text-muted opacity-25" style="height: 12px;"></div>
-                        <span class="text-muted small"><i class="fas fa-copy me-1"></i> <strong>{{ total_physical_books }}</strong> bản sao</span>
-                    </div>
-                </div>
                 
                 <div class="d-flex flex-column flex-md-row align-items-md-center gap-3">
                     <div class="dropdown">
@@ -194,7 +188,6 @@
                 </div>
                 {% endif %}
             </div>
-        </div>
     </div>
 </div>
 {% endblock %}

@@ -257,11 +257,12 @@ def staff_publisher_delete(request, pk):
 def staff_borrow_management(request):
     # Lấy ngày hiện tại để dùng cho việc hiển thị ngoài HTML
     today_date = timezone.now().date()
+    query = request.GET.get('search_query', '').strip()
+    status_filter = request.GET.get('status', '')
 
     # ========================================================
     # LẤY DANH SÁCH GIAO DỊCH & XỬ LÝ TÌM KIẾM
     # ========================================================
-    query = request.GET.get('search_query', '').strip()
     
     # Sắp xếp ưu tiên: Chờ duyệt > Quá hạn > Đang mượn > Khác
     transactions = BorrowTransaction.objects.select_related('user', 'book').annotate(
@@ -275,6 +276,9 @@ def staff_borrow_management(request):
             output_field=IntegerField(),
         )
     )
+
+    if status_filter:
+        transactions = transactions.filter(status=status_filter)
     
     if query:
         transactions = transactions.filter(
@@ -302,6 +306,7 @@ def staff_borrow_management(request):
     return render(request, 'core/staff/borrow_management.html', {
         'transactions': page_obj, 
         'query': query,
+        'status_filter': status_filter,
         'today': today_date
     })
 # Xác nhận duyệt đơn mượn sách của sinh viên (Cả sách Free và có phí)
@@ -343,7 +348,7 @@ def staff_approve_borrow(request, transaction_id):
 # xác nh thu tiền phạt và hoàn tất yêu cầu trả sách của sinh viên
 @user_passes_test(is_staff, login_url='login')
 def staff_confirm_return(request, transaction_id):
-    borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, status__in=['BORROWED', 'PENDING'])
+    borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, status__in=['BORROWED', 'PENDING', 'OVERDUE'])
     user = borrow_record.user
     
     if request.method == 'POST':

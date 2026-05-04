@@ -996,7 +996,6 @@ main {
         top: 90px; /* Mặc định cho Staff (chỉ có 1 thanh header) */
         z-index: 10;
         align-self: start;
-        transition: top 0.3s ease; /* Thêm transition mượt mà nếu cần */
     }
 
     /* Nếu header có thêm thanh điều hướng (cho User) */
