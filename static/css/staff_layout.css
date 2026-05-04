@@ -105,7 +105,7 @@ body.staff-mode {
     align-items: center;
     justify-content: space-between;
     padding: 0 30px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     position: sticky;
     top: 0;
     z-index: 1000;
@@ -139,11 +139,11 @@ body.staff-mode {
     .staff-sidebar {
         left: calc(-1 * var(--staff-sidebar-width));
     }
-    
+
     .staff-sidebar.show {
         left: 0;
     }
-    
+
     .staff-content-wrapper {
         margin-left: 0;
     }

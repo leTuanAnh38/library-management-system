@@ -96,9 +96,12 @@
                                 </td>
 
                                 <td class="text-end pe-4">
-                                    <a href="{% url 'book_detail' book.id %}#reviews" class="btn btn-sm btn-light border px-3 fw-medium rounded-2 text-dark shadow-none">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-light border px-3 fw-medium rounded-2 text-dark shadow-none btn-view-reviews"
+                                            data-book-id="{{ book.id }}"
+                                            data-url="{% url 'api_staff_get_book_reviews' book.id %}">
                                         Xem chi tiết
-                                    </a>
+                                    </button>
                                 </td>
                             </tr>
                             {% empty %}
@@ -152,5 +155,35 @@
             </div>
             {% endif %}
 
+        </div>
+
+        <!-- Modal Xem chi tiết đánh giá -->
+        <div class="modal fade" id="reviewDetailModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content border-0 rounded-4 shadow-lg">
+                    <div class="modal-header border-bottom bg-light px-4 py-3">
+                        <h5 class="modal-title fw-bold text-dark" id="modal-book-title">Chi tiết đánh giá</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-0">
+                        <div class="px-4 py-3 bg-white border-bottom d-flex align-items-center justify-content-between">
+                            <div class="text-muted small">
+                                <i class="fas fa-users me-1"></i> 
+                                <span id="modal-total-reviewers" class="fw-bold text-dark">0</span> lượt đánh giá cho tài liệu này
+                            </div>
+                        </div>
+                        <div id="modal-reviews-container" class="overflow-auto" style="max-height: 500px;">
+                            <!-- Reviews will be loaded here -->
+                            <div class="p-5 text-center text-muted">
+                                <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+                                Đang tải dữ liệu...
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-top px-4 py-3">
+                        <button type="button" class="btn btn-secondary rounded-pill px-4 fw-bold" data-bs-dismiss="modal">Đóng</button>
+                    </div>
+                </div>
+            </div>
         </div>
 {% endblock %}

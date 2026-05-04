@@ -13,13 +13,13 @@
                 <div class="card-header bg-white border-0 p-4 pb-0">
                     <div class="d-flex align-items-center pb-4 border-bottom">
                         <div class="me-4 position-relative">
-                            {% if reader.avatar %}
+                            {% if reader.avatar and 'default.png' not in reader.avatar.name %}
                                 <img src="{{ reader.avatar.url }}" 
                                      alt="{{ reader.username }}" 
                                      class="rounded-circle border border-4 border-white shadow-sm" 
                                      style="width: 120px; height: 120px; object-fit: cover;">
                             {% else %}
-                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center shadow-sm border border-4 border-white" 
+                                <div class="bg-white text-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm border border-4 border-primary" 
                                      style="width: 120px; height: 120px; font-size: 3rem; font-weight: bold;">
                                     {{ reader.username|first|upper }}
                                 </div>
@@ -56,7 +56,7 @@
                                 <div class="col-sm-4">
                                     <div class="p-2 bg-light rounded-3">
                                         <small class="text-muted d-block">Địa chỉ Email</small>
-                                        <span class="fw-bold text-truncate d-block">{{ reader.email }}</span>
+                                        <span class="fw-bold text-truncate d-block">{{ reader.email|default:"Chưa cập nhật email" }}</span>
                                     </div>
                                 </div>
                             </div>

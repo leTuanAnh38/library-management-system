@@ -138,3 +138,26 @@ def api_staff_load_more_borrows(request):
         'data': data,
         'has_next': trans_page.has_next()
     })
+
+@user_passes_test(is_staff, login_url='login')
+def api_staff_get_book_reviews(request, book_id):
+    """Lấy danh sách đánh giá của một cuốn sách cụ thể để hiển thị trong Modal"""
+    book = get_object_or_404(Book, id=book_id)
+    reviews = Review.objects.filter(book=book).order_by('-created_at')
+    
+    data = []
+    for r in reviews:
+        data.append({
+            'user_name': r.user.get_full_name() or r.user.username,
+            'user_avatar': r.user.avatar_url,
+            'rating': r.rating,
+            'comment': r.comment or 'Không có nội dung nhận xét.',
+            'created_at': r.created_at.strftime("%d/%m/%Y %H:%M")
+        })
+        
+    return JsonResponse({
+        'status': 'success',
+        'book_title': book.title,
+        'total_reviewers': reviews.count(),
+        'reviews': data
+    })

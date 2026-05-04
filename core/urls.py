@@ -139,4 +139,5 @@ urlpatterns = [
 
     path('api/staff/books/load-more/', api_staff.api_staff_load_more_books, name='api_staff_load_more_books'),
     path('api/staff/borrows/load-more/', api_staff.api_staff_load_more_borrows, name='api_staff_load_more_borrows'),
+    path('api/staff/reviews/<int:book_id>/', api_staff.api_staff_get_book_reviews, name='api_staff_get_book_reviews'),
 ]

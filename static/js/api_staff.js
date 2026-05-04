@@ -182,3 +182,146 @@ $(window).scroll(function() {
         }
     }
 });
+
+/* =================================================================
+   12. XEM CHI TIẾT ĐÁNH GIÁ (MODAL)
+   ================================================================= */
+$(document).on('click', '.btn-view-reviews', function() {
+    var btn = $(this);
+    var url = btn.data('url');
+    var modal = $('#reviewDetailModal');
+    var container = $('#modal-reviews-container');
+    
+    // Reset modal
+    container.html(`
+        <div class="p-5 text-center text-muted">
+            <div class="spinner-border spinner-border-sm me-2" role="status"></div>
+            Đang tải dữ liệu...
+        </div>
+    `);
+    modal.modal('show');
+    
+    $.ajax({
+        url: url,
+        type: 'GET',
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#modal-book-title').text('Đánh giá: ' + response.book_title);
+                $('#modal-total-reviewers').text(response.total_reviewers);
+                
+                var html = '';
+                if (response.reviews.length > 0) {
+                    response.reviews.forEach(function(r) {
+                        var stars = '';
+                        for (var i = 1; i <= 5; i++) {
+                            if (i <= r.rating) {
+                                stars += '<i class="fas fa-star text-warning small"></i>';
+                            } else {
+                                stars += '<i class="far fa-star text-muted small"></i>';
+                            }
+                        }
+                        
+                        html += `
+                            <div class="p-4 border-bottom transition-hover bg-white">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <div class="d-flex align-items-center">
+                                        <img src="${r.user_avatar}" 
+                                             class="rounded-circle border border-2 border-primary-soft me-3 shadow-sm object-fit-cover" 
+                                             style="width: 42px; height: 42px;" 
+                                             onerror="this.src='/static/img/avatar.png'">
+                                        <div>
+                                            <div class="fw-bold text-dark mb-0" style="font-size: 0.9rem;">${r.user_name}</div>
+                                            <div class="stars-group">${stars}</div>
+                                        </div>
+                                    </div>
+                                    <div class="text-muted small" style="font-size: 0.75rem;">
+                                        <i class="far fa-clock me-1"></i>${r.created_at}
+                                    </div>
+                                </div>
+                                <div class="ps-5">
+                                    <p class="text-dark mb-0 lh-base" style="font-size: 0.9rem;">${r.comment}</p>
+                                </div>
+                            </div>
+                        `;
+                    });
+                } else {
+                    html = '<div class="p-5 text-center text-muted">Chưa có đánh giá nào cho sách này.</div>';
+                }
+                container.html(html);
+            } else {
+                container.html('<div class="p-5 text-center text-danger">Có lỗi xảy ra khi tải dữ liệu.</div>');
+            }
+        },
+        error: function() {
+            container.html('<div class="p-5 text-center text-danger">Không thể kết nối đến máy chủ.</div>');
+        }
+    });
+});
+
+/* =================================================================
+   13. TÍNH PHÍ PHẠT KHI THU HỒI SÁCH (BORROW MANAGEMENT)
+   ================================================================= */
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const conditionSelectors = document.querySelectorAll('.condition-selector');
+    
+    conditionSelectors.forEach(select => {
+        const updateFines = () => {
+            const transId = select.dataset.transactionId;
+            const originalPrice = parseFloat(select.dataset.originalPrice) || 0;
+            const dueDate = new Date(select.dataset.dueDate);
+            const condition = select.value;
+
+            // 1. Tính phí trễ hạn (5000đ/ngày)
+            let lateFine = 0;
+            if (today > dueDate) {
+                const diffTime = Math.abs(today - dueDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                lateFine = diffDays * 5000;
+            }
+
+            // 2. Tính phí hư hỏng
+            let damageFine = 0;
+            if (condition === 'LIGHT_DAMAGE') {
+                damageFine = Math.floor(originalPrice * 0.10);
+            } else if (condition === 'LOST_OR_DESTROYED') {
+                damageFine = Math.floor(originalPrice);
+            }
+
+            const totalFine = lateFine + damageFine;
+
+            // 3. Cập nhật giao diện
+            const lateFineElem = document.getElementById(`lateFine${transId}`);
+            const damageFineElem = document.getElementById(`damageFine${transId}`);
+            const totalFineElem = document.getElementById(`totalFine${transId}`);
+
+            if (lateFineElem) lateFineElem.innerText = lateFine.toLocaleString('vi-VN') + ' VNĐ';
+            if (damageFineElem) damageFineElem.innerText = damageFine.toLocaleString('vi-VN') + ' VNĐ';
+            if (totalFineElem) totalFineElem.innerText = totalFine.toLocaleString('vi-VN') + ' VNĐ';
+
+            // 4. Hiển thị checkbox "Đã nộp tiền" nếu có phí phạt
+            const payNowContainer = document.getElementById(`payNowContainer${transId}`);
+            const summaryBox = document.getElementById(`penaltySummary${transId}`);
+            
+            if (totalFine > 0) {
+                if (payNowContainer) payNowContainer.style.display = 'block';
+                if (summaryBox) {
+                    summaryBox.classList.add('bg-warning-subtle', 'border-warning');
+                    summaryBox.classList.remove('bg-light');
+                }
+            } else {
+                if (payNowContainer) payNowContainer.style.display = 'none';
+                if (summaryBox) {
+                    summaryBox.classList.remove('bg-warning-subtle', 'border-warning');
+                    summaryBox.classList.add('bg-light');
+                }
+            }
+        };
+
+        select.addEventListener('change', updateFines);
+        // Chạy lần đầu (trong trường hợp quá hạn sẵn)
+        updateFines();
+    });
+});
