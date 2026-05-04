@@ -3,17 +3,12 @@
 
 {% block title %}Chi tiết người đọc - Admin Alovu{% endblock %}
 
-{% block content %}
-<div class="container-fluid px-lg-5 py-5 mt-5">
-    <div class="row g-4">
-        <div class="col-lg-3">
-            <div class="sticky-sidebar">
-                {% include 'core/includes/sidebar.html' %}
-            </div>
-        </div>
+{% block staff_title %}Chi tiết Người dùng{% endblock %}
+{% block nav_staff_user %}active{% endblock %}
 
-        <div class="col-lg-9">
-            <div class="card border-0 shadow-sm rounded-4 overflow-hidden animate__animated animate__fadeIn">
+{% block content %}
+<div class="p-4">
+    <div class="card border-0 shadow-sm rounded-4 overflow-hidden animate__animated animate__fadeIn">
                 
                 <div class="card-header bg-white border-0 p-4 pb-0">
                     <div class="d-flex align-items-center pb-4 border-bottom">
@@ -199,8 +194,6 @@
                     </a>
                 </div>
                 
-            </div>
-        </div>
     </div>
 </div>
 {% endblock %}

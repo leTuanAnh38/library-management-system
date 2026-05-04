@@ -3,23 +3,17 @@
 
 {% block title %}Quản lý Tiền Phạt - Admin Alovu{% endblock %}
 
+{% block staff_title %}Quản lý Xử phạt & Tiền phạt{% endblock %}
+{% block nav_staff_penalty %}active{% endblock %}
+
 {% block content %}
-<div class="container-fluid px-lg-5 py-5 mt-4">
-    <div class="row g-4">
-        <div class="col-lg-3">
-            <div class="sticky-sidebar">
-                {% include 'core/includes/sidebar.html' %}
-            </div>
+<div class="p-4">
+    <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
+        <div>
+            <h3 class="fw-bold m-0 text-dark">Quản lý Tiền Phạt</h3>
+            <p class="text-muted small m-0 mt-1">Theo dõi và xác nhận các khoản bồi thường, phạt quá hạn.</p>
         </div>
-
-        <div class="col-lg-9">
-
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
-                <div>
-                    <h3 class="fw-bold m-0 text-dark">Quản lý Tiền Phạt</h3>
-                    <p class="text-muted small m-0 mt-1">Theo dõi và xác nhận các khoản bồi thường, phạt quá hạn.</p>
-                </div>
-            </div>
+    </div>
 
             <div class="row g-3 mb-4">
                 <div class="col-md-4">
@@ -225,8 +219,5 @@
                 </nav>
             </div>
             {% endif %}
-        </div>
-    </div>
-</div>
 
 {% endblock %}
