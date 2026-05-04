@@ -22,12 +22,13 @@
 
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
-    <link href="{% static 'css/style.css' %}?v=3.9" rel="stylesheet">
+    <link href="{% static 'css/style.css' %}?v=4.2" rel="stylesheet">
 
 </head>
 
 <body>
-    <header class="sticky-top shadow-sm">
+    <header
+        class="sticky-top shadow-sm {% if not user.is_staff and user.role != 'STAFF' and not user.is_superuser %}header-user{% endif %}">
         <div class="container-fluid px-lg-5 py-2 d-none d-lg-block border-bottom bg-white">
             <div class="row gx-0 align-items-center justify-content-between">
                 <div class="col-md-4 col-lg-3">
@@ -60,7 +61,7 @@
                         <a href="#" class="dropdown-toggle text-dark fs-6 text-decoration-none fw-bold"
                             data-bs-toggle="dropdown" data-bs-display="static">
                             <div class="position-relative d-inline-block me-2">
-                                {% if user.avatar %}
+                                {% if user.avatar and 'default.png' not in user.avatar.name %}
                                 <img src="{{ user.avatar.url }}"
                                     class="rounded-circle border border-primary object-fit-cover"
                                     style="width: 30px; height: 30px;" alt="Avatar">
@@ -174,6 +175,7 @@
         {% block content %}{% endblock %}
     </main>
 
+    {% if not user.is_staff and user.role != 'STAFF' and not user.is_superuser %}
     <footer class="full-footer">
         <div class="container-fluid px-lg-5">
             <div class="row g-5">
@@ -227,6 +229,7 @@
             </div>
         </div>
     </footer>
+    {% endif %}
 
     <div class="modal fade" id="customConfirmModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-sm">

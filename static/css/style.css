@@ -993,9 +993,15 @@ main {
     .sticky-sidebar {
         position: -webkit-sticky;
         position: sticky;
-        top: 100px;
+        top: 90px; /* Mặc định cho Staff (chỉ có 1 thanh header) */
         z-index: 10;
-        margin-top: 10px;
+        align-self: start;
+        transition: top 0.3s ease; /* Thêm transition mượt mà nếu cần */
+    }
+
+    /* Nếu header có thêm thanh điều hướng (cho User) */
+    header.header-user ~ main .sticky-sidebar {
+        top: 155px; /* Offset cao hơn để tránh đè lên thanh Danh mục sách */
     }
 }
 
