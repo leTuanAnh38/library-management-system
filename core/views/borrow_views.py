@@ -45,8 +45,9 @@ def borrow_book(request, book_id):
         status__in=['PENDING', 'BORROWED', 'OVERDUE']
     ).count()
 
-    if active_borrows_count >= 4:
-        return respond('error', f"Bạn đang mượn hoặc chờ duyệt {active_borrows_count} cuốn rồi. Tối đa chỉ được 4 cuốn!")
+    max_books = user.rank_info['max_books']
+    if active_borrows_count >= max_books:
+        return respond('error', f"Bạn đang mượn hoặc chờ duyệt {active_borrows_count} cuốn rồi. Với hạng {user.rank_info['level']}, bạn chỉ được mượn tối đa {max_books} cuốn!")
 
     book = get_object_or_404(Book, id=book_id)
     #KIỂM TRA MƯỢN TRÙNG
@@ -133,12 +134,16 @@ def add_to_cart(request, book_id):
     # 1. Lấy hoặc tạo giỏ hàng cho user
     user_cart, created = Cart.objects.get_or_create(user=request.user)
     
-    # 2. Kiểm tra giới hạn 4 cuốn (Sách đang mượn + Sách trong giỏ)
+    # 2. Kiểm tra giới hạn số lượng (Dựa trên Hạng)
+    max_books = request.user.rank_info['max_books']
     active_borrows = BorrowTransaction.objects.filter(user=request.user, status__in=['PENDING', 'BORROWED', 'OVERDUE']).count()
     items_in_cart = user_cart.items.count()
     
-    if active_borrows + items_in_cart >= 4:
-        return JsonResponse({'success': False, 'message': f'Giới hạn 4 cuốn! Bạn đang giữ {active_borrows} cuốn và có {items_in_cart} cuốn trong giỏ.'})
+    if active_borrows + items_in_cart >= max_books:
+        return JsonResponse({
+            'success': False, 
+            'message': f'Giới hạn {max_books} cuốn! Hạng {request.user.rank_info["level"]} của bạn đang giữ {active_borrows} cuốn và có {items_in_cart} cuốn trong giỏ.'
+        })
         
     # 3. Kiểm tra mượn trùng trong lịch sử
     already_borrowed = BorrowTransaction.objects.filter(user=request.user, book_id=book_id, status__in=['PENDING', 'BORROWED', 'OVERDUE']).exists()
@@ -213,6 +218,19 @@ def checkout_cart(request):
                 messages.error(request, "Các ca nhận sách hôm nay đã kết thúc. Vui lòng chọn ngày kế tiếp!")
                 return redirect('view_cart')
 
+        # ---------- 3. KIỂM TRA GIỚI HẠN SỐ LƯỢNG (DỰA TRÊN HẠNG) ----------
+        active_borrows_count = BorrowTransaction.objects.filter(
+            user=request.user,
+            status__in=['PENDING', 'BORROWED', 'OVERDUE']
+        ).count()
+        
+        max_books = request.user.rank_info['max_books']
+        cart_count = user_cart.items.count()
+        
+        if active_borrows_count + cart_count > max_books:
+            messages.error(request, f"Bạn đang mượn/chờ duyệt {active_borrows_count} cuốn. Giỏ hàng có {cart_count} cuốn. Tổng cộng vượt quá giới hạn {max_books} cuốn của hạng {request.user.rank_info['level']}!")
+            return redirect('view_cart')
+
         cart_items = user_cart.items.all()
         han_tra = pickup_date_obj + timedelta(days=14)
         
@@ -259,12 +277,11 @@ def borrow_history(request):
             When(status='OVERDUE', then=Value(1)),   
             When(status='BORROWED', then=Value(2)), 
             When(status='PENDING', then=Value(3)),
-            When(status='CANCELLED', then=Value(4)), 
-            When(status='RETURNED', then=Value(5)),  
-            default=Value(6),
+            When(status__in=['RETURNED', 'CANCELLED'], then=Value(4)),  # Nhóm các đơn đã kết thúc (Trả/Hủy) vào cùng mức
+            default=Value(5),
             output_field=IntegerField(),
         )
-    ).order_by('status_priority', F('return_date').desc(nulls_last=True), '-created_at')
+    ).order_by('status_priority', '-updated_at')
     
     # Phân trang: Mỗi lần tải 8 giao dịch
     paginator = Paginator(history_list, 8) 
