@@ -48,6 +48,10 @@
                     style="opacity: 0.8;">
                     <i class="fas fa-clock me-1"></i>Chờ duyệt
                 </button>
+                {% elif book.id in overdue_book_ids %}
+                <button class="btn btn-danger text-white rounded-pill fw-bold px-4 py-2 disabled shadow-none">
+                    <i class="fas fa-exclamation-circle me-1"></i>Quá hạn
+                </button>
                 {% elif book.id in borrowed_book_ids %}
                 <button class="btn btn-secondary rounded-pill fw-bold px-4 py-2 disabled shadow-none">
                     <i class="fas fa-book-reader me-1"></i>Đang mượn

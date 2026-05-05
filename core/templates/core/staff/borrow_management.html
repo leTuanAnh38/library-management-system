@@ -27,6 +27,8 @@
                         Trạng thái: Quá hạn
                     {% elif status_filter == 'RETURNED' %}
                         Trạng thái: Đã trả
+                    {% elif status_filter == 'CANCELLED' %}
+                        Trạng thái: Đã hủy
                     {% else %}
                         Tất cả trạng thái
                     {% endif %}
@@ -38,6 +40,7 @@
                     <li><a class="dropdown-item py-2 {% if status_filter == 'BORROWED' %}active bg-dark text-white{% endif %}" href="?search_query={{ query }}&status=BORROWED">Đang mượn</a></li>
                     <li><a class="dropdown-item py-2 {% if status_filter == 'OVERDUE' %}active bg-dark text-white{% endif %}" href="?search_query={{ query }}&status=OVERDUE">Quá hạn</a></li>
                     <li><a class="dropdown-item py-2 {% if status_filter == 'RETURNED' %}active bg-dark text-white{% endif %}" href="?search_query={{ query }}&status=RETURNED">Đã trả</a></li>
+                    <li><a class="dropdown-item py-2 {% if status_filter == 'CANCELLED' %}active bg-dark text-white{% endif %}" href="?search_query={{ query }}&status=CANCELLED">Đã hủy</a></li>
                 </ul>
             </div>
 
@@ -214,7 +217,7 @@
                     <ul class="pagination pagination-sm shadow-sm bg-white rounded-3 overflow-hidden border m-0">
                         {% if transactions.has_previous %}
                             <li class="page-item">
-                                <a class="page-link text-dark border-0 px-3 py-2 fw-medium" href="?search_query={{ query|default:'' }}&page={{ transactions.previous_page_number }}">
+                                <a class="page-link text-dark border-0 px-3 py-2 fw-medium" href="?search_query={{ query|default:'' }}&status={{ status_filter }}&page={{ transactions.previous_page_number }}">
                                     Trước
                                 </a>
                             </li>
@@ -227,14 +230,14 @@
                                 </li>
                             {% else %}
                                 <li class="page-item">
-                                    <a class="page-link text-dark border-0 px-3 py-2 fw-medium" href="?search_query={{ query|default:'' }}&page={{ num }}">{{ num }}</a>
+                                    <a class="page-link text-dark border-0 px-3 py-2 fw-medium" href="?search_query={{ query|default:'' }}&status={{ status_filter }}&page={{ num }}">{{ num }}</a>
                                 </li>
                             {% endif %}
                         {% endfor %}
 
                         {% if transactions.has_next %}
                             <li class="page-item">
-                                <a class="page-link text-dark border-0 px-3 py-2 fw-medium" href="?search_query={{ query|default:'' }}&page={{ transactions.next_page_number }}">
+                                <a class="page-link text-dark border-0 px-3 py-2 fw-medium" href="?search_query={{ query|default:'' }}&status={{ status_filter }}&page={{ transactions.next_page_number }}">
                                     Sau
                                 </a>
                             </li>

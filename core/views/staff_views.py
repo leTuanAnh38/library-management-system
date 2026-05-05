@@ -1,6 +1,5 @@
 # file: core/views/staff_views.py
 from sched import Event
-
 from django.db.models import Case, When, Value, IntegerField
 from datetime import timedelta
 from django.utils import timezone
@@ -12,7 +11,6 @@ from django.db import transaction as db_transaction
 from ..models import Category, Publisher, Review
 from ..forms import CategoryForm, PublisherForm
 from django.core.paginator import Paginator
-# Chú ý import lại các model và form từ thư mục gốc của app core
 from core.models import Book, BorrowTransaction, Penalty, User, Notification
 from core.forms import BookForm
 from django.db.models import Avg, Count, OuterRef, Subquery
@@ -192,7 +190,6 @@ def staff_category_form(request, pk=None):
         form = CategoryForm(instance=instance)
     
     title = "Chỉnh sửa danh mục" if pk else "Thêm danh mục mới"
-    # Sửa từ 'staff/category_form.html' thành 'core/staff/category_form.html'
     return render(request, 'core/staff/category_form.html', {'form': form, 'title': title})
 
 @user_passes_test(is_staff, login_url='login')
@@ -225,8 +222,8 @@ def staff_publisher_list(request):
     page_obj = paginator.get_page(page_number)
     
     return render(request, 'core/staff/publisher_list.html', {
-        'publishers': page_obj, # Truyền biến đã phân trang ra giao diện
-        'query': query,          # Truyền lại từ khóa để thanh search không bị mất chữ
+        'publishers': page_obj, 
+        'query': query,          
         'total_publishers': Publisher.objects.count()
     })
 
@@ -242,7 +239,6 @@ def staff_publisher_form(request, pk=None):
         form = PublisherForm(instance=instance)
     
     title = "Chỉnh sửa nhà xuất bản" if pk else "Thêm nhà xuất bản mới"
-    # Sửa từ 'staff/category_form.html' thành 'core/staff/category_form.html'
     return render(request, 'core/staff/category_form.html', {'form': form, 'title': title})
 
 @user_passes_test(is_staff, login_url='login')
@@ -255,16 +251,10 @@ def staff_publisher_delete(request, pk):
 
 @user_passes_test(is_staff, login_url='login')
 def staff_borrow_management(request):
-    # Lấy ngày hiện tại để dùng cho việc hiển thị ngoài HTML
     today_date = timezone.now().date()
     query = request.GET.get('search_query', '').strip()
     status_filter = request.GET.get('status', '')
-
-    # ========================================================
     # LẤY DANH SÁCH GIAO DỊCH & XỬ LÝ TÌM KIẾM
-    # ========================================================
-    
-    # Sắp xếp ưu tiên: Chờ duyệt > Quá hạn > Đang mượn > Khác
     transactions = BorrowTransaction.objects.select_related('user', 'book').annotate(
         status_priority=Case(
             When(status='PENDING', then=Value(1)),
@@ -288,10 +278,7 @@ def staff_borrow_management(request):
         ).distinct()
         
     transactions = transactions.order_by('status_priority', '-created_at')
-    
-    # ========================================================
     # PHÂN TRANG & TÍNH TOÁN DỮ LIỆU PHỤ TRỢ
-    # ========================================================
     page_number = request.GET.get('page', 1) 
     paginator = Paginator(transactions, 10)
     page_obj = paginator.get_page(page_number) 
@@ -312,18 +299,16 @@ def staff_borrow_management(request):
 # Xác nhận duyệt đơn mượn sách của sinh viên (Cả sách Free và có phí)
 @user_passes_test(is_staff, login_url='login')
 def staff_approve_borrow(request, transaction_id):
-    # ---> ĐÃ SỬA: Bỏ điều kiện is_paid=False để Thủ thư có thể tìm và duyệt được cả sách Free
     borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, status='PENDING')
     
     try:
         with db_transaction.atomic():
             borrow_record.status = 'BORROWED'
-            borrow_record.is_paid = True  # Đảm bảo đơn nào duyệt xong cũng là hợp lệ
+            borrow_record.is_paid = True  
             borrow_record.borrow_date = timezone.now().date()
             borrow_record.due_date = timezone.now().date() + timedelta(days=14)
-            borrow_record.save()
-            
-            # ---> ĐÃ SỬA: Phân loại sách để hiển thị tin nhắn phù hợp
+            borrow_record.save() 
+            #Phân loại sách để hiển thị tin nhắn phù hợp
             is_premium = borrow_record.book.price and borrow_record.book.price > 0
             
             if is_premium:
@@ -437,11 +422,10 @@ def staff_confirm_return(request, transaction_id):
 def staff_penalty_management(request):
     query = request.GET.get('search_query', '').strip()
     
-    # 1. Lấy TẤT CẢ khoản phạt (không dùng exclude PAID nữa)
-    # Sắp xếp ưu tiên: Chờ duyệt (1) -> Chưa đóng (2) -> Đã đóng (3)
+    # 1. Lấy TẤT CẢ khoản phạt
     penalties = Penalty.objects.select_related('user').annotate(
         status_priority=Case(
-            When(status='PROCESSING', then=Value(1)), # Khớp với status trong code của bạn
+            When(status='PROCESSING', then=Value(1)), 
             When(status='UNPAID', then=Value(2)),
             When(status='PAID', then=Value(3)),
             default=Value(4),
@@ -478,7 +462,6 @@ def staff_penalty_management(request):
         'total_collected_amount': total_collected_amount
     })
 
-# Hàm dưới này của bạn đã quá chuẩn, cứ giữ nguyên nhé!
 @user_passes_test(is_staff, login_url='login')
 def staff_confirm_penalty(request, penalty_id):
     penalty = get_object_or_404(Penalty, id=penalty_id, status__in=['UNPAID', 'PROCESSING'])
@@ -513,14 +496,13 @@ def staff_user_management(request):
             Q(msv__icontains=query)
         )
         
-    # 3. ---> THÊM XỬ LÝ PHÂN TRANG Ở ĐÂY <---
-    page_number = request.GET.get('page', 1)  # Lấy số trang hiện tại từ URL
-    paginator = Paginator(readers, 10)        # Chia 10 người / 1 trang
-    page_obj = paginator.get_page(page_number) # Lấy dữ liệu của trang đó
+    page_number = request.GET.get('page', 1)  
+    paginator = Paginator(readers, 10)       
+    page_obj = paginator.get_page(page_number) 
     
     return render(request, 'core/staff/user_management.html', {
-        'readers': page_obj,  # Truyền page_obj ra HTML để các nút 1,2,3 hoạt động
-        'total_readers': readers.count() # Tính tổng số người đọc (sau khi filter)
+        'readers': page_obj,  
+        'total_readers': readers.count() 
     })
 
 @user_passes_test(is_staff, login_url='login')
@@ -543,7 +525,6 @@ def staff_review_management(request):
     # Lấy thông tin bài đánh giá gần nhất của mỗi cuốn sách
     latest_review = Review.objects.filter(book=OuterRef('pk')).order_by('-created_at')
 
-    # Query gốc của bạn (rất xịn)
     books = Book.objects.annotate(
         review_count=Count('reviews'), 
         avg_rating=Avg('reviews__rating'), 

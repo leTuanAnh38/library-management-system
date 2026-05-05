@@ -226,6 +226,7 @@ def api_load_more_books(request):
         wishlist_ids = list(Wishlist.objects.filter(user=request.user).values_list('book_id', flat=True))
         borrowed_ids = list(BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True))
         pending_ids = list(BorrowTransaction.objects.filter(user=request.user, status='PENDING').values_list('book_id', flat=True))
+        overdue_ids = list(BorrowTransaction.objects.filter(user=request.user, status='OVERDUE').values_list('book_id', flat=True))
 
     paginator = Paginator(books_list, 6) 
     
@@ -237,6 +238,7 @@ def api_load_more_books(request):
     data = []
     for b in books:
         if b.id in pending_ids: btn_status = 'PENDING'
+        elif b.id in overdue_ids: btn_status = 'OVERDUE'
         elif b.id in borrowed_ids: btn_status = 'BORROWED'
         elif b.quantity <= 0: btn_status = 'OUT_OF_STOCK'
         elif b.price and b.price > 0: btn_status = 'VIP'
@@ -367,12 +369,14 @@ def api_load_more_wishlist(request):
         
     borrowed_ids = list(BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True))
     pending_ids = list(BorrowTransaction.objects.filter(user=request.user, status='PENDING').values_list('book_id', flat=True))
+    overdue_ids = list(BorrowTransaction.objects.filter(user=request.user, status='OVERDUE').values_list('book_id', flat=True))
 
     data = []
     for item in items:
         b = item.book
         
         if b.id in pending_ids: btn_status = 'PENDING'
+        elif b.id in overdue_ids: btn_status = 'OVERDUE'
         elif b.id in borrowed_ids: btn_status = 'BORROWED'
         elif b.quantity <= 0: btn_status = 'OUT_OF_STOCK'
         elif b.price and b.price > 0: btn_status = 'VIP'

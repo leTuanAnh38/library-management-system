@@ -127,6 +127,8 @@ function renderBookHTML(book, is_premium) {
 
     if (book.btn_status === 'PENDING') {
         actionBtn = `<button class="btn btn-warning text-dark rounded-pill fw-bold px-4 py-2 shadow-none disabled" style="opacity: 0.8;"><i class="fas fa-clock me-1"></i>Chờ duyệt</button>`;
+    } else if (book.btn_status === 'OVERDUE') {
+        actionBtn = `<button class="btn btn-danger text-white rounded-pill fw-bold px-4 py-2 disabled shadow-none"><i class="fas fa-exclamation-circle me-1"></i>Quá hạn</button>`;
     } else if (book.btn_status === 'BORROWED') {
         actionBtn = `<button class="btn btn-secondary rounded-pill fw-bold px-4 py-2 disabled shadow-none"><i class="fas fa-book-reader me-1"></i>Đang mượn</button>`;
     } else if (book.btn_status === 'OUT_OF_STOCK' || book.quantity <= 0) {
@@ -535,7 +537,7 @@ $(document).ready(function() {
         }
     });
 
-    $(document).on('hidden.bs.modal', '.payment-modal', function () {
+    $(document).on('hidden.bs.modal', '.payment-modal, .borrow-modal', function () {
         $(this).find('input[value="CASH"]').prop('checked', true).trigger('change');
     });
 
@@ -1103,7 +1105,15 @@ $(document).ready(function() {
                     confirmModal.hide();
                     setTimeout(function() {
                         if (response.status === 'success') {
-                            btn.replaceWith('<button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 disabled"><i class="fas fa-clock me-1"></i>CHỜ DUYỆT</button>');
+                            // SỬA: Thay thế toàn bộ cụm nút (bao gồm nút Giỏ) để nút Chờ duyệt căn giữa
+                            var container = btn.closest('.d-flex.gap-2');
+                            var pendingBtn = '<button class="btn btn-warning text-dark rounded-pill fw-bold px-4 py-2 shadow-none disabled" style="opacity: 0.8;"><i class="fas fa-clock me-1"></i>Chờ duyệt</button>';
+                            
+                            if (container.length) {
+                                container.replaceWith(pendingBtn);
+                            } else {
+                                btn.replaceWith(pendingBtn);
+                            }
                             if (typeof checkNewNotifications === "function") checkNewNotifications();
                             showSingleNotify('success', response.message);
                         } else if (response.redirect) {
@@ -1123,7 +1133,7 @@ $(document).ready(function() {
     });
 
     // Dành cho sách VIP (Thanh toán Modal)
-    $(document).on('submit', '.payment-modal form', function(e) {
+    $(document).on('submit', '.payment-modal form, .borrow-modal form', function(e) {
         e.preventDefault();
         e.stopImmediatePropagation();
         
@@ -1146,7 +1156,16 @@ $(document).ready(function() {
                 setTimeout(function() {
                     if (response.status === 'success') {
                         var modalId = $(modalEl).attr('id');
-                        $('button[data-bs-target="#' + modalId + '"]').replaceWith('<button class="btn btn-warning text-dark rounded-pill fw-bold w-100 py-2 shadow-sm disabled"><i class="fas fa-clock me-1"></i>CHỜ DUYỆT</button>');
+                        // SỬA: Thay thế toàn bộ cụm nút để nút Chờ duyệt căn giữa và ẩn nút Giỏ
+                        var triggerBtn = $('button[data-bs-target="#' + modalId + '"]');
+                        var container = triggerBtn.closest('.d-flex.gap-2');
+                        var pendingBtn = '<button class="btn btn-warning text-dark rounded-pill fw-bold px-4 py-2 shadow-none disabled" style="opacity: 0.8;"><i class="fas fa-clock me-1"></i>Chờ duyệt</button>';
+                        
+                        if (container.length) {
+                            container.replaceWith(pendingBtn);
+                        } else {
+                            triggerBtn.replaceWith(pendingBtn);
+                        }
                         
                         if (typeof checkNewNotifications === "function") checkNewNotifications();
                         showSingleNotify('success', response.message);

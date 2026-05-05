@@ -46,7 +46,7 @@ class User(AbstractUser, TimeStampedModel):
         elif self.points >= 100:
             return {'level': 'PREMIUM', 'max_books': 5, 'color': 'text-primary', 'next': 500}
         else:
-            return {'level': 'STANDARD', 'max_books': 3, 'color': 'text-success', 'next': 100}
+            return {'level': 'STANDARD', 'max_books': 4, 'color': 'text-success', 'next': 100}
 
     @property
     def avatar_url(self):
