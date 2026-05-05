@@ -131,13 +131,15 @@ body.modal-open {
 body.modal-open .sticky-top,
 body.modal-open .fixed-top {
     padding-right: 0 !important;
-    z-index: 1030 !important; /* Ensure header stays above backdrop if needed, or stays visible */
+    z-index: 1030 !important;
+    /* Ensure header stays above backdrop if needed, or stays visible */
 }
 
 /* Fix for WOW.js/Animate.css: ensure elements stay visible when scroll is locked */
 body.modal-open .wow {
     visibility: visible !important;
-    animation-name: none !important; /* Stop animation to keep it visible */
+    animation-name: none !important;
+    /* Stop animation to keep it visible */
 }
 
 /* Prevent main content from collapsing or disappearing */
@@ -993,14 +995,16 @@ main {
     .sticky-sidebar {
         position: -webkit-sticky;
         position: sticky;
-        top: 90px; /* Mặc định cho Staff (chỉ có 1 thanh header) */
+        top: 90px;
+        /* Mặc định cho Staff (chỉ có 1 thanh header) */
         z-index: 10;
         align-self: start;
     }
 
     /* Nếu header có thêm thanh điều hướng (cho User) */
-    header.header-user ~ main .sticky-sidebar {
-        top: 155px; /* Offset cao hơn để tránh đè lên thanh Danh mục sách */
+    header.header-user~main .sticky-sidebar {
+        top: 155px;
+        /* Offset cao hơn để tránh đè lên thanh Danh mục sách */
     }
 }
 
@@ -1499,18 +1503,18 @@ body.auth-page {
 }
 
 /* Fix floating labels for rounded-pill inputs */
-.form-floating > .form-control.rounded-pill {
+.form-floating>.form-control.rounded-pill {
     padding-left: 2rem !important;
 }
 
-.form-floating > label {
+.form-floating>label {
     padding-left: 2rem !important;
     transform-origin: 0 0;
     transition: opacity .1s ease-in-out, transform .1s ease-in-out;
 }
 
-.form-floating > .form-control.rounded-pill:focus ~ label,
-.form-floating > .form-control.rounded-pill:not(:placeholder-shown) ~ label {
+.form-floating>.form-control.rounded-pill:focus~label,
+.form-floating>.form-control.rounded-pill:not(:placeholder-shown)~label {
     transform: scale(.85) translateY(-.75rem) translateX(.5rem);
     background-color: white;
     padding: 0 0.5rem !important;
@@ -2078,6 +2082,7 @@ select.form-select:focus {
     border-style: solid !important;
     color: #0d6efd;
 }
+
 /* --- Modern UI Enhancements v2 --- */
 :root {
     --glass-bg: rgba(255, 255, 255, 0.7);
@@ -2132,59 +2137,83 @@ select.form-select:focus {
     margin: 0 auto 15px;
     font-size: 1.5rem;
     background: var(--glass-bg);
-    box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
 }
 
-    .stats-card {
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-        cursor: default;
-    }
-    .stats-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
-    }
-    .stats-icon {
-        width: 54px;
-        height: 54px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.3s ease;
-    }
-    .stats-card:hover .stats-icon {
-        transform: scale(1.1);
-    }
-    .table-container {
-        border-radius: 1rem;
-        overflow: hidden;
-    }
-    .custom-confirm {
-        transition: all 0.2s ease;
-    }
-    .custom-confirm:hover {
-        transform: scale(1.05);
-        filter: brightness(1.1);
-    }
-    /* Fix for Bootstrap 5.0.0 opacity issues */
-    .bg-soft-primary { background-color: rgba(13, 110, 253, 0.1) !important; }
-    .bg-soft-success { background-color: rgba(25, 135, 84, 0.1) !important; }
-    .bg-soft-danger { background-color: rgba(220, 53, 69, 0.1) !important; }
-    .bg-soft-info { background-color: rgba(13, 202, 240, 0.1) !important; }
-    .rounded-4 { border-radius: 1rem !important; }
-    
-    /* Drag & Drop Feedback */
-    .drag-over .preview-frame, .drag-over#drag-drop-area {
-        border: 3px dashed var(--bs-primary) !important;
-        background-color: rgba(13, 110, 253, 0.05) !important;
-        transform: scale(1.02);
-        transition: all 0.3s ease;
-    }
-    .border-dashed {
-        border-style: dashed !important;
-    }
-    .transition-hover {
-        transition: all 0.3s ease;
-    }
+.stats-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: default;
+}
+
+.stats-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05) !important;
+}
+
+.stats-icon {
+    width: 54px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.stats-card:hover .stats-icon {
+    transform: scale(1.1);
+}
+
+.table-container {
+    border-radius: 1rem;
+    overflow: hidden;
+}
+
+.custom-confirm {
+    transition: all 0.2s ease;
+}
+
+.custom-confirm:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+/* Fix for Bootstrap 5.0.0 opacity issues */
+.bg-soft-primary {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+.bg-soft-success {
+    background-color: rgba(25, 135, 84, 0.1) !important;
+}
+
+.bg-soft-danger {
+    background-color: rgba(220, 53, 69, 0.1) !important;
+}
+
+.bg-soft-info {
+    background-color: rgba(13, 202, 240, 0.1) !important;
+}
+
+.rounded-4 {
+    border-radius: 1rem !important;
+}
+
+/* Drag & Drop Feedback */
+.drag-over .preview-frame,
+.drag-over#drag-drop-area {
+    border: 3px dashed var(--bs-primary) !important;
+    background-color: rgba(13, 110, 253, 0.05) !important;
+    transform: scale(1.02);
+    transition: all 0.3s ease;
+}
+
+.border-dashed {
+    border-style: dashed !important;
+}
+
+.transition-hover {
+    transition: all 0.3s ease;
+}
 
 /* --- Cart Checkout Form Styles --- */
 .cart-radio-card {
@@ -2193,16 +2222,19 @@ select.form-select:focus {
     cursor: pointer;
     transition: all 0.2s ease-in-out;
 }
+
 .cart-radio-card:hover {
     border-color: #dee2e6;
     background-color: #f8f9fa;
     transform: translateY(-2px);
 }
-.btn-check:checked + .cart-radio-card {
+
+.btn-check:checked+.cart-radio-card {
     border-color: var(--bs-primary);
     background-color: #f8f9fa;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
-.btn-check:checked + .cart-radio-card .shift-icon {
+
+.btn-check:checked+.cart-radio-card .shift-icon {
     color: var(--bs-primary) !important;
 }
