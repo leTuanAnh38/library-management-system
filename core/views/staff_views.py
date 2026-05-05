@@ -257,12 +257,13 @@ def staff_borrow_management(request):
     # LẤY DANH SÁCH GIAO DỊCH & XỬ LÝ TÌM KIẾM
     transactions = BorrowTransaction.objects.select_related('user', 'book').annotate(
         status_priority=Case(
-            When(status='PENDING', then=Value(1)),
-            When(status='OVERDUE', then=Value(2)),
-            When(status='BORROWED', then=Value(3)),
-            When(status='CANCELLED', then=Value(4)),
-            When(status='RETURNED', then=Value(5)),
-            default=Value(6),
+            When(status='PENDING', reason='YÊU CẦU TRẢ', then=Value(1)), 
+            When(status='PENDING', then=Value(2)),                     
+            When(status='OVERDUE', then=Value(3)),
+            When(status='BORROWED', then=Value(4)),
+            When(status='CANCELLED', then=Value(5)),
+            When(status='RETURNED', then=Value(6)),
+            default=Value(7),
             output_field=IntegerField(),
         )
     )
@@ -277,7 +278,7 @@ def staff_borrow_management(request):
             Q(book__title__icontains=query)
         ).distinct()
         
-    transactions = transactions.order_by('status_priority', '-created_at')
+    transactions = transactions.order_by('status_priority', '-updated_at')
     # PHÂN TRANG & TÍNH TOÁN DỮ LIỆU PHỤ TRỢ
     page_number = request.GET.get('page', 1) 
     paginator = Paginator(transactions, 10)

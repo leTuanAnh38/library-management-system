@@ -42,7 +42,7 @@ class User(AbstractUser, TimeStampedModel):
     def rank_info(self):
         """Xác định hạng và quyền lợi dựa trên số điểm tích lũy"""
         if self.points >= 500:
-            return {'level': 'VIP', 'max_books': 10, 'color': 'text-danger', 'next': None}
+            return {'level': 'VIP', 'max_books': 6, 'color': 'text-danger', 'next': None}
         elif self.points >= 100:
             return {'level': 'PREMIUM', 'max_books': 5, 'color': 'text-primary', 'next': 500}
         else:
