@@ -37,11 +37,13 @@ def home(request):
     wishlist_book_ids = []
     borrowed_book_ids = []
     pending_book_ids = [] 
+    overdue_book_ids = []
     
     if request.user.is_authenticated:
         wishlist_book_ids = Wishlist.objects.filter(user=request.user).values_list('book_id', flat=True)
         borrowed_book_ids = BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True)
         pending_book_ids = BorrowTransaction.objects.filter(user=request.user, status='PENDING').values_list('book_id', flat=True)
+        overdue_book_ids = BorrowTransaction.objects.filter(user=request.user, status='OVERDUE').values_list('book_id', flat=True)
 
     return render(request, 'core/pages/index.html', {
         'featured_books': featured_books,
@@ -52,7 +54,8 @@ def home(request):
         'top_rated_books': top_rated_books,  
         'wishlist_book_ids': list(wishlist_book_ids),
         'borrowed_book_ids': list(borrowed_book_ids),
-        'pending_book_ids': list(pending_book_ids) 
+        'pending_book_ids': list(pending_book_ids),
+        'overdue_book_ids': list(overdue_book_ids)
     })
 
 def guide_view(request):
@@ -120,11 +123,13 @@ def book_list(request):
     wishlist_book_ids = []
     borrowed_book_ids = []
     pending_book_ids = [] 
+    overdue_book_ids = []
 
     if request.user.is_authenticated:
         wishlist_book_ids = Wishlist.objects.filter(user=request.user).values_list('book_id', flat=True)
         borrowed_book_ids = BorrowTransaction.objects.filter(user=request.user, status='BORROWED').values_list('book_id', flat=True)
         pending_book_ids = BorrowTransaction.objects.filter(user=request.user, status='PENDING').values_list('book_id', flat=True)
+        overdue_book_ids = BorrowTransaction.objects.filter(user=request.user, status='OVERDUE').values_list('book_id', flat=True)
 
     paginator = Paginator(books_list, 6) 
     page = request.GET.get('page')
@@ -144,7 +149,8 @@ def book_list(request):
         'category_obj': Category.objects.filter(id=category_id).first() if category_id else None,
         'wishlist_book_ids': list(wishlist_book_ids),
         'borrowed_book_ids': list(borrowed_book_ids),
-        'pending_book_ids': list(pending_book_ids) 
+        'pending_book_ids': list(pending_book_ids),
+        'overdue_book_ids': list(overdue_book_ids)
     }
     return render(request, 'core/books/book_list.html', context)
 
@@ -185,6 +191,7 @@ def premium_book_list(request):
 
     borrowed_book_ids = []
     pending_book_ids = []
+    overdue_book_ids = []
     wishlist_book_ids = []
     
     if request.user.is_authenticated:
@@ -194,6 +201,10 @@ def premium_book_list(request):
         
         pending_book_ids = BorrowTransaction.objects.filter(
             user=request.user, status='PENDING'
+        ).values_list('book_id', flat=True)
+
+        overdue_book_ids = BorrowTransaction.objects.filter(
+            user=request.user, status='OVERDUE'
         ).values_list('book_id', flat=True)
         
         wishlist_book_ids = Wishlist.objects.filter(
@@ -209,6 +220,7 @@ def premium_book_list(request):
         'category_obj': Category.objects.filter(id=category_id).first() if category_id else None,
         'borrowed_book_ids': list(borrowed_book_ids),
         'pending_book_ids': list(pending_book_ids),
+        'overdue_book_ids': list(overdue_book_ids),
         'wishlist_book_ids': list(wishlist_book_ids)
     })
 
@@ -238,6 +250,7 @@ def book_detail(request, book_id):
 
     borrowed_book_ids = []
     pending_book_ids = [] 
+    overdue_book_ids = []
     wishlist_book_ids = []
     
     if request.user.is_authenticated:
@@ -251,6 +264,11 @@ def book_detail(request, book_id):
             status='PENDING'
         ).values_list('book_id', flat=True)
 
+        overdue_book_ids = BorrowTransaction.objects.filter(
+            user=request.user, 
+            status='OVERDUE'
+        ).values_list('book_id', flat=True)
+
         wishlist_book_ids = Wishlist.objects.filter(
             user=request.user
         ).values_list('book_id', flat=True)
@@ -261,6 +279,7 @@ def book_detail(request, book_id):
         'recommended_books': recommended_books, 
         'borrowed_book_ids': list(borrowed_book_ids),
         'pending_book_ids': list(pending_book_ids), 
+        'overdue_book_ids': list(overdue_book_ids),
         'wishlist_book_ids': list(wishlist_book_ids),
         'user_has_reviewed': user_has_reviewed  
     })

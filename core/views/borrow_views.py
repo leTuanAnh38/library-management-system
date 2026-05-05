@@ -1,5 +1,6 @@
 # file: core/views/borrow_views.py
 from django.http import JsonResponse
+from django.urls import reverse
 from datetime import timedelta, datetime
 from django.utils import timezone
 from django.shortcuts import render, redirect, get_object_or_404
@@ -7,11 +8,8 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction as db_transaction
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
-# ---> THÊM DÒNG NÀY ĐỂ SỬ DỤNG HÀM CASE, WHEN CỦA DJANGO ORM <---
 from django.db.models import Case, When, Value, IntegerField,F
 from core.models import Cart, CartItem
-# Import models từ app core
 from core.models import Book, BorrowTransaction, Notification
 
 # ==========================================
@@ -20,10 +18,8 @@ from core.models import Book, BorrowTransaction, Notification
 @login_required(login_url='login')
 def borrow_book(request, book_id):
     user = request.user
-    
     # 1. NHẬN DIỆN AJAX: Kiểm tra xem yêu cầu có phải gửi ngầm không
     is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
-    
     # Hàm hỗ trợ: AJAX thì trả JSON, bình thường thì Redirect kèm thông báo Django
     def respond(status, message, redirect_url=None):
         if is_ajax:
@@ -34,15 +30,16 @@ def borrow_book(request, book_id):
             else: messages.success(request, message)
             return redirect(redirect_url or request.META.get('HTTP_REFERER', 'book_list'))
 
-    # 2. KIỂM TRA PHÍ PHẠT
     if user.total_fine > 0:
-        return respond('error', f"Bạn đang nợ ({user.total_fine} VNĐ) tiền phạt. Vui lòng thanh toán trước!", 'profile')
+        return respond('error', f"Bạn đang nợ ({user.total_fine} VNĐ) tiền phạt. Vui lòng thanh toán trước!", reverse('profile'))
 
-    # 3. KIỂM TRA HỒ SƠ
+    overdue_count = BorrowTransaction.objects.filter(user=user, status='OVERDUE').count()
+    if overdue_count > 0:
+        return respond('error', f"Bạn có {overdue_count} cuốn sách đang QUÁ HẠN. Vui lòng trả sách và nộp phạt (nếu có) trước khi mượn sách mới!", reverse('borrow_history'))
+
     if not getattr(user, 'msv', None) or not getattr(user, 'lop', None):
-        return respond('warning', "Vui lòng cập nhật MSSV và Lớp trong hồ sơ trước khi mượn sách!", 'profile')
+        return respond('warning', "Vui lòng cập nhật MSSV và Lớp trong hồ sơ trước khi mượn sách!", reverse('profile'))
 
-    # 4. KIỂM TRA GIỚI HẠN 4 CUỐN
     active_borrows_count = BorrowTransaction.objects.filter(
         user=user,
         status__in=['PENDING', 'BORROWED', 'OVERDUE']
@@ -51,10 +48,8 @@ def borrow_book(request, book_id):
     if active_borrows_count >= 4:
         return respond('error', f"Bạn đang mượn hoặc chờ duyệt {active_borrows_count} cuốn rồi. Tối đa chỉ được 4 cuốn!")
 
-    # 5. LẤY THÔNG TIN SÁCH
     book = get_object_or_404(Book, id=book_id)
-
-    # 6. KIỂM TRA MƯỢN TRÙNG
+    #KIỂM TRA MƯỢN TRÙNG
     already_borrowed = BorrowTransaction.objects.filter(
         user=user, 
         book=book, 
@@ -64,11 +59,10 @@ def borrow_book(request, book_id):
     if already_borrowed:
         return respond('warning', f"Bạn đang mượn hoặc đã gửi yêu cầu mượn cuốn '{book.title}' rồi!")
     
-    # 7. KIỂM TRA KHO
     if book.quantity <= 0:
         return respond('error', f"Sách '{book.title}' đã hết trong kho!")
         
-    # 8. LẤY DỮ LIỆU TỪ FORM (Ngày, Ca lấy, Phương thức thanh toán)
+    # LẤY DỮ LIỆU TỪ FORM (Ngày, Ca lấy, Phương thức thanh toán)
     is_premium = book.price and book.price > 0
     if request.method == 'POST':
         pickup_date = request.POST.get('pickup_date')
@@ -83,14 +77,11 @@ def borrow_book(request, book_id):
         current_hour = timezone.localtime().hour
         
         if pickup_date_obj == today:
-            # Nếu chọn ca Sáng hôm nay nhưng đã quá 11h trưa (hoặc đang là chiều/tối)
             if pickup_shift == 'SANG' and current_hour >= 11:
                 return respond('error', "Ca Sáng hôm nay đã kết thúc. Vui lòng chọn ca Chiều hoặc ngày khác!")
-            # Nếu chọn ca Chiều hôm nay nhưng đã quá 17h chiều (đang là buổi tối)
             if pickup_shift == 'CHIEU' and current_hour >= 17:
                 return respond('error', "Các ca nhận sách hôm nay đã kết thúc. Vui lòng chọn ngày khác!")
     else:
-        # Chặn truy cập trực tiếp qua URL (GET request) vì phải dùng Modal để chọn ngày
         return respond('error', "Vui lòng sử dụng form đăng ký để chọn thời gian nhận sách.")
 
     pickup_date_obj = datetime.strptime(pickup_date, '%Y-%m-%d').date()
@@ -111,7 +102,7 @@ def borrow_book(request, book_id):
             BorrowTransaction.objects.create(
                 user=user, book=book, due_date=han_tra, 
                 status=status, payment_method=payment_method, is_paid=is_paid,
-                pickup_date=pickup_date, pickup_shift=pickup_shift # Lưu thông tin lịch hẹn
+                pickup_date=pickup_date, pickup_shift=pickup_shift 
             )
 
             # Tùy chỉnh tin nhắn theo loại sách
@@ -125,7 +116,6 @@ def borrow_book(request, book_id):
             book.quantity -= 1
             book.save()
 
-        # Giữ nguyên logic hiển thị tin nhắn của bạn
         if not is_ajax:
             try:
                 request.session['show_borrow_info_msg'] = msg
@@ -188,6 +178,12 @@ def checkout_cart(request):
         user_cart = Cart.objects.filter(user=request.user).first()
         if not user_cart or not user_cart.items.exists():
             return redirect('book_list')
+        
+        # THÊM: Chặn checkout nếu có sách quá hạn
+        overdue_count = BorrowTransaction.objects.filter(user=request.user, status='OVERDUE').count()
+        if overdue_count > 0:
+            messages.error(request, f"Bạn đang có {overdue_count} cuốn sách QUÁ HẠN trả. Vui lòng trả sách trước khi mượn thêm!")
+            return redirect('borrow_history')
             
         pickup_date = request.POST.get('pickup_date')
         pickup_shift = request.POST.get('pickup_shift')
@@ -209,16 +205,13 @@ def checkout_cart(request):
         current_hour = timezone.localtime().hour
         
         if pickup_date_obj == today:
-            # Chọn ca Sáng hôm nay nhưng đã quá 11h trưa
             if pickup_shift == 'SANG' and current_hour >= 11:
                 messages.error(request, "Ca Sáng hôm nay đã kết thúc. Vui lòng chọn ca Chiều hoặc ngày khác!")
                 return redirect('view_cart')
             
-            # Chọn ca Chiều hôm nay nhưng đã quá 17h chiều (buổi tối)
             if pickup_shift == 'CHIEU' and current_hour >= 17:
                 messages.error(request, "Các ca nhận sách hôm nay đã kết thúc. Vui lòng chọn ngày kế tiếp!")
                 return redirect('view_cart')
-        # ----------------------------------------------
 
         cart_items = user_cart.items.all()
         han_tra = pickup_date_obj + timedelta(days=14)
@@ -241,9 +234,7 @@ def checkout_cart(request):
                         total_fee += book.price if book.price else 0
                         count += 1
                 
-                # Xóa sạch giỏ hàng sau khi đặt thành công
                 cart_items.delete()
-                
                 shift_display = "Sáng" if pickup_shift == 'SANG' else "Chiều"
                 # Định dạng lại chuỗi ngày hiển thị trong thông báo cho đẹp (DD/MM/YYYY)
                 display_date = pickup_date_obj.strftime('%d/%m/%Y')
@@ -263,14 +254,13 @@ def checkout_cart(request):
 # ==========================================
 @login_required(login_url='login')
 def borrow_history(request):
-    # ĐÃ SỬA: Thêm CANCELLED vào ưu tiên số 4, đẩy RETURNED xuống số 5
     history_list = BorrowTransaction.objects.filter(user=request.user).annotate(
         status_priority=Case(
             When(status='OVERDUE', then=Value(1)),   
             When(status='BORROWED', then=Value(2)), 
             When(status='PENDING', then=Value(3)),
-            When(status='CANCELLED', then=Value(4)), # <--- Mới thêm vào đây
-            When(status='RETURNED', then=Value(5)),  # <--- Đổi thành số 5
+            When(status='CANCELLED', then=Value(4)), 
+            When(status='RETURNED', then=Value(5)),  
             default=Value(6),
             output_field=IntegerField(),
         )
@@ -291,26 +281,23 @@ def borrow_history(request):
 # ==========================================
 @login_required(login_url='login')
 def return_book(request, transaction_id):
-    # Chỉ lấy những giao dịch đang mượn (BORROWED) hoặc QUÁ HẠN (OVERDUE)
     borrow_record = get_object_or_404(BorrowTransaction, id=transaction_id, user=request.user, status__in=['BORROWED', 'OVERDUE'])
     
     try:
-        # 1. Tính toán trễ hạn tạm tính
+        #  Tính toán trễ hạn tạm tính
         today = timezone.localtime().date()
         late_info = ""
         if today > borrow_record.due_date:
             days_late = (today - borrow_record.due_date).days
-            estimated_fine = days_late * 5000  # Đơn giá 5000đ/ngày theo quy định staff_views
+            estimated_fine = days_late * 5000  
             late_info = f" (CẢNH BÁO: Bạn đã trễ {days_late} ngày, phí phạt dự kiến là {estimated_fine:,.0f} VNĐ)"
 
-        # 2. Cập nhật trạng thái yêu cầu trả
         borrow_record.status = 'PENDING'
         borrow_record.reason = 'YÊU CẦU TRẢ' 
         borrow_record.save()
         
         msg = f"Yêu cầu trả cuốn '{borrow_record.book.title}' đã được gửi.{late_info} Vui lòng mang sách đến quầy trong vòng 24h(ca sáng - chiều) để Thủ thư xác nhận tình trạng vật lý và chốt phí phạt cuối cùng."
         
-        # 3. Tạo thông báo vào Hộp thư cho user
         Notification.objects.create(
             user=request.user, 
             message=msg, 
@@ -368,7 +355,6 @@ def return_books_batch(request):
             
             msg = f"Đã gửi yêu cầu báo trả cho {count} cuốn sách.{late_info} Vui lòng mang sách đến quầy trong vòng 24h(ca sáng - chiều) để Thủ thư kiểm tra."
             
-            # 3. Tạo thông báo vào Hộp thư
             Notification.objects.create(
                 user=request.user, 
                 message=msg, 
@@ -414,14 +400,12 @@ def renew_book(request, transaction_id):
         return redirect('borrow_history')
 
     try:
-        # Xử lý gia hạn: Cộng thêm 7 ngày vào Hạn trả
         trans.due_date = trans.due_date + timedelta(days=7)
         trans.renewal_count += 1
         trans.save()
 
         msg = f"Gia hạn thành công! Hạn trả mới của cuốn '{trans.book.title}' là {trans.due_date.strftime('%d/%m/%Y')}. (Đã gia hạn {trans.renewal_count}/2 lần)."
         
-        # Gửi thông báo vào hộp thư
         Notification.objects.create(
             user=request.user, message=msg, type='SYSTEM', status='UNREAD'
         )
