@@ -68,7 +68,9 @@ def profile_view(request):
         return redirect('profile')
         
     # XỬ LÝ KHI TRUY CẬP TRANG (GET REQUEST)
-    user_reviews = Review.objects.filter(user=request.user).select_related('book').order_by('-created_at')
+    all_reviews = Review.objects.filter(user=request.user).select_related('book').order_by('-created_at')
+    user_reviews = all_reviews[:3] # Chỉ lấy 3 cái mới nhất
+    has_more_reviews = all_reviews.count() > 3
     
     # KIỂM TRA TRẠNG THÁI TIỀN PHẠT ĐỂ HIỂN THỊ NÚT
     has_unpaid = Penalty.objects.filter(user=request.user, status='UNPAID').exists()
@@ -81,9 +83,26 @@ def profile_view(request):
     
     return render(request, 'core/user/profile.html', {
         'user_reviews': user_reviews,
+        'has_more_reviews': has_more_reviews,
         'has_unpaid': has_unpaid,
         'has_processing': has_processing,
         'processing_amount': processing_amount 
+    })
+
+@login_required(login_url='login')
+def my_reviews_view(request):
+    reviews_list = Review.objects.filter(user=request.user).select_related('book').order_by('-created_at')
+    
+    paginator = Paginator(reviews_list, 10) 
+    page = request.GET.get('page', 1)
+    
+    try:
+        reviews = paginator.page(page)
+    except (PageNotAnInteger, EmptyPage):
+        reviews = paginator.page(1)
+        
+    return render(request, 'core/user/my_reviews.html', {
+        'reviews': reviews
     })
     
 @login_required(login_url='login')

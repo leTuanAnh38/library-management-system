@@ -41,6 +41,7 @@ urlpatterns = [
     # 3. NHÓM NGƯỜI DÙNG CÁ NHÂN (USER PROFILE)
     # ==========================================
     path('profile/', user_views.profile_view, name='profile'),
+    path('profile/reviews/', user_views.my_reviews_view, name='my_reviews'),
     path('pay-penalties/', user_views.pay_all_penalties, name='pay_all_penalties'),
     path('wishlist/', user_views.wishlist_view, name='wishlist'),
     path('wishlist/toggle/<int:book_id>/', user_views.toggle_wishlist, name='toggle_wishlist'),
