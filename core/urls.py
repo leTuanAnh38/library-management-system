@@ -15,7 +15,7 @@ from core.views import (
 )
 from core.views.api_views import RegisterView
 from core.views.chat_views import chat_message_api, get_chat_history, get_chat_greeting
-
+from core.views.admin_dashboard import AdminDashboardView, admin_chart_api
 
 urlpatterns = [
     # ==========================================
@@ -123,6 +123,9 @@ urlpatterns = [
     path('api/history/load-more/', api_views.api_load_more_history, name='api_load_more_history'),
     path('api/wishlist/load-more/', api_views.api_load_more_wishlist, name='api_load_more_wishlist'),
     path('api/notifications/unread-count/', api_views.api_unread_notification_count, name='api_unread_notification_count'),
+    # Thêm URL cho Bàn làm việc Admin (Khớp với SIMPLEUI_INDEX trong settings.py)
+    path('admin-dashboard/', AdminDashboardView.as_view(), name='admin_dashboard'),
+    path('api/admin-chart/', admin_chart_api, name='admin_chart_api'),
 
     # 1. API Đăng ký tài khoản
     path('api/register/', RegisterView.as_view(), name='api_register'),

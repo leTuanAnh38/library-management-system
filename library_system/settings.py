@@ -253,8 +253,13 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 # }
 
 # --- CẤU HÌNH CƠ BẢN SIMPLEUI ---
+
+SIMPLEUI_INDEX = '/admin/'
+SIMPLEUI_HOME_PAGE = '/admin-dashboard/'
+
 SIMPLEUI_HOME_INFO = False
-SIMPLEUI_HOME_QUICK = True 
+SIMPLEUI_HOME_QUICK = False   # Trạng thái ban đầu của bạn là True, hãy đổi thành False
+SIMPLEUI_HOME_ACTION = False
 SIMPLEUI_ANALYSIS = False
 
 SIMPLEUI_LOGO = 'https://i1.sndcdn.com/artworks-Qzpeh3004ZyWPcgz-SW4Qhg-t500x500.png'
@@ -319,7 +324,7 @@ SIMPLEUI_CONFIG = {
     ]
 }
 
-SIMPLEUI_INDEX = '/admin-dashboard/'
+
 
 # Khi gọi hàm logout, hệ thống sẽ tự tìm đến URL có name='login'
 LOGOUT_REDIRECT_URL = 'login'
