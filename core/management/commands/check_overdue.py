@@ -9,7 +9,7 @@ class Command(BaseCommand):
     help = 'Quét các đơn mượn trễ hạn, tạo thông báo web và gửi email'
 
     def handle(self, *args, **kwargs):
-        today = timezone.now().date()
+        today = timezone.localtime().date()
         
         # 1. Tìm các sách đang mượn (BORROWED) và ngày trả < hôm nay
         overdue_records = BorrowTransaction.objects.filter(
