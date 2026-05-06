@@ -424,6 +424,7 @@ document.addEventListener("DOMContentLoaded", function () {
         fetch(url, {
             method: 'POST',
             headers: {
+                'X-Requested-With': 'XMLHttpRequest',
                 'X-CSRFToken': csrftoken,
                 'Content-Type': 'application/json'
             }
@@ -448,14 +449,22 @@ document.addEventListener("DOMContentLoaded", function () {
                         }
                     }
                 } else {
-                    // Gọi Toast đỏ báo lỗi (ví dụ: quá 4 cuốn)
+                    // Gọi Toast đỏ báo lỗi (ví dụ: chưa đăng nhập hoặc quá 4 cuốn)
                     showModernToast(`<b>Từ chối:</b> ${data.message}`, 'error');
+                    
+                    // Nếu có yêu cầu chuyển hướng (do chưa đăng nhập)
+                    if (data.redirect) {
+                        setTimeout(() => {
+                            window.location.href = data.redirect;
+                        }, 2000);
+                    }
                 }
             })
             .catch(error => {
                 btn.innerHTML = originalHTML;
                 btn.disabled = false;
-                showModernToast('<b>Lỗi mạng:</b> Vui lòng kiểm tra kết nối và thử lại!', 'error');
+                console.error("Cart Error:", error);
+                showModernToast('<b>Lỗi kết nối:</b> Vui lòng thử lại sau!', 'error');
             });
     });
 });

@@ -15,8 +15,18 @@ from core.models import Book, BorrowTransaction, Notification
 # ==========================================
 # 1. NGHIỆP VỤ MƯỢN SÁCH
 # ==========================================
-@login_required(login_url='login')
 def borrow_book(request, book_id):
+    # CHÈN THÊM: Kiểm tra đăng nhập thủ công để trả JSON cho AJAX
+    if not request.user.is_authenticated:
+        is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
+        if is_ajax:
+            return JsonResponse({
+                'status': 'warning', 
+                'message': 'Vui lòng đăng nhập để mượn sách!', 
+                'redirect': reverse('login')
+            })
+        return redirect('login')
+
     user = request.user
     # 1. NHẬN DIỆN AJAX: Kiểm tra xem yêu cầu có phải gửi ngầm không
     is_ajax = request.headers.get('x-requested-with') == 'XMLHttpRequest'
@@ -129,8 +139,15 @@ def borrow_book(request, book_id):
 # ==========================================
 # 2. HỆ THỐNG GIỎ MƯỢN SÁCH (CART)
 # ==========================================
-@login_required(login_url='login')
 def add_to_cart(request, book_id):
+    # 0. Kiểm tra đăng nhập (Trả về JSON cho AJAX xử lý)
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'success': False, 
+            'message': 'Vui lòng đăng nhập để thêm sách vào giỏ!',
+            'redirect': reverse('login')
+        })
+
     # 1. Lấy hoặc tạo giỏ hàng cho user
     user_cart, created = Cart.objects.get_or_create(user=request.user)
     
