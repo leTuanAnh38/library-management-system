@@ -5,6 +5,8 @@ from django.contrib.auth.forms import PasswordChangeForm, AuthenticationForm
 from django.contrib.auth import update_session_auth_hash, authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.utils.http import url_has_allowed_host_and_scheme
+
 
 # Import form đăng ký từ thư mục gốc của app core
 from core.forms import CustomUserCreationForm
@@ -30,40 +32,38 @@ def register(request):
     
     return render(request, 'core/auth/register.html', {'form': form})
 
+# ==========================================
+# HÀM HỖ TRỢ: PHÂN LUỒNG CHUYỂN HƯỚNG THEO VAI TRÒ
+# ==========================================
+def get_user_redirect_url(user):
+    """Xác định URL chuyển hướng phù hợp với vai trò của người dùng"""
+    if user.is_superuser or getattr(user, 'role', '') == 'ADMIN':
+        return '/admin/'
+    elif user.is_staff or getattr(user, 'role', '') == 'STAFF':
+        return 'staff_dashboard'
+    return 'home'
+
 def user_login(request):
-    # 1. Kiểm tra nếu đã đăng nhập từ trước
+    # 1. Nếu đã đăng nhập, chuyển hướng ngay theo vai trò
     if request.user.is_authenticated:
-        user = request.user
-        if user.is_superuser or getattr(user, 'role', '') == 'ADMIN':
-            return redirect('/admin/')
-        elif user.is_staff or getattr(user, 'role', '') == 'STAFF':
-            # Sửa ở đây:
-            return redirect('staff_dashboard')
-        return redirect('home')
+        return redirect(get_user_redirect_url(request.user))
 
     # 2. Xử lý khi nhấn nút Đăng nhập (POST)
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
-            username = form.cleaned_data.get('username')
-            password = form.cleaned_data.get('password')
-            user = authenticate(username=username, password=password)
+            user = form.get_user() # AuthenticationForm đã authenticate rồi, chỉ cần lấy user ra
+            login(request, user) 
             
-            if user is not None:
-                login(request, user) 
+            # Xử lý tham số 'next' để quay lại trang cũ nếu có (Tránh Open Redirect)
+            next_url = request.GET.get('next')
+            if next_url and url_has_allowed_host_and_scheme(url=next_url, allowed_hosts={request.get_host()}):
+                return redirect(next_url)
                 
-                # PHÂN LUỒNG SAU ĐĂNG NHẬP
-                if user.is_superuser or getattr(user, 'role', '') == 'ADMIN':
-                    return redirect('/admin/') # Admin vào trang quản trị hệ thống
-                elif user.is_staff or getattr(user, 'role', '') == 'STAFF':
-                    # Sửa ở đây:
-                    return redirect('staff_dashboard') # Staff vào BẢNG ĐIỀU KHIỂN
-                else:
-                    return redirect('home') # Người đọc vào trang chủ
-            else:
-                messages.error(request, 'Tên đăng nhập hoặc mật khẩu không đúng.')
+            # Nếu không có 'next' hoặc 'next' không an toàn, về dashboard mặc định
+            return redirect(get_user_redirect_url(user))
         else:
-            messages.error(request, 'Thông tin đăng nhập không hợp lệ. Vui lòng kiểm tra lại.')
+            messages.error(request, 'Tên đăng nhập hoặc mật khẩu không đúng.')
     else:
         form = AuthenticationForm()
     
@@ -73,7 +73,7 @@ def user_login(request):
 def change_password(request):
     if request.method == 'POST':
         form = PasswordChangeForm(request.user, request.POST)
-        if form.is_valid():
+        if form.is_valid():  
             user = form.save()
             update_session_auth_hash(request, user) 
             messages.success(request, 'Mật khẩu của bạn đã được cập nhật thành công!')
