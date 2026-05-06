@@ -9,7 +9,7 @@ class Command(BaseCommand):
     help = 'Tự động hủy lịch hẹn mượn và yêu cầu trả sách ảo'
 
     def handle(self, *args, **kwargs):
-        now = timezone.now()
+        now = timezone.localtime()
         today_date = now.date()
         current_hour = now.hour
 
@@ -29,7 +29,7 @@ class Command(BaseCommand):
                 elif t.pickup_date == today_date:
                     if t.pickup_shift == 'SANG' and current_hour >= 12:
                         is_expired = True
-                    elif t.pickup_shift == 'CHIEU' and current_hour >= 18:
+                    elif t.pickup_shift == 'CHIEU' and current_hour >= 17:
                         is_expired = True
 
             if is_expired:
