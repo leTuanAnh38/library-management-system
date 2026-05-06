@@ -66,7 +66,7 @@ def get_chat_history(request):
 def get_chat_greeting(request):
     """Lấy greeting message khi mở chat lần đầu"""
     first_name = request.user.first_name or "bạn"
-    greeting = f"""Alo {first_name} à {first_name} ! 👋 Tôi là Độ Mixi trợ lý ảo của thư viện Alovu. 📚
+    greeting = f"""Xin chào {first_name}! 👋 Tôi là trợ lý ảo của thư viện Alovu. 📚
 
 ✨ Tôi có thể giúp bạn:
 • Tìm và mượn sách
