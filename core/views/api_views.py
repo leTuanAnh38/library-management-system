@@ -137,9 +137,14 @@ def live_search_api(request):
 # 3. API TƯƠNG TÁC NGƯỜI DÙNG (YÊU THÍCH, ĐÁNH GIÁ)
 # ==========================================
 
-@login_required
 @require_POST 
 def toggle_wishlist_api(request, book_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'status': 'error', 
+            'message': 'Vui lòng đăng nhập để lưu sách yêu thích!', 
+            'redirect': reverse('login')
+        })
     book = get_object_or_404(Book, id=book_id)
     wishlist_item = Wishlist.objects.filter(user=request.user, book=book).first()
     
@@ -155,9 +160,14 @@ def toggle_wishlist_api(request, book_id):
         'is_wished': is_wished
     })
 
-@login_required
 @require_POST
 def api_add_review(request, book_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'status': 'error', 
+            'message': 'Vui lòng đăng nhập để đánh giá sách!', 
+            'redirect': reverse('login')
+        })
     book = get_object_or_404(Book, id=book_id)
     rating = request.POST.get('rating')
     comment = request.POST.get('comment')
@@ -402,9 +412,14 @@ def api_load_more_wishlist(request):
         })
         
     return JsonResponse({'status': 'success', 'data': data, 'has_next': items.has_next()})
-@login_required
 @require_POST
 def api_toggle_event_registration(request, event_id):
+    if not request.user.is_authenticated:
+        return JsonResponse({
+            'status': 'error', 
+            'message': 'Vui lòng đăng nhập để đăng ký tham gia sự kiện!', 
+            'redirect': reverse('login')
+        })
     event = get_object_or_404(Event, id=event_id)
     
     # Kiểm tra sự kiện đã kết thúc chưa
