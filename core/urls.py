@@ -45,6 +45,7 @@ urlpatterns = [
     path('wishlist/', user_views.wishlist_view, name='wishlist'),
     path('wishlist/toggle/<int:book_id>/', user_views.toggle_wishlist, name='toggle_wishlist'),
     path('notifications/', user_views.notification_list, name='notification_list'),
+
     # URL cho trang danh sách Sự kiện
     path('events/', book_views.event_list, name='event_list'),
     
@@ -54,7 +55,6 @@ urlpatterns = [
     # ==========================================
     # 4. NHÓM MƯỢN TRẢ SÁCH (BORROW / RETURN)
     # ==========================================
-    # URL Giỏ sách mới
     path('cart/', borrow_views.view_cart, name='view_cart'),
     path('api/cart/add/<int:book_id>/', borrow_views.add_to_cart, name='api_add_to_cart'),
     path('cart/remove/<int:book_id>/', borrow_views.remove_from_cart, name='remove_from_cart'),
@@ -86,6 +86,7 @@ urlpatterns = [
     
     path('staff/users/', staff_views.staff_user_management, name='staff_user_management'),
     path('staff/users/<int:user_id>/', staff_views.staff_user_detail, name='staff_user_detail'),
+
     # --- QUẢN LÝ DANH MỤC (CATEGORY) ---
     path('staff/categories/', staff_views.staff_category_list, name='staff_category_list'),
     path('staff/categories/add/', staff_views.staff_category_form, name='staff_category_add'),
@@ -97,6 +98,7 @@ urlpatterns = [
     path('staff/publishers/edit/<int:pk>/', staff_views.staff_publisher_form, name='staff_publisher_edit'),
 
     path('staff/reviews/', staff_views.staff_review_management, name='staff_review_management'),
+
     # ==========================================
     # QUẢN LÝ SỰ KIỆN DÀNH CHO THỦ THƯ
     # ==========================================
@@ -104,6 +106,7 @@ urlpatterns = [
     path('staff/events/add/', staff_views.event_create, name='event_create'),
     path('staff/events/<int:event_id>/edit/', staff_views.event_edit, name='event_edit'),
     path('staff/events/<int:event_id>/delete/', staff_views.event_delete, name='event_delete'),
+
     # ==========================================
     # 6. NHÓM API (XỬ LÝ NGẦM AJAX & LOAD MORE)
     # ==========================================
