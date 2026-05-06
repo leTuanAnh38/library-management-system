@@ -127,6 +127,9 @@ urlpatterns = [
     path('admin-dashboard/', AdminDashboardView.as_view(), name='admin_dashboard'),
     path('api/admin-chart/', admin_chart_api, name='admin_chart_api'),
 
+    #path('login/', auth_views.user_login(template_name='core/login.html'), name='login'),
+
+
     # 1. API Đăng ký tài khoản
     path('api/register/', RegisterView.as_view(), name='api_register'),
     
