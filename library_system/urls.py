@@ -19,6 +19,10 @@ from django.urls import path, include
 from django.conf import settings # THÊM DÒNG NÀY
 from django.conf.urls.static import static
 
+admin.site.site_header = 'Hệ Thống Quản Lý Thư Viện'  # Thay đổi chữ ở thanh bar xanh
+admin.site.site_title = 'Allovu Admin'             # Thay đổi chữ trên tab trình duyệt
+admin.site.index_title = 'Bảng điều khiển'          # Tiêu đề bên trong trang chủ
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls')), 

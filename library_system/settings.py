@@ -262,7 +262,8 @@ SIMPLEUI_HOME_QUICK = False   # Trạng thái ban đầu của bạn là True, h
 SIMPLEUI_HOME_ACTION = False
 SIMPLEUI_ANALYSIS = False
 
-SIMPLEUI_LOGO = 'https://i1.sndcdn.com/artworks-Qzpeh3004ZyWPcgz-SW4Qhg-t500x500.png'
+
+SIMPLEUI_LOGO = 'https://cdn-icons-png.flaticon.com/512/1508/1508555.png'
 
 # Tương đương site_title, site_header, welcome_sign của Jazzmin
 SIMPLEUI_HOME_TITLE = 'Alovu Library' 
@@ -318,16 +319,22 @@ SIMPLEUI_CONFIG = {
                 {'name': 'Thẻ Thành viên', 'url': 'core/membership/', 'icon': 'fas fa-medal'},
                 {'name': 'Thông báo', 'url': 'core/notification/', 'icon': 'fas fa-bell'},
                 # Link thoát hệ thống giống topmenu_links của Jazzmin
-                {'name': 'Thoát hệ thống', 'url': '/admin/logout/', 'icon': 'fas fa-sign-out-alt'} 
+                #{'name': 'Thoát hệ thống', 'url': '/logout/', 'icon': 'fas fa-sign-out-alt'} 
             ]
         }
     ]
 }
 
+LOGOUT_ON_GET = True
 
+# Đường dẫn trang login của bạn
+LOGIN_URL = '/login/'
+
+# Sau khi logout thì quay về trang login này
+LOGOUT_REDIRECT_URL = '/login/'
 
 # Khi gọi hàm logout, hệ thống sẽ tự tìm đến URL có name='login'
-LOGOUT_REDIRECT_URL = 'login'
+# LOGOUT_REDIRECT_URL = 'login'
 
 # CẤU HÌNH GỬI EMAIL QUA GMAIL
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'

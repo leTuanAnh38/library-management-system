@@ -6,6 +6,14 @@
     {% load static %}
     <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% comment %} <style>
+        body { background-color: #f4f6f9; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 20px; margin: 0; }
+        /* Các style cho bảng bên dưới */
+        .panel { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); margin-bottom: 20px; }
+        .panel-title { font-size: 16px; font-weight: bold; color: #444; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+        .table-custom th { border-bottom: 1px solid #eee; color: #888; font-size: 13px; font-weight: 600; padding: 12px 15px; }
+        .table-custom td { padding: 15px; vertical-align: middle; border-bottom: 1px solid #f8f9fa; font-size: 14px; font-weight: 500;}
+    </style> {% endcomment %}
     <style>
         body {
             background-color: #f4f6f9;
@@ -95,41 +103,72 @@
 </head>
 <body>
 
-<div class="container-fluid">
-    <div class="header-title">Bảng điều khiển quản trị</div>
-    <div class="header-subtitle">Chào buổi làm việc, hệ thống đang vận hành ổn định.</div>
+<div class="container-fluid p-4">
+    <div class="mb-5 d-flex justify-content-between align-items-start">
+        <div>
+            <h3 class="fw-bold text-dark m-0">Bảng điều khiển quản trị</h3>
+            <p class="text-muted small m-0 mt-1">Chào buổi làm việc, hệ thống đang vận hành ổn định.</p>
+        </div>
+    </div>
 
-    <div class="row g-3 mb-4">
-        <div class="col-md-3">
-            <div class="dashboard-card bg-purple">
-                <span class="badge-tag">Tổng kho</span>
-                <div class="card-icon"><i class="fas fa-book"></i></div>
-                <div class="stat-value">{{ total_books }}</div>
-                <p class="stat-label">Sách trong thư viện</p>
+    <div class="row g-4 mb-5">
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: rgba(255, 255, 255, 0.2);">
+                            <i class="fas fa-book fs-4 text-white"></i>
+                        </div>
+                        <span class="badge rounded-pill small px-3" style="background: rgba(255, 255, 255, 0.2); color: white;">Tổng kho</span>
+                    </div>
+                    <h2 class="mb-0 fw-bold text-white">{{ total_books }}</h2>
+                    <p class="mb-0 text-white text-opacity-75 small fw-medium mt-1">Sách trong thư viện</p>
+                </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="dashboard-card bg-cyan">
-                <span class="badge-tag">Khả dụng</span>
-                <div class="card-icon"><i class="fas fa-check-circle"></i></div>
-                <div class="stat-value">{{ available_books }}</div>
-                <p class="stat-label">Sách đang trên kệ</p>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="background: linear-gradient(135deg, #2af598 0%, #009efd 100%);">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: rgba(255, 255, 255, 0.2);">
+                            <i class="fas fa-check-circle fs-4 text-white"></i>
+                        </div>
+                        <span class="badge rounded-pill small px-3" style="background: rgba(255, 255, 255, 0.2); color: white;">Khả dụng</span>
+                    </div>
+                    <h2 class="mb-0 fw-bold text-white">{{ available_books }}</h2>
+                    <p class="mb-0 text-white text-opacity-75 small fw-medium mt-1">Sách đang trên kệ</p>
+                </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="dashboard-card bg-yellow">
-                <span class="badge-tag">Xử lý ngay</span>
-                <div class="card-icon"><i class="fas fa-clock"></i></div>
-                <div class="stat-value">{{ pending_borrows }}</div>
-                <p class="stat-label">Đơn đang chờ duyệt</p>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: rgba(255, 255, 255, 0.2);">
+                            <i class="fas fa-clock fs-4 text-white"></i>
+                        </div>
+                        <a href="{% url 'admin:core_borrowtransaction_changelist' %}?status__exact=PENDING" class="badge bg-white text-dark rounded-pill small px-3 text-decoration-none fw-bold shadow-sm">Xử lý ngay</a>
+                    </div>
+                    <h2 class="mb-0 fw-bold text-white">{{ pending_transactions.count|default:0 }}</h2>
+                    <p class="mb-0 text-white text-opacity-75 small fw-medium mt-1">Đơn đang chờ duyệt</p>
+                </div>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="dashboard-card bg-red">
-                <span class="badge-tag">Cảnh báo</span>
-                <div class="card-icon"><i class="fas fa-exclamation-triangle"></i></div>
-                <div class="stat-value">{{ overdue_borrows }}</div>
-                <p class="stat-label">Đơn mượn quá hạn</p>
+
+        <div class="col-md-6 col-xl-3">
+            <div class="card border-0 shadow-sm rounded-4 h-100" style="background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div class="rounded-3 d-flex align-items-center justify-content-center" style="width: 45px; height: 45px; background: rgba(255, 255, 255, 0.2);">
+                            <i class="fas fa-exclamation-triangle fs-4 text-white"></i>
+                        </div>
+                        <span class="badge rounded-pill small px-3" style="background: rgba(255, 255, 255, 0.2); color: white;">Cảnh báo</span>
+                    </div>
+                    <h2 class="mb-0 fw-bold text-white">{{ overdue_transactions.count|default:0 }}</h2>
+                    <p class="mb-0 text-white text-opacity-75 small fw-medium mt-1">Đơn mượn quá hạn</p>
+                </div>
             </div>
         </div>
     </div>
@@ -163,7 +202,7 @@
             </a>
         </div>
         <div class="col-6 col-md-2">
-            <a href="/admin/auth/user/add/" class="quick-link-card">
+            <a href="{% url 'admin:core_user_add' %}" class="quick-link-card">
                 <i class="fas fa-user-plus text-info"></i>
                 <span>Tạo tài khoản</span>
             </a>
@@ -176,63 +215,11 @@
         </div>
     </div>
 
-
-
     <div class="row g-3 mb-4">
-        <div class="col-md-6">
-            <div class="panel h-100">
-                <div class="panel-title"><i class="fas fa-chart-pie text-warning"></i> Trạng thái mượn sách</div>
-                <div style="height: 250px; display: flex; justify-content: center; align-items: center;">
-                    <canvas id="statusChart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="panel h-100">
-                <div class="panel-title"><i class="fas fa-fire text-danger"></i> Sách mượn nhiều nhất</div>
-                <div style="height: 250px;">
-                    <canvas id="topBooksChart"></canvas>
-                </div>
-            </div>
-        </div>
+        <div class="col-md-6"><div class="panel h-100"><div class="panel-title"><i class="fas fa-chart-pie text-warning"></i> Trạng thái mượn sách</div><div style="height: 250px;"><canvas id="statusChart"></canvas></div></div></div>
+        <div class="col-md-6"><div class="panel h-100"><div class="panel-title"><i class="fas fa-fire text-danger"></i> Sách mượn nhiều nhất</div><div style="height: 250px;"><canvas id="topBooksChart"></canvas></div></div></div>
     </div>
 
-    <div class="panel">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <div class="panel-title mb-0"><i class="fas fa-exclamation-circle text-danger"></i> Mượn quá hạn cần xử lý</div>
-            <a href="{% url 'admin:core_borrowtransaction_changelist' %}?status__exact=OVERDUE" class="btn-view-all text-decoration-none">Xem tất cả</a>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-custom table-borderless">
-                <thead>
-                    <tr>
-                        <th>SINH VIÊN</th>
-                        <th>MSSV</th>
-                        <th>TÀI LIỆU</th>
-                        <th>HẠN TRẢ</th>
-                        <th class="text-end">HỒ SƠ</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for item in overdue_list %}
-                    <tr>
-                        <td><strong>{{ item.user.get_full_name|default:item.user.username }}</strong></td>
-                        <td>{{ item.user.msv|default:"---" }}</td>
-                        <td class="text-muted">{{ item.book.title }}</td>
-                        <td><span class="text-danger-custom badge bg-danger bg-opacity-10">{{ item.due_date|date:"d/m/Y" }}</span></td>
-                        <td class="text-end">
-                            <a href="{% url 'admin:core_user_change' item.user.id %}" class="text-secondary fs-5"><i class="far fa-user-circle"></i></a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center py-4 text-success"><i class="fas fa-check-circle me-2"></i>Tuyệt vời! Không có đơn mượn nào quá hạn.</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
