@@ -280,9 +280,9 @@ function renderBookHTML(book, is_premium) {
                 
                 ${priceRibbon}
                 
-                <div class="text-center bg-light" style="height: 260px; overflow: hidden;">
-                    <a href="${book.url}" class="d-block h-100">
-                        <img src="${book.cover_image}" class="h-100 w-100 transition-zoom" style="object-fit: cover; object-position: top;">
+                <div class="text-center bg-white d-flex align-items-center justify-content-center" style="height: 260px; overflow: hidden; padding: 15px;">
+                    <a href="${book.url}" class="d-block h-100 w-100">
+                        <img src="${book.cover_image}" class="h-100 w-100 transition-zoom" style="object-fit: contain; object-position: center;">
                     </a>
                 </div>
 
