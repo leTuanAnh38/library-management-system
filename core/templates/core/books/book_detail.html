@@ -170,14 +170,18 @@
                         <h6 class="fw-bold mb-3 text-dark">Chia sẻ trải nghiệm của bạn</h6>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label class="form-label fw-bold small text-muted text-uppercase">Đánh giá sao</label>
-                                <select name="rating" class="form-select rating-select-modern py-2 shadow-none" required>
-                                    <option value="5">⭐⭐⭐⭐⭐ (Tuyệt vời)</option>
-                                    <option value="4">⭐⭐⭐⭐ (Rất tốt)</option>
-                                    <option value="3">⭐⭐⭐ (Bình thường)</option>
-                                    <option value="2">⭐⭐ (Kém)</option>
-                                    <option value="1">⭐ (Rất tệ)</option>
-                                </select>
+                                <label class="form-label fw-bold small text-muted text-uppercase mb-2">Đánh giá sao</label>
+                                <input type="hidden" name="rating" id="ratingInput" value="5" required>
+                                <div class="star-rating-selector d-flex align-items-center gap-2 py-1">
+                                    <div class="stars-container d-flex gap-1">
+                                        <i class="fas fa-star text-warning star-item" data-value="1" style="font-size: 1.6rem; cursor: pointer; transition: transform 0.15s ease-in-out;" title="Rất tệ"></i>
+                                        <i class="fas fa-star text-warning star-item" data-value="2" style="font-size: 1.6rem; cursor: pointer; transition: transform 0.15s ease-in-out;" title="Kém"></i>
+                                        <i class="fas fa-star text-warning star-item" data-value="3" style="font-size: 1.6rem; cursor: pointer; transition: transform 0.15s ease-in-out;" title="Bình thường"></i>
+                                        <i class="fas fa-star text-warning star-item" data-value="4" style="font-size: 1.6rem; cursor: pointer; transition: transform 0.15s ease-in-out;" title="Rất tốt"></i>
+                                        <i class="fas fa-star text-warning star-item" data-value="5" style="font-size: 1.6rem; cursor: pointer; transition: transform 0.15s ease-in-out;" title="Tuyệt vời"></i>
+                                    </div>
+                                    <span class="ms-3 text-warning fw-bold small" id="ratingDescription" style="font-size: 0.95rem;">Tuyệt vời</span>
+                                </div>
                             </div>
                             <div class="col-12 mb-4">
                                 <label class="form-label fw-bold small text-muted text-uppercase">Cảm nghĩ chi tiết</label>
@@ -347,4 +351,58 @@
         </div>
     </div>
 </div>
+
+<style>
+    .star-item:hover {
+        transform: scale(1.25);
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const stars = document.querySelectorAll('.star-rating-selector .star-item');
+        const ratingInput = document.getElementById('ratingInput');
+        const ratingDescription = document.getElementById('ratingDescription');
+        
+        const descriptions = {
+            '1': 'Rất tệ',
+            '2': 'Kém',
+            '3': 'Bình thường',
+            '4': 'Rất tốt',
+            '5': 'Tuyệt vời'
+        };
+        
+        function highlightStars(val) {
+            stars.forEach(star => {
+                const starValue = parseInt(star.getAttribute('data-value'));
+                if (starValue <= val) {
+                    star.classList.remove('far', 'text-muted');
+                    star.classList.add('fas', 'text-warning');
+                } else {
+                    star.classList.remove('fas', 'text-warning');
+                    star.classList.add('far', 'text-muted');
+                }
+            });
+            ratingDescription.textContent = descriptions[val] || '';
+        }
+        
+        stars.forEach(star => {
+            star.addEventListener('mouseover', function() {
+                const val = parseInt(this.getAttribute('data-value'));
+                highlightStars(val);
+            });
+            
+            star.addEventListener('mouseleave', function() {
+                const currentVal = parseInt(ratingInput.value);
+                highlightStars(currentVal);
+            });
+            
+            star.addEventListener('click', function() {
+                const val = parseInt(this.getAttribute('data-value'));
+                ratingInput.value = val;
+                highlightStars(val);
+            });
+        });
+    });
+</script>
 {% endblock %}
