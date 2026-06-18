@@ -2,10 +2,7 @@
 Lớp 22CT2
 Thành Viên:
           Lê Tuấn Anh
-          Lê Duy Khánh
-          Trần Đức Anh
           Nguyễn Chí Trung
-          Nguyễn Đức Phát
 
 Alovu là một hệ thống quản lý thư viện hiện đại được xây dựng bằng **Django Framework**. Dự án cung cấp giải pháp toàn diện để số hóa quy trình mượn/trả sách, quản lý kho tài liệu, thu phí phạt và tự động hóa các tác vụ quản trị cho thủ thư.
 
